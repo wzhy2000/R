@@ -1,0 +1,20 @@
+useDynLib(glasso, .registration = TRUE)
+
+# functions
+export(bls.simulate)
+export(bls.simple)
+export(bls.plink)
+export(summary.BLS.ret)
+export(plot.BLS.ret)
+export(bls.outputpdf)
+export(gls.simulate)
+export(gls.simple)
+export(gls.plink)
+export(summary.GLS.ret)
+export(plot.GLS.ret)
+export(gls.outputpdf)
+
+# variables
+#export(SSD_FILE_OPEN.isOpen,SSD_FILE_OPEN.FileName)
+
+
