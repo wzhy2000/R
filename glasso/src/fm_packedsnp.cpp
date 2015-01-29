@@ -15,6 +15,7 @@
 #include "fm_packedsnp.h"
 #include "fm_rlogger.h"
 #include "fm_err.h"
+#include "fm_new.h"
 
 #define MAX_TIME_INPHENO   128
 #define MAX_SUBJ_INDATA    4096
@@ -38,21 +39,21 @@ CFmPackedSNP::CFmPackedSNP()
 CFmPackedSNP::~CFmPackedSNP()
 {
     if(m_pData)
-        free(m_pData);
+        Free(m_pData);
 
     if (m_ppSnpInfo)
     {
         for (int i=0;i<m_nMaxSnps;i++)
             if (m_ppSnpInfo[i]) delete (m_ppSnpInfo[i]);
 
-        free(m_ppSnpInfo);
+        Free(m_ppSnpInfo);
     }
 
     if(m_pSnpIdx)
-        delete m_pSnpIdx;
+        destroy( m_pSnpIdx );
 
     if(m_pSubjIdx)
-        delete m_pSubjIdx;
+        destroy(  m_pSubjIdx );
 
     _log_debug(_HI_, "CFmPackedSNP is released successfully.");
 }
@@ -72,7 +73,7 @@ void CFmPackedSNP::InitData(long nSubj, long nSnp)
         m_nMaxSnps = nSnp;
 
     //** initialize m_pData
-    m_pData = (unsigned char*)malloc( (m_nBaseSubjN/4+1)*m_nMaxSnps );
+    m_pData = (unsigned char*)Calloc( (m_nBaseSubjN/4+1)*m_nMaxSnps, char );
     if (!m_pData)
     {
         _log_fatal(_HI_, "Failed to alloc memory for the packed SNP structure:(%d bytes)",(m_nBaseSubjN/4+1)*m_nMaxSnps);
@@ -80,7 +81,7 @@ void CFmPackedSNP::InitData(long nSubj, long nSnp)
     memset(m_pData, 0, (m_nBaseSubjN/4+1)*m_nMaxSnps );
 
     //** initialize SNP info pointer
-    m_ppSnpInfo = (SNPINFO**)malloc( sizeof(SNPINFO*)*m_nMaxSnps );
+    m_ppSnpInfo = (SNPINFO**)Calloc( m_nMaxSnps, SNPINFO* );
     if (!m_ppSnpInfo)
     {
         _log_fatal(_HI_, "Failed to alloc memory for the packed SNP info:(%d bytes)",sizeof(SNPINFO*)*m_nMaxSnps);
@@ -88,11 +89,12 @@ void CFmPackedSNP::InitData(long nSubj, long nSnp)
     memset(m_ppSnpInfo, 0, sizeof(SNPINFO*)*m_nMaxSnps );
 
     //** initialize outside<->inside index table
-    m_pSnpIdx = new CFmVector(m_nMaxSnps, 0.0);
+    CFmNewTemp refNew;
+    m_pSnpIdx = new (refNew) CFmVector(m_nMaxSnps, 0.0);
     for (int i=0; i<m_nMaxSnps; i++)
         m_pSnpIdx->Set(i, i);
 
-    m_pSubjIdx  = new CFmVector(m_nBaseSubjN, 0.0);
+    m_pSubjIdx  = new (refNew) CFmVector(m_nBaseSubjN, 0.0);
     for (int i=0; i<m_nBaseSubjN; i++)
         m_pSubjIdx->Set(i, i);
 }
@@ -109,7 +111,7 @@ int CFmPackedSNP::AppendSnp()
     int newMax = m_nMaxSnps + 1000;
 
     // enlarge m_pData buffer
-    unsigned char* pNewData = (unsigned char*)malloc( (m_nBaseSubjN/4+1)*newMax  );
+    unsigned char* pNewData = (unsigned char*)Calloc( (m_nBaseSubjN/4+1)*newMax, char  );
     if (!pNewData)
     {
         _log_fatal(_HI_, "Failed to alloc memory for the packed SNP structure:(%d bytes)", (m_nBaseSubjN/4+1)*newMax);
@@ -118,11 +120,11 @@ int CFmPackedSNP::AppendSnp()
 
     memset(pNewData, 0, (m_nBaseSubjN/4+1)*newMax );
     memcpy(pNewData, m_pData, (m_nBaseSubjN/4+1)*m_nMaxSnps );
-    free(m_pData);
+    Free(m_pData);
     m_pData = pNewData;
 
     // enlarge m_ppSnpInfo buffer
-    SNPINFO** ppNewSnpInfo = (SNPINFO**)malloc( sizeof(SNPINFO*)*newMax );
+    SNPINFO** ppNewSnpInfo = (SNPINFO**)Calloc( newMax, SNPINFO* );
     if (!ppNewSnpInfo)
     {
         _log_fatal(_HI_, "Failed to alloc memory for the packed SNP structure:(%d bytes)", sizeof(SNPINFO*)*newMax);
@@ -131,12 +133,14 @@ int CFmPackedSNP::AppendSnp()
 
     memset(ppNewSnpInfo, 0, sizeof(SNPINFO*)*newMax );
     memcpy(ppNewSnpInfo, m_ppSnpInfo, sizeof(SNPINFO*)*m_nMaxSnps );
-    free(m_ppSnpInfo);
+    Free(m_ppSnpInfo);
     m_ppSnpInfo = ppNewSnpInfo;
 
+	CFmNewTemp refNew;
+
     //** enlarge outside<->inside index table
-    delete m_pSnpIdx;
-    m_pSnpIdx = new CFmVector(newMax, 0.0);
+    destroy( m_pSnpIdx );
+    m_pSnpIdx = new (refNew) CFmVector(newMax, 0.0);
     for (int i=0; i<newMax; i++)
         m_pSnpIdx->Set(i, i);
 
@@ -230,9 +234,9 @@ bool CFmPackedSNP::GetSnpInfo( int nOutSnpIdx, SNPINFO** ppInfo )
     return(true);
 }
 
-int CFmPackedSNP::RemoveRareSNP()
+int CFmPackedSNP::RemoveRareSNP(double fRareMaf)
 {
-    _log_info(_HI_, "CFmPackedSNP: RemoveRareSNP Start, SnpP=%d, SubjN=%d", m_nSnpP, m_nSubjN);
+    _log_debug( _HI_, " RemoveRareSNP() Start, SnpP=%d, SubjN=%d", m_nSnpP, m_nSubjN);
 
     double* pSNPs = new double[m_nSubjN];
     CFmVector nRemoves(0, 0.0);
@@ -264,10 +268,10 @@ int CFmPackedSNP::RemoveRareSNP()
             }
         }
 
-        double p1=(2.0*n0+n1)/2.0/(n0+n1+n2);
-        double p2=(2.0*n2+n1)/2.0/(n0+n1+n2);
+        double p1=(2.0*n0+n1)/(2.0*n0+2.0*n1+2.0*n2);
+        double p2=(2.0*n2+n1)/(2.0*n0+2.0*n1+2.0*n2);
 
-        if (fmin(p1,p2)<0.1)
+        if ( fmin(p1,p2) < fRareMaf )
             nRemoves.Put(i);
 		else
 	    if (n3>0)
@@ -300,7 +304,7 @@ int CFmPackedSNP::RemoveRareSNP()
 
 	PutRNGstate();
 
-	_log_info(_HI_, "CFmPackedSNP: RemoveRareSNP Total:%d, removed:%d", m_nSnpP, nRemoves.GetLength());
+	_log_debug(_HI_, "RemoveRareSNP Total:%d, removed:%d", m_nSnpP, nRemoves.GetLength());
 
     return(0);
 }
@@ -407,12 +411,12 @@ bool CFmPackedSNP::OrderByChrPos()
 {
     _log_info(_HI_, "CFmPackedSNP::OrderByChrPos: m_nSnpP=%d.", m_nSnpP);
 
-    SNPINFO** ppSnpInfo = (SNPINFO**)malloc( sizeof(SNPINFO*)*m_nSnpP );
+    SNPINFO** ppSnpInfo = (SNPINFO**)Calloc( m_nSnpP, SNPINFO* );
     memcpy(ppSnpInfo, m_ppSnpInfo, sizeof(SNPINFO*)*m_nSnpP );
 
     quickSort(ppSnpInfo, 0, m_nSnpP-1);
 
-    free(ppSnpInfo);
+    Free(ppSnpInfo);
 
     /*SNPINFO* pSnpInfo=NULL;
     for (int i=0; i<300; i++)
@@ -446,4 +450,11 @@ int CFmPackedSNP::WriteAsCSVFile(const char* filename)
     int ret = mat.WriteAsCSVFile(filename);
 
     return(ret);
+}
+
+void destroy(CFmPackedSNP* p)
+{
+	CFmNewTemp  fmRef;
+	p->~CFmPackedSNP();
+	operator delete(p, fmRef);
 }

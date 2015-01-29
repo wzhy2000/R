@@ -16,6 +16,7 @@
 #include "fm_vector_str.h"
 #include "fm_rlogger.h"
 #include "fm_err.h"
+#include "fm_linux.h"
 #include "fm_rtdump.h"
 
 
@@ -35,7 +36,7 @@ CFmRtDump::~CFmRtDump()
         SaveFile();
 
     if (m_szRtFile)
-        free(m_szRtFile);
+        Free(m_szRtFile);
 }
 
 
@@ -381,7 +382,7 @@ int CFmRtDump::OpenFile( char *szRtdumpFile )
 {
     _log_info(_HI_, "OpenFile: Open a result file , file name=%s", szRtdumpFile);
 
-    m_szRtFile = strdup(szRtdumpFile);
+    m_szRtFile = Strdup(szRtdumpFile);
 
     if ((m_fp=fopen(m_szRtFile, "r+b"))==NULL)
     {

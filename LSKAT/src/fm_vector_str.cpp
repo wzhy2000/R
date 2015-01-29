@@ -13,6 +13,9 @@
 #include "fm_vector_str.h"
 #include "fm_rlogger.h"
 #include "fm_err.h"
+#include "fm_new.h"
+
+#define Strdup(X) strcpy(Calloc(strlen(X)+1, char), X) ;
 
 CFmVectorStr::CFmVectorStr(CFmVectorStr* pOther)
 {
@@ -24,7 +27,7 @@ CFmVectorStr::CFmVectorStr(CFmVectorStr* pOther)
     m_pData = AllocateMemory( m_nMaxLen+1 );
     for (int i=0; i<pOther->GetLength(); i++)
     {
-        m_pData[i] = strdup(pOther->Get(i));
+        m_pData[i] = Strdup(pOther->Get(i));
         if ( strlen(pOther->Get(i)) > m_nMaxStrlen )
             m_nMaxStrlen = strlen(pOther->Get(i));
     }
@@ -49,10 +52,12 @@ CFmVectorStr::CFmVectorStr(int nSize, int nMaxSize)
 CFmVectorStr::~CFmVectorStr()
 {
     for (int i=0; i<m_nActLen; i++)
-        if (m_pData[i])
-            free(m_pData[i]);
+    {
+		if (m_pData[i])
+            Free(m_pData[i]);
+	}
 
-    delete[] m_pData;
+    Free(m_pData);
 }
 
 void CFmVectorStr::Reset(int size)
@@ -60,14 +65,14 @@ void CFmVectorStr::Reset(int size)
     for (int i=0; i<m_nActLen; i++)
     {
         if (m_pData[i])
-            free(m_pData[i]);
+            Free(m_pData[i]);
         m_pData[i] = NULL;
         m_nMaxStrlen = 0;
     }
 
     if (m_nMaxLen<size)
     {
-        delete[] m_pData;
+        Free(m_pData);
         m_nMaxLen = size;
         m_pData = AllocateMemory( m_nMaxLen+1 );
     }
@@ -90,7 +95,7 @@ void CFmVectorStr::Resize(int size)
             m_nMaxLen = size;
             char** ppData = AllocateMemory( m_nMaxLen+1 );
             memcpy(ppData, m_pData, sizeof(char*) * (m_nActLen) );
-            delete[] m_pData;
+            Free( m_pData );
             m_pData = ppData;
             m_nActLen = size;
         }
@@ -100,7 +105,7 @@ void CFmVectorStr::Resize(int size)
         for (int i=size; i<m_nActLen; i++)
         {
             if (m_pData[i])
-                free(m_pData[i]);
+                Free(m_pData[i]);
             m_pData[i] = NULL;
         }
 
@@ -142,14 +147,14 @@ void CFmVectorStr::Set(int idx, char* str)
     if (idx>=m_nActLen || idx<0)
         throw(  "wrong index of vector in CFmVectorStr::Set()");
 
-    if (m_pData[idx]) free(m_pData[idx]);
+    if (m_pData[idx]) Free(m_pData[idx]);
     if(str ==NULL || strlen(str)==0 )
         return;
 
     if(strlen(str)>m_nMaxStrlen)
         m_nMaxStrlen = strlen(str);
 
-    m_pData[idx] = strdup(str);
+    m_pData[idx] = Strdup(str);
 }
 
 char* CFmVectorStr::operator[](int idx) const
@@ -167,15 +172,15 @@ void CFmVectorStr::Put(char* str)
         int nInc = m_nMaxLen/5>20 ? m_nMaxLen/5 : 20;
         m_nMaxLen += nInc;
         char** pData = AllocateMemory( m_nMaxLen+1 );
-        memcpy(pData, m_pData, sizeof(char*) * (m_nMaxLen-nInc) );
-        delete[] m_pData;
+        memcpy(pData, m_pData, sizeof(char*) * m_nActLen );
+        Free( m_pData );
         m_pData = pData;
     }
 
     if (strlen(str)>m_nMaxStrlen)
         m_nMaxStrlen = strlen(str);
 
-    m_pData[m_nActLen] = strdup(str);
+    m_pData[m_nActLen] = Strdup(str);
     m_nActLen++;
 }
 
@@ -196,20 +201,32 @@ bool CFmVectorStr::Remove(int idx)
     if (idx<0 || idx>=m_nActLen)
         return false;
 
-    if (m_pData[idx]) free(m_pData[idx]);
+    if ( m_pData[idx] ) Free(m_pData[idx]);
+
+	Rprintf("!!!!! ADDR:Remove(%d), %X, %X, %d\n",
+		idx,
+		&m_pData[idx],
+		&m_pData[idx+1],
+		(m_nActLen-idx-1) * sizeof(char*) );
+
+	for(int i=0;i<20;i++)
+		Rprintf("!BEFORE [%d] ADDR: %X %s\n", i, (char*)m_pData[i], m_pData[i] );
 
     if ( idx < (m_nActLen-1) )
-        memcpy(m_pData+ idx*sizeof(char*),
-               m_pData+ (idx+1)*sizeof(char*),
-               (m_nActLen-idx-1)*sizeof(char*));
+        memmove( &m_pData[idx], &m_pData[idx+1], (m_nActLen-idx-1) * sizeof(char*) );
 
+	m_pData[ m_nActLen-1 ] = NULL;
     m_nActLen--;
+
+	for(int i=0;i<20;i++)
+		Rprintf("!AFTER [%d] ADDR: %X %s \n", i, (char*)m_pData[i], m_pData[i] );
+
     return(true);
 }
 
 char** CFmVectorStr::AllocateMemory( int nLen )
 {
-    char** pData = new char*[nLen+1] ;
+    char** pData = Calloc( nLen+1, char*);
 //**MEMTEST: Rprintf("ALLOC MEMORY: %d(CFmVectorStr)\n", (nLen + 1));
 
     if (pData==NULL)
@@ -235,7 +252,7 @@ bool CFmVectorStr::RemoveElements(CFmVector& nRows)
         if (nRows.Find(i)>=0)
         {
             //delete string data
-            if (m_pData[i]) free( m_pData[i] );
+            if (m_pData[i]) Free( m_pData[i] );
         }
         else
         {
@@ -284,7 +301,7 @@ int CFmVectorStr::Find(const char* szName )
 
 void CFmVectorStr::SetNames( CFmVectorStr* pNames)
 {
-    if ( m_pNames ) delete m_pNames;
+    if ( m_pNames ) destroy(m_pNames);
     m_pNames = pNames;
 }
 
@@ -354,4 +371,11 @@ int CFmVectorStr::WriteAsCSVFile(const char* szCsvFile, bool bAppend, const char
 
     fclose(fp);
     return(0);
+}
+
+void destroy(CFmVectorStr* p)
+{
+	CFmNewTemp fmRef;
+	p->~CFmVectorStr();
+	operator delete(p, fmRef);
 }

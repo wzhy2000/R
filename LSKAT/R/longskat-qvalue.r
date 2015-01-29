@@ -174,7 +174,7 @@ Get_Lambda<-function(K){
 	out.s<-try(eigen(K,symmetric=TRUE, only.values = TRUE))
 	#print(out.s$values)
 	
-	if (class(out.s)=="try-error") browser();
+	if (class(out.s)=="try-error") { show(K); browser(); }
 	
 	#out.s1<-eigen(K,symmetric=TRUE)
 	#print(out.s1$values)

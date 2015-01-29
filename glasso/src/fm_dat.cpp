@@ -17,11 +17,12 @@
 #include "fm_err.h"
 #include "fm_dataframe.h"
 #include "fm_dat.h"
+#include "fm_new.h"
 
 CFmDat_Plink::CFmDat_Plink(char* szFile_tped, char* szFile_tfam )
 {
-    m_sTped_file = strdup(szFile_tped);
-    m_sTfam_file = strdup(szFile_tfam);
+    m_sTped_file = Strdup(szFile_tped);
+    m_sTfam_file = Strdup(szFile_tfam);
     m_nSnpP = 0;
 	m_pSubIds = NULL;
 	m_pSnpNames = NULL;
@@ -29,11 +30,11 @@ CFmDat_Plink::CFmDat_Plink(char* szFile_tped, char* szFile_tfam )
 
 CFmDat_Plink::~CFmDat_Plink()
 {
-    free(m_sTped_file);
-    free(m_sTfam_file);
+    Free(m_sTped_file);
+    Free(m_sTfam_file);
 
-	if(m_pSnpNames) delete m_pSnpNames;
-	if(m_pSubIds) delete m_pSubIds;
+	if(m_pSnpNames) destroy( m_pSnpNames );
+	if(m_pSubIds) destroy( m_pSubIds );
 
     _log_debug(_HI_, "CFmDat_Plink is released successfully.");
 }
@@ -51,7 +52,7 @@ int CFmDat_Plink::Load(char* szPresigFile)
 
     m_nSnpP = m_PackedSNP.GetNumSnps();
     _log_info( _HI_, "LoadPlink: Start to remove rare SNPs,snp=%d", m_nSnpP);
-    nRet = m_PackedSNP.RemoveRareSNP();
+    nRet = m_PackedSNP.RemoveRareSNP( 0.01 );
     if (nRet!=0)
     {
         _log_info(_HI_, "LoadSnpFile: Failed to remove rare SNPs");
@@ -61,7 +62,8 @@ int CFmDat_Plink::Load(char* szPresigFile)
     m_nSnpP = m_PackedSNP.GetNumSnps();
     _log_info( _HI_, "LoadPlink: non-rare SNP:%d", m_nSnpP );
 
-    m_pSnpNames = new CFmVectorStr(m_nSnpP);
+	CFmNewTemp refNew;
+    m_pSnpNames = new (refNew) CFmVectorStr(m_nSnpP);
     for (int i=0;i<m_nSnpP;i++)
     {
         char szBuf[64]={0};
@@ -248,7 +250,8 @@ int CFmDat_Plink::LoadTfam( char* szFile_tfam )
         return( ERR_OPEN_FILE );
     }
 
-	m_pSubIds = new CFmVectorStr(0, 1000);
+	CFmNewTemp refNew;
+	m_pSubIds = new (refNew) CFmVectorStr(0, 1000);
     int nSubj=0;
     char aLine[256]={0};
     char seps1[] = " ,\t";
@@ -283,7 +286,7 @@ int CFmDat_Plink::LoadTfam( char* szFile_tfam )
 
 CFmDat_Simple::CFmDat_Simple(char* szFile_snp )
 {
-    m_szFile_snp = strdup(szFile_snp);
+    m_szFile_snp = Strdup(szFile_snp);
 	m_pSubIds = NULL;
     m_pSnpNames= NULL;
 
@@ -291,9 +294,9 @@ CFmDat_Simple::CFmDat_Simple(char* szFile_snp )
 
 CFmDat_Simple::~CFmDat_Simple()
 {
-    free(m_szFile_snp);
-	if(m_pSubIds) delete m_pSubIds;
-	if(m_pSnpNames) delete m_pSnpNames;
+    Free(m_szFile_snp);
+	if(m_pSubIds) destroy( m_pSubIds );
+	if(m_pSnpNames) destroy( m_pSnpNames );
 
     _log_debug(_HI_, "CFmDat_Simple is released successfully.");
 }
@@ -345,7 +348,7 @@ int CFmDat_Simple::Load(char* szPresigFile)
 
     int nSnpP = m_PackedSNP.GetNumSnps();
     _log_info( _HI_, "LoadSimple: Start to remove rare SNPs,snp=%d", nSnpP);
-    ret = m_PackedSNP.RemoveRareSNP();
+    ret = m_PackedSNP.RemoveRareSNP( 0.01 );
     if (ret!=0)
     {
         _log_info(_HI_, "LoadSnpFile: Failed to remove rare SNPs");
@@ -356,7 +359,8 @@ int CFmDat_Simple::Load(char* szPresigFile)
 
     _log_info( _HI_, "LoadSimple: non-rare SNP:%d", nSnpP );
 
-    m_pSnpNames = new CFmVectorStr(nSnpP);
+	CFmNewTemp refNew;
+    m_pSnpNames = new (refNew) CFmVectorStr(nSnpP);
     for (int i=0;i<nSnpP;i++)
     {
         SNPINFO* pInfo;
@@ -369,36 +373,74 @@ int CFmDat_Simple::Load(char* szPresigFile)
     return(0);
 }
 
-CFmDat_Pheno::CFmDat_Pheno(char* szFile_pheno, bool bZnorm, char* szModel )
+CFmDat_Pheno::CFmDat_Pheno(char* szFile_pheno, bool bZnorm, char* szYname, char* szZname, char* szXname )
 {
-    m_szFile_pheno = strdup(szFile_pheno);
+    m_szFile_pheno = Strdup(szFile_pheno);
     m_bZnorm = bZnorm;
+    m_pAttachedPhe = NULL;
 
+	m_pszXname = NULL;
+	m_pszZname = NULL;
+	m_pszYname = Strdup(szYname);
+
+	if(szXname) m_pszXname = Strdup(szXname);
+	if(szZname) m_pszZname = Strdup(szZname);
+
+	Init();
+}
+
+void CFmDat_Pheno::Init()
+{
     m_pPhenoY = NULL ;
     m_pPhenoZ = NULL ;
     m_pPhenoZ0 = NULL ;
     m_pCovars = NULL ;
-    m_pModelPar = NULL;
 	m_pSubjs = NULL;
 
-    m_nCovCount = 0;
     m_nSubjN = 0;
     m_nMesuQ = 1;
 
-    if (szModel)
-        SetModel(szModel);
+	CFmNewTemp refNew;
+	m_pXnames = new (refNew) CFmVectorStr(0);
+    char* pch = strtok (m_pszXname,",");
+    while (pch != NULL)
+    {
+        m_pXnames->Put(pch);
+        pch = strtok (NULL, ",");
+    }
+
+    //m_pXnames->Show("m_pXnames");
+}
+
+CFmDat_Pheno::CFmDat_Pheno(CFmMatrix* pFmPhe, bool bZnorm, char* szYname, char* szZname, char* szXname )
+{
+    m_szFile_pheno = NULL;
+    m_pAttachedPhe = pFmPhe;
+    m_bZnorm = bZnorm;
+
+	m_pszXname = NULL;
+	m_pszZname = NULL;
+	m_pszYname = Strdup(szYname);
+
+	if(szXname) m_pszXname = Strdup(szXname);
+	if(szZname) m_pszZname = Strdup(szZname);
+
+	Init();
 }
 
 CFmDat_Pheno::~CFmDat_Pheno()
 {
-    delete m_szFile_pheno;
+    if (m_szFile_pheno) Free( m_szFile_pheno );
+    if (m_pszXname) Free( m_pszXname);
+    if (m_pszYname) Free( m_pszYname);
+    if (m_pszZname) Free( m_pszZname);
 
-    if (m_pSubjs) delete m_pSubjs;
-    if (m_pPhenoY) delete m_pPhenoY;
-    if (m_pPhenoZ) delete m_pPhenoZ;
-    if (m_pPhenoZ0) delete m_pPhenoZ0;
-    if (m_pCovars) delete m_pCovars;
-    if (m_pModelPar) delete m_pModelPar;
+    if (m_pXnames) destroy( m_pXnames );
+    if (m_pSubjs) destroy( m_pSubjs );
+    if (m_pPhenoY) destroy( m_pPhenoY );
+    if (m_pPhenoZ) destroy( m_pPhenoZ );
+    if (m_pPhenoZ0) destroy( m_pPhenoZ0 );
+    if (m_pCovars) destroy( m_pCovars );
 
     _log_debug(_HI_, "CFmDat_Pheno is released successfully.");
 }
@@ -406,29 +448,36 @@ CFmDat_Pheno::~CFmDat_Pheno()
 int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs)
 {
     //include response value(y);
-    m_nCovCount = GetModelCount( false );
-    if (m_nCovCount<1)
+    if ( m_pszYname ==NULL || m_pszZname == NULL )
     {
         _log_error(_HI_, "No response value or  covariate in the model parameter");
         return( ERR_PARAM_VALUE );
     }
 
-    CFmDataFrame df;
-    int ret = df.Load(m_szFile_pheno, false, true);
-    if (ret!=0)
-    {
-        _log_error(_HI_, "Failed to open the Phenotype file(%s)", m_szFile_pheno);
-        return( ERR_OPEN_FILE );
-    }
+	CFmMatrix* pFmPhe = NULL;
+	if( m_szFile_pheno != NULL)
+	{
+	    CFmDataFrame df;
+		int ret = df.Load(m_szFile_pheno, true, true);
+		if (ret!=0)
+		{
+			_log_error(_HI_, "Failed to open the Phenotype file(%s)", m_szFile_pheno);
+			return( ERR_OPEN_FILE );
+		}
+		pFmPhe = df.GetMatrix();
+	}
+	else
+		pFmPhe = m_pAttachedPhe;
 
     m_nSubjN = pPackedSNP->GetNumSubjs();
-    if ( df.GetNumRow() != m_nSubjN )
+    if ( pFmPhe->GetNumRows() != m_nSubjN )
     {
-        _log_error(_HI_, "The id's count is greater than the count in SNP data");
+        _log_error(_HI_, "The id's count is greater than the count in SNP data, %d!=%d", pFmPhe->GetNumRows(), m_nSubjN);
         return( ERR_UNKNOWN );
     }
 
-    m_pSubjs = df.GetStringCol(0);
+    CFmNewTemp refNew;
+    m_pSubjs = new (refNew) CFmVectorStr( pFmPhe->GetRowNames() );
 
     // Data from PLINK command
 	CFmVector subjOrd(0, 0.0);
@@ -448,16 +497,15 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
     {
         for(int i=0;i<m_pSubjs->GetLength(); i++)
             subjOrd.Put( i+1 );
-
     }
 
-    char* szVarY = GetModelParam( 0, false );
+    char* szVarY = m_pszYname;
     CFmVector fmVctPosY(0, 0.0);
-    for(int i=1; i<=df.GetNumCol(); i++)
+    for(int i=1; i<= pFmPhe->GetNumCols(); i++)
     {
         char szLongY[256] = {0};
         sprintf(szLongY, "%s_%d", szVarY, i);
-        int nIdx = df.FindColumn( szLongY );
+        int nIdx = pFmPhe->FindColumn( szLongY );
         if (nIdx<0)
             continue;
 
@@ -472,53 +520,37 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
     }
 
     // Y matrix
-    if (m_pPhenoY) delete m_pPhenoY;
-    m_pPhenoY = new CFmMatrix( m_nSubjN, m_nMesuQ );
+    if (m_pPhenoY) destroy( m_pPhenoY );
+
+    m_pPhenoY = new (refNew) CFmMatrix( m_nSubjN, m_nMesuQ );
 
     for(int i=0; i<fmVctPosY.GetLength(); i++)
     {
         char szLongY[256] = {0};
         sprintf(szLongY, "%s_%d", szVarY, (int)(fmVctPosY.Get(i)) );
-        int nIdx = df.FindColumn( szLongY );
+        int nIdx = pFmPhe->FindColumn( szLongY );
         if (nIdx<0)
             _log_fatal( _HI_, "Why?(DataFrame.nIdx=%d)", nIdx );
 
-        CFmVector& VctY = df.GetFloatCol(nIdx);
+        CFmVector& VctY = pFmPhe->GetCol(nIdx);
         VctY.Rearrange( subjOrd );
 
         m_pPhenoY->SetCol(i, VctY );
     }
 
-    // Z Matrix
-    char* szHypoZ = NULL;
-    for(int i=1; i<m_nCovCount;i++)
-    {
-        char* szVarX = GetModelParam( i, false );
-        int nIdx = df.FindColumn( szVarX );
-        if ( nIdx<0 )
-        {
-            if (szHypoZ==NULL)
-                szHypoZ=szVarX;
-            else
-            {
-                _log_error( _HI_, "Hypothesis Z has two or more defination=%s,%s", szHypoZ, szVarX);
-                return( ERR_PARAM_VALUE );
-            }
-        }
-    }
 
-    _log_prompt( _HI_, "Hypothesis Z=%s", szHypoZ);
-    if (szHypoZ==NULL)
+    _log_prompt( _HI_, "Hypothesis Z=%s", m_pszZname);
+    if (m_pszZname == NULL)
         return( ERR_PARAM_VALUE );
 
-    if (m_pPhenoZ) delete m_pPhenoZ;
-    if (m_pPhenoZ0) delete m_pPhenoZ0;
+    if (m_pPhenoZ) destroy( m_pPhenoZ );
+    if (m_pPhenoZ0) destroy( m_pPhenoZ0 );
 
     for(int i=0; i<fmVctPosY.GetLength(); i++)
     {
         char szLongZ[256] = {0};
-        sprintf(szLongZ, "%s_%d", szHypoZ, (int)(fmVctPosY.Get(i)) );
-        int nIdx = df.FindColumn( szLongZ );
+        sprintf(szLongZ, "%s_%d", m_pszZname, (int)(fmVctPosY.Get(i)) );
+        int nIdx = pFmPhe->FindColumn( szLongZ );
         if (nIdx<0)
         {
             _log_error( _HI_, "Hypothesis Z doesn't match Y(%d!=%d).", fmVctPosY.GetLength(), m_nMesuQ );
@@ -526,16 +558,16 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
         }
     }
 
-    m_pPhenoZ = new CFmMatrix( m_nSubjN, m_nMesuQ );
+    m_pPhenoZ = new (refNew) CFmMatrix( m_nSubjN, m_nMesuQ );
     for( int i=0; i<fmVctPosY.GetLength(); i++)
     {
         char szLongZ[256] = {0};
-        sprintf(szLongZ, "%s_%d", szHypoZ, (int)(fmVctPosY.Get(i)) );
-        int nIdx = df.FindColumn( szLongZ );
+        sprintf(szLongZ, "%s_%d", m_pszZname, (int)(fmVctPosY.Get(i)) );
+        int nIdx = pFmPhe->FindColumn( szLongZ );
         if (nIdx<0)
             _log_fatal( _HI_, "Why?(DataFrame.nIdx=%d)", nIdx );
 
-        CFmVector& VctZ = df.GetFloatCol(nIdx);
+        CFmVector& VctZ = pFmPhe->GetCol(nIdx);
         VctZ.Rearrange( subjOrd );
         m_pPhenoZ->SetCol(i, VctZ );
     }
@@ -543,7 +575,6 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
     CFmVector phe_null(0, 0.0);
     CFmVector vct(0, 0.0);
     CFmVector vct_ord(0, 0.0);
-
 
     for(int i=0; i<m_pPhenoZ->GetNumRows(); i++)
     {
@@ -570,16 +601,15 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
     }
 
     // Covars matrix
-    m_pCovars = new CFmMatrix( m_nSubjN, m_nCovCount-1);
+    m_pCovars = new (refNew) CFmMatrix( m_nSubjN, m_pXnames->GetLength() + 1);
 	m_pCovars->SetColName( 0, (char*)"Mu" );
     for(int i=0; i<m_nSubjN; i++)
         m_pCovars->Set( i, 0, 1.0 );
 
-    for(int i=1; i<m_nCovCount-1;i++)
+    for(int i=1; i<m_pXnames->GetLength()+1;i++)
     {
-        char* szVarX = GetModelParam( i, false );
-
-        int nIdx = df.FindColumn( szVarX );
+		char* szVarX = m_pXnames->Get( i-1 );
+        int nIdx = pFmPhe->FindColumn( szVarX );
         if (nIdx<0)
         {
             _log_error(_HI_, "Failed to find the colume(%s)", szVarX);
@@ -587,9 +617,8 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
         }
         else
         {
-            _log_debug(_HI_, "Covariance(%d), nCol=%d, %s", i, nIdx, szVarX);
-            CFmVector& VctX = df.GetFloatCol(nIdx);
-
+            _log_debug(_HI_, "Covariate(%d), nCol=%d, %s", i, nIdx, szVarX);
+            CFmVector& VctX = pFmPhe->GetCol(nIdx);
             VctX.Rearrange( subjOrd );
             m_pCovars->SetCol(i, VctX, szVarX );
         }
@@ -597,7 +626,7 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
 
     RemoveMissing(pPackedSNP);
 
-    m_pPhenoZ0 = new CFmMatrix(m_pPhenoZ);
+    m_pPhenoZ0 = new (refNew) CFmMatrix(m_pPhenoZ);
 
     if (!m_bZnorm)
     {
@@ -630,6 +659,9 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
         }
     }
 
+	if( m_szFile_pheno != NULL)
+		destroy( pFmPhe );
+
     _log_info( _HI_, "Phenotype: %d subjects are read from phenotype file", m_pPhenoY->GetNumRows() );
 
     return(0);
@@ -638,22 +670,30 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
 int CFmDat_Pheno::LoadNonlongdt( CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSubjs )
 {
     //include response value(y);
-    m_nCovCount = GetModelCount( false );
-    if (m_nCovCount<1)
+    if ( m_pszYname == NULL )
     {
         _log_error(_HI_, "No response value or  covariate in the model parameter");
         return( ERR_OPEN_FILE );
     }
 
-    CFmDataFrame df;
-    int ret = df.Load(m_szFile_pheno, false, true);
-    if (ret!=0)
-    {
-        _log_error(_HI_, "Failed to open the Phenotype file(%s)", m_szFile_pheno);
-        return( ERR_OPEN_FILE );
-    }
+	CFmMatrix* pFmPhe=NULL;
+	if( m_szFile_pheno!=NULL)
+	{
+	    CFmDataFrame df;
+		int ret = df.Load(m_szFile_pheno, true, true);
+		if (ret!=0)
+		{
+			_log_error(_HI_, "Failed to open the Phenotype file(%s)", m_szFile_pheno);
+			return( ERR_OPEN_FILE );
+		}
 
-	m_pSubjs = df.GetStringCol(0);
+		pFmPhe = df.GetMatrix();
+	}
+	else
+		pFmPhe = m_pAttachedPhe;
+
+	CFmNewTemp refNew;
+	m_pSubjs = new (refNew) CFmVectorStr( pFmPhe->GetRowNames() );
 
 	CFmVector subjOrd(0, 0.0);
 	if (pFamSubjs)
@@ -670,45 +710,41 @@ int CFmDat_Pheno::LoadNonlongdt( CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSub
 
     m_nMesuQ = 1;
     m_nSubjN = pPackedSNP->GetNumSubjs();
-    if ( df.GetNumRow() != m_nSubjN )
+    if ( pFmPhe->GetNumRows() != m_nSubjN )
     {
-        _log_error(_HI_, "The id's count is greater than the count in SNP data(%d:%d)", df.GetNumRow(), m_nSubjN);
+        _log_error(_HI_, "The id's count is greater than the count in SNP data(%d:%d)", pFmPhe->GetNumRows(), m_nSubjN);
         return(-1);
     }
 
-    if (m_pPhenoY) delete m_pPhenoY;
-
+    if (m_pPhenoY) destroy( m_pPhenoY );
 
     // Y matrix
-    m_pPhenoY = new CFmMatrix( m_nSubjN, 1 );
-    char* szVarY = GetModelParam( 0, false );
-    int nIdx = df.FindColumn( szVarY );
+    m_pPhenoY = new (refNew) CFmMatrix( m_nSubjN, 1 );
+    int nIdx = pFmPhe->FindColumn( m_pszYname );
     if (nIdx<0)
     {
-        _log_error(_HI_, "Failed to find the colume(%s)", szVarY);
+        _log_error(_HI_, "Failed to find the colume(%s)", m_pszYname );
         return( ERR_OPEN_FILE );
     }
     else
     {
-        CFmVector& VctY = df.GetFloatCol(nIdx);
+        CFmVector& VctY = pFmPhe->GetCol(nIdx);
 
-		if (subjOrd.GetLength()>0)
-            VctY.Rearrange( subjOrd );
+		if (subjOrd.GetLength()>0) VctY.Rearrange( subjOrd );
         m_pPhenoY->SetCol(0, VctY );
     }
 
-
     // Covar matrix
-    m_pCovars = new CFmMatrix( m_nSubjN, m_nCovCount);
+    m_pCovars = new (refNew) CFmMatrix( m_nSubjN, m_pXnames->GetLength() + 1  );
 	m_pCovars->SetColName( 0, (char*)"Mu" );
     for(int i=0; i<m_nSubjN; i++)
 		m_pCovars->Set( i, 0, 1.0);
 
-    for(int i=1; i<m_nCovCount;i++)
+    for(int i=1; i< m_pXnames->GetLength() + 1;i++)
     {
-        char* szVarX = GetModelParam( i, false );
+        char* szVarX = m_pXnames->Get(i-1 );
 
-        int nIdx = df.FindColumn( szVarX );
+        int nIdx = pFmPhe->FindColumn( szVarX );
         if (nIdx<0)
         {
             _log_error(_HI_, "Failed to find the colume(%s)", szVarX);
@@ -716,7 +752,7 @@ int CFmDat_Pheno::LoadNonlongdt( CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSub
         }
         else
         {
-            CFmVector& VctX = df.GetFloatCol(nIdx);
+            CFmVector& VctX = pFmPhe->GetCol(nIdx);
 			if (subjOrd.GetLength()>0)
                 VctX.Rearrange( subjOrd );
             m_pCovars->SetCol(i, VctX, szVarX );
@@ -724,6 +760,9 @@ int CFmDat_Pheno::LoadNonlongdt( CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSub
     }
 
 	RemoveMissing(pPackedSNP);
+
+	if( m_szFile_pheno != NULL)
+		destroy( pFmPhe );
 
     _log_info( _HI_, "Phenotype: %d subjects are read from phenotype file", m_pPhenoY->GetNumRows() );
 
@@ -792,90 +831,23 @@ int CFmDat_Pheno::RemoveMissing( CFmPackedSNP* pPackedSNP )
     return(0);
 }
 
-int CFmDat_Pheno::SetModel( char* szModel )
+void destroy(CFmDat_Plink* p)
 {
-    if (m_pModelPar) delete m_pModelPar;
-
-    m_pModelPar = new CFmVectorStr(0);
-
-    char* szBak = strdup(szModel);
-    char* pch = strtok (szBak,",");
-    bool bAdd=false;
-    bool bDom=false;
-
-    while (pch != NULL)
-    {
-        if ( strcasecmp(pch, "add")==0)
-        {
-            bAdd=true;
-            pch = strtok (NULL, ",");
-            continue;
-        }
-        if ( strcasecmp(pch, "dom")==0)
-        {
-            bDom=true;
-            pch = strtok (NULL, ",");
-            continue;
-        }
-
-        m_pModelPar->Put(pch);
-        pch = strtok (NULL, ",");
-    }
-
-    if (bAdd)
-        m_pModelPar->Put((char*)"add");
-
-    if (bDom)
-        m_pModelPar->Put((char*)"dom");
-
-    m_pModelPar->Show("Modelpar");
-    free(szBak);
-    return( 0 );
+	CFmNewTemp  fmRef;
+	p->~CFmDat_Plink();
+	operator delete(p, fmRef);
 }
 
-//Model expression
-//         y, cov1, cov2, add, dom
-//model.count=5;
-//model[0]=y;
-int CFmDat_Pheno::GetModelCount(bool bIncludeEffect)
+void destroy(CFmDat_Simple* p)
 {
-    if (bIncludeEffect)
-        return m_pModelPar->GetLength();
-    else
-    {
-        int nCov=0;
-        for (int i=0; i<m_pModelPar->GetLength(); i++)
-            if ( strcasecmp(m_pModelPar->Get(i), "add")==0 ||
-                 strcasecmp(m_pModelPar->Get(i), "dom")==0 )
-            {
-            //skip;
-            }
-            else
-                nCov++;
-
-        return(nCov);
-    }
+	CFmNewTemp  fmRef;
+	p->~CFmDat_Simple();
+	operator delete(p, fmRef);
 }
 
-char* CFmDat_Pheno::GetModelParam(int nIdx, bool bIncludeEffect)
+void destroy(CFmDat_Pheno* p)
 {
-    int nIdx0 = 0;
-
-    for (int i=0; i<m_pModelPar->GetLength(); i++)
-    {
-        char* pch = m_pModelPar->Get(i);
-        if (!bIncludeEffect && (strcasecmp(pch, "add")==0 || strcasecmp(pch, "dom")==0) )
-        {
-            continue;
-        }
-
-        if (nIdx0==nIdx)
-            return(pch);
-
-        nIdx0 ++;
-    }
-
-    return(NULL);
+	CFmNewTemp  fmRef;
+	p->~CFmDat_Pheno();
+	operator delete(p, fmRef);
 }
-
-

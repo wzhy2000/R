@@ -6,6 +6,8 @@
 #include "fm_rlogger.h"
 #include "fm_pcf.h"
 #include "fm_err.h"
+#include "fm_new.h"
+
 #include "gls_R.h"
 #include "gls_model.h"
 #include "gls_cfg.h"
@@ -13,8 +15,7 @@
 
 int _glasso_simulate( CMDOPTIONS *pCmd, GLS_par *pPar)
 {
-    _log_prompt(_HI_, "Simulation will be performed.\n Total rounds:%d parameter:%s, pcf_file=%s",
-              pCmd->nSimuRound, pCmd->szParFile, pCmd->szPcfFile);
+    _log_prompt(_HI_, "Simulation will be performed. Total rounds:%d parameter:%s", pCmd->nSimuRound, pCmd->szParFile );
 
     CFmPcf pcf(pCmd->szPcfFile);
     pcf.UpdatePcfFile( PCF_START );
@@ -40,15 +41,14 @@ int _glasso_simulate( CMDOPTIONS *pCmd, GLS_par *pPar)
 
 _Abort1:
     pcf.UpdatePcfFile( PCF_EXCEPT, 0, 0, 0, 0, status );
-    _log_prompt( _HI_, "Simulation is exit abnormally with code(%d),", status);
+    _log_prompt(_HI_, "Simulation is exit abnormally with code(%d),", status);
     return(status);
 }
 
 
-SEXP _glasso_plink( CMDOPTIONS* pCmd, GLS_cfg* pCfg )
+SEXP _glasso_plink_tped( CMDOPTIONS* pCmd, GLS_cfg* pCfg )
 {
-    _log_prompt(_HI_, "PLINK will be performed.\n Total rounds:%d parameter:%s,%s,%s, pcf_file=%s",
-              pCmd->nSimuRound, pCmd->szTpedFile, pCmd->szTfamFile, pCmd->szPheFile, pCmd->szPcfFile);
+    _log_prompt(_HI_, "PLINK(tped) will be performed. Files: %s,%s,%s.", pCmd->szTpedFile, pCmd->szTfamFile, pCmd->szPheFile );
 
 	SEXP sRet = R_NilValue;
     CFmPcf pcf(pCmd->szPcfFile );
@@ -66,7 +66,7 @@ SEXP _glasso_plink( CMDOPTIONS* pCmd, GLS_cfg* pCfg )
 		if (status!=0)
 			goto _Abort2;
 
-        if(pCmd->nRunmode != _RUN_VARSEL)
+        if(pCmd->bRefit)
         {
             status = sm.Refit(pCfg);
             if ( status!=0 && status!=ERR_NO_ITEMS )
@@ -77,7 +77,7 @@ SEXP _glasso_plink( CMDOPTIONS* pCmd, GLS_cfg* pCfg )
     }
     catch( char const* str )
     {
-        _log_error( _HI_, "PLINK has an exception(%s).", str);
+        _log_error( _HI_, "PLINK(tped) has an exception(%s).", str);
         status = ERR_EXCEPTION;
         goto _Abort2;
     }
@@ -88,14 +88,13 @@ SEXP _glasso_plink( CMDOPTIONS* pCmd, GLS_cfg* pCfg )
 
 _Abort2:
     pcf.UpdatePcfFile( PCF_EXCEPT );
-    _log_prompt( _HI_, "PLINK is exit abnormally with code(%d),", status);
+    _log_prompt( _HI_, "PLINK(tped) is exit abnormally with code(%d),", status);
     return(sRet);
 }
 
 SEXP _glasso_simple(  CMDOPTIONS* pCmd, GLS_cfg* pCfg )
 {
-    _log_prompt(_HI_, "SIMPLE will be performed. \nTotal rounds:%d parameter:%s,%s,%s, pcf_file=%s",
-              pCmd->nSimuRound, pCmd->szTpedFile, pCmd->szTfamFile, pCmd->szPheFile, pCmd->szPcfFile);
+    _log_prompt(_HI_, "SIMPLE will be performed. Files:%s,%s.", pCmd->szPheFile, pCmd->szSnpFile );
 
 	SEXP sRet = R_NilValue;
     CFmPcf pcf( pCmd->szPcfFile );
@@ -113,7 +112,7 @@ SEXP _glasso_simple(  CMDOPTIONS* pCmd, GLS_cfg* pCfg )
 		if (status!=0)
 			goto _Abort3;
 
-        if(pCmd->nRunmode != _RUN_VARSEL)
+        if(pCmd->bRefit)
         {
             status = sm.Refit(pCfg);
             if ( status!=0 && status!=ERR_NO_ITEMS )
@@ -135,7 +134,55 @@ SEXP _glasso_simple(  CMDOPTIONS* pCmd, GLS_cfg* pCfg )
 
 _Abort3:
     pcf.UpdatePcfFile( PCF_EXCEPT, 0, 0, 0, 0, status );
-    _log_prompt( _HI_, "SIMPLE is exit abnormally with code(%d),", status);
+    _log_prompt(_HI_, "SIMPLE is exit abnormally with code(%d),", status);
+    return(sRet);
+}
+
+
+SEXP _glasso_snpmat( CFmMatrix* pfmPhe, CFmMatrix* pfmSnp, CMDOPTIONS* pCmd, GLS_cfg* pCfg )
+{
+    _log_prompt(_HI_, "SNPMAT will be performed, Phenotype Matrix(%d,%d), SNP matrix(%d,%d) .",
+    			pfmPhe->GetNumRows(), pfmPhe->GetNumCols(), pfmSnp->GetNumRows(), pfmSnp->GetNumCols() );
+
+	SEXP sRet = R_NilValue;
+    CFmPcf pcf( pCmd->szPcfFile );
+    pcf.UpdatePcfFile( PCF_START );
+
+    int status = 0;
+    try
+    {
+        GLS sm;
+        status = sm.LoadSnpmat( pfmPhe, pfmSnp, pCmd );
+        if (status!=0)
+            goto _Abort4;
+
+		status = sm.Varsel(pCfg);
+		if (status!=0)
+			goto _Abort4;
+
+        if(pCmd->bRefit)
+        {
+            status = sm.Refit(pCfg);
+            if ( status!=0 && status!=ERR_NO_ITEMS )
+                goto _Abort4;
+        }
+
+        sRet = sm.GetRObj();
+    }
+    catch( char const* str )
+    {
+        _log_error(_HI_, "SNPMAT has an exception(%s).", str);
+        status = ERR_EXCEPTION;
+        goto _Abort4;
+    }
+
+    pcf.UpdatePcfFile( PCF_END );
+    _log_prompt(_HI_, "SNPMAT is done successfully.");
+    return(sRet);
+
+_Abort4:
+    pcf.UpdatePcfFile( PCF_EXCEPT, 0, 0, 0, 0, status );
+    _log_prompt(_HI_, "SNPMAT is exit abnormally with code(%d),", status);
     return(sRet);
 }
 
@@ -158,18 +205,19 @@ int glasso_simulate( const char* szPhe_out,
 			 		 double* pfSimu_d_effect,
 			 		 double* pfSimu_z_range,
 			 		 int* pnSimu_z_count,
-					 int bDebug)
+					 int nDebug)
 {
 	CMDOPTIONS cmd;
 	memset(&cmd, 0, sizeof(CMDOPTIONS));
 
 	strcpy( cmd.szPheoutFile, szPhe_out);
 	strcpy( cmd.szSnpoutFile, szSnp_out);
-	cmd.bDebug = bDebug;
+	cmd.nDebug = nDebug;
 
-    start_log( cmd.bDebug );
+    start_log( cmd.nDebug );
 
-	GLS_par *pPar = new GLS_par(&cmd);
+	CFmNewTemp refNew;
+	GLS_par *pPar = new (refNew) GLS_par(&cmd);
 
     pPar->simu_grps    = nSimu_grp;
     pPar->simu_n       = nSimu_n;
@@ -220,34 +268,47 @@ int glasso_simulate( const char* szPhe_out,
 	pPar->simu_covar_range[1] = pfSimu_covar_range[1];
 
     int nRet = _glasso_simulate( &cmd, pPar );
-	delete pPar;
+
+	destroy( pPar );
 
     return(nRet);
 }
 
 SEXP glasso_simple( const char* pszPhefile,
   		   	const char*  pzSnpfile,
-  		   	const char*  pzModel,
+  		   	const char*  pzYname,
+  		   	const char*  pzZname,
+  		   	const char*  pzXname,
   		   	bool bRefit,
-  		   	int nMaxIter,
+  		   	bool bAddUsed,
+  		   	bool bDomUsed,
+  		   	int nMcmcIter,
 		   	double fBurnInRound,
 			double fRhoTuning,
 	        double fQval_add,
 	        double fQval_dom,
-	        bool   bDebug)
+	        int   nDebug)
 {
 	CMDOPTIONS cmd;
 	memset(&cmd, 0, sizeof(CMDOPTIONS));
 
 	strcpy( cmd.szSnpFile,  pzSnpfile);
 	strcpy( cmd.szPheFile,  pszPhefile);
-	strcpy( cmd.szModel,    pzModel);
-	cmd.bDebug = bDebug;
 
-    start_log( cmd.bDebug );
+	strcpy( cmd.szYname,    pzYname);
+	strcpy( cmd.szXname,    pzXname);
+	strcpy( cmd.szZname,    pzZname);
 
-	GLS_cfg *pCfg = new GLS_cfg();
-	pCfg->m_nMaxIter  	  = nMaxIter,
+	cmd.nDebug   = nDebug;
+	cmd.bAddUsed = bAddUsed;
+	cmd.bDomUsed = bDomUsed;
+	cmd.bRefit   = bRefit;
+
+    start_log( cmd.nDebug );
+
+	CFmNewTemp refNew;
+	GLS_cfg *pCfg = new (refNew) GLS_cfg();
+	pCfg->m_nMcmcIter  	  = nMcmcIter,
     pCfg->m_fBurnInRound  = fBurnInRound;
 	pCfg->m_fQval_add	  = fQval_add;
 	pCfg->m_fQval_dom	  = fQval_dom;
@@ -266,22 +327,26 @@ SEXP glasso_simple( const char* pszPhefile,
 
 	SEXP sRet;
     sRet = _glasso_simple( &cmd, pCfg );
-    delete pCfg;
+    destroy( pCfg );
 
     return(sRet);
 }
 
-SEXP glasso_plink( const char* pszPhefile,
+SEXP glasso_plink_tped( const char* pszPhefile,
   		   	const char*  pzTpedfile,
   		   	const char*  pzTfamfile,
-  		   	const char*  pzModel,
+  		   	const char*  pzYname,
+  		   	const char*  pzZname,
+  		   	const char*  pzXname,
   		   	bool bRefit,
-  		   	int nMaxIter,
+  		   	bool bAddUsed,
+  		   	bool bDomUsed,
+  		   	int nMcmcIter,
 		   	double fBurnInRound,
 			double fRhoTuning,
 	        double fQval_add,
 	        double fQval_dom,
-	        bool   bDebug)
+	        int   nDebug)
 {
 	CMDOPTIONS cmd;
 	memset(&cmd, 0, sizeof(CMDOPTIONS));
@@ -289,13 +354,21 @@ SEXP glasso_plink( const char* pszPhefile,
 	strcpy( cmd.szPheFile,  pszPhefile);
 	strcpy( cmd.szTpedFile, pzTpedfile);
 	strcpy( cmd.szTfamFile, pzTfamfile);
-	strcpy( cmd.szModel,    pzModel);
-	cmd.bDebug = bDebug;
 
-    start_log( cmd.bDebug );
+	strcpy( cmd.szYname,    pzYname);
+	strcpy( cmd.szXname,    pzXname);
+	strcpy( cmd.szZname,    pzZname);
 
-	GLS_cfg *pCfg = new GLS_cfg();
-	pCfg->m_nMaxIter  	  = nMaxIter,
+	cmd.nDebug   = nDebug;
+	cmd.bAddUsed = bAddUsed;
+	cmd.bDomUsed = bDomUsed;
+	cmd.bRefit   = bRefit;
+
+    start_log( cmd.nDebug );
+
+	CFmNewTemp refNew;
+	GLS_cfg *pCfg = new (refNew) GLS_cfg();
+	pCfg->m_nMcmcIter  	  = nMcmcIter,
     pCfg->m_fBurnInRound  = fBurnInRound;
 	pCfg->m_fQval_add     = fQval_add;
 	pCfg->m_fQval_dom     = fQval_dom;
@@ -313,8 +386,65 @@ SEXP glasso_plink( const char* pszPhefile,
         CFmSys::GetTempFile(cmd.szMatadFile, "gls.fmat", MAX_PATH);
 
 	SEXP sRet;
-    sRet = _glasso_plink( &cmd, pCfg );
-    delete pCfg;
+    sRet = _glasso_plink_tped( &cmd, pCfg );
+    destroy( pCfg );
+
+    return(sRet);
+}
+
+
+SEXP glasso_snpmat( SEXP smatPhe,
+  		   	SEXP smatSnp,
+  		   	const char*  pzYname,
+  		   	const char*  pzZname,
+  		   	const char*  pzXname,
+  		   	bool bRefit,
+  		   	bool bAddUsed,
+  		   	bool bDomUsed,
+  		   	int nMcmcIter,
+		   	double fBurnInRound,
+			double fRhoTuning,
+	        double fQval_add,
+	        double fQval_dom,
+	        int    nDebug)
+{
+	CFmNewTemp refNew;
+	CFmMatrix* pFmPhe   = new (refNew) CFmMatrix(0,0);
+	GetMatrix( smatPhe, pFmPhe);
+
+	CFmMatrix* pFmSnp   = new  (refNew) CFmMatrix(0,0);
+	GetMatrix( smatSnp, pFmSnp);
+
+	CMDOPTIONS cmd;
+	memset(&cmd, 0, sizeof(CMDOPTIONS));
+
+	strcpy( cmd.szYname,    pzYname);
+	strcpy( cmd.szXname,    pzXname);
+	strcpy( cmd.szZname,    pzZname);
+
+	cmd.nDebug   = nDebug;
+	cmd.bAddUsed = bAddUsed;
+	cmd.bDomUsed = bDomUsed;
+	cmd.bRefit   = bRefit;
+
+    if (strlen(cmd.szMatadFile)==0)
+        CFmSys::GetTempFile(cmd.szMatadFile, "gls.fmat", MAX_PATH);
+
+    start_log( cmd.nDebug );
+
+	GLS_cfg *pCfg = new  (refNew)  GLS_cfg();
+	pCfg->m_nMcmcIter  	  = nMcmcIter,
+    pCfg->m_fBurnInRound  = fBurnInRound;
+	pCfg->m_fQval_add     = fQval_add;
+	pCfg->m_fQval_dom     = fQval_dom;
+    pCfg->m_fRhoTuning    = fRhoTuning;
+
+	SEXP sRet;
+    sRet = _glasso_snpmat( pFmPhe, pFmSnp, &cmd, pCfg );
+
+    destroy( pCfg );
+	destroy( pFmPhe );
+	destroy( pFmSnp );
 
     return(sRet);
 }

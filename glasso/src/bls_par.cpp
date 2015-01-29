@@ -11,13 +11,15 @@
 #include <Rdefines.h>
 #include <Rmath.h>
 
+#include "Rmethods.h"
+#include "fm_rlogger.h"
+#include "fm_inifile.h"
+#include "fm_err.h"
+#include "fm_new.h"
+
 #include "bls_dat.h"
 #include "bls_cfg.h"
 #include "bls_par.h"
-#include "Rmethods.h"
-#include "fm_rlogger.h"
-#include "fm_err.h"
-#include "fm_inifile.h"
 
 BLS_par::BLS_par( CMDOPTIONS* pCmd )
 {
@@ -30,7 +32,7 @@ BLS_par::BLS_par( CMDOPTIONS* pCmd )
 BLS_par::~BLS_par()
 {
     if(m_szParFile)
-        free(m_szParFile);
+        Free(m_szParFile);
 
     _log_debug(_HI_, "BLS_par is released successfully.");
 }
@@ -224,7 +226,7 @@ int BLS_par::Load(char* szParFile)
     }
 
     sig_p = Get_SigP();
-    m_szParFile = strdup(szParFile);
+    m_szParFile = Strdup(szParFile);
 
     _log_info(_HI_, "parameter file is loaded successfully.(sig_p:%d)", sig_p);
 
@@ -280,4 +282,11 @@ int BLS_par::Summary( char* szOutFile )
     }
 
     return(0);
+}
+
+void destroy(BLS_par* p)
+{
+	CFmNewTemp  fmRef;
+	p->~BLS_par();
+	operator delete(p, fmRef);
 }

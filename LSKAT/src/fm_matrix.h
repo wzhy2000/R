@@ -212,6 +212,7 @@ private:
     double*         AllocateDouble(int nRows, int nCols) ;
     void            FreeMemory();
     void            EnlargeCols( int nMaxCols );
+    void            FreeDouble( double* pData );
 
     // reference counting functions
     void            AddRef() ;	// increments the m_pData reference count
@@ -225,5 +226,6 @@ private:
 
 SEXP GetSEXP(CFmMatrix* pMat);
 int GetMatrix(SEXP pExp, CFmMatrix* pMat);
+void destroy( CFmMatrix* p);
 
 #endif // !defined(_FM_MATRIX_H_)

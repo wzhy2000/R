@@ -12,31 +12,34 @@
 
 #include <R.h>
 #include <Rinternals.h>
-
 #include <Rembedded.h>
 #include <Rdefines.h>
 
 #include "fm_rlogger.h"
 
-
 //typedef unsigned char BYTE;
+
+#define FM_LOG_NONE		0
+#define FM_LOG_WARN		1
+#define FM_LOG_INFO		2
+#define FM_LOG_DEBUG	3
 
 static char szPid[256];
 static char* pgm_name  = NULL;
 static char* szLogName = NULL;
 static int  nErrorCount= 0;
 static FILE* pFLog     = NULL;
-static bool bDebug     = false;
+static int nDebug      = FM_LOG_NONE;
 
 /****************
  * start the log file, if szLogFile is NULL, stdout or stderr is used to output log.
  * the Fd where logoutputs should go.
  */
 
-int start_log(bool bCmdDebug)
+int start_log(int nCmdDebug)
 {
-    bDebug = bCmdDebug;
-    if( bDebug )
+    nDebug = nCmdDebug;
+    if( nDebug )
        	pFLog = stdout;
 	else
    		pFLog = stderr;
@@ -83,7 +86,7 @@ void log_print_prefix(const char *text)
     if( pgm_name )
         fprintf(pFLog, "%s%s: %s", pgm_name, szPid, text );
     else
-        fprintf(pFLog, "?%s: %s", szPid, text );
+        fprintf(pFLog, "?%s:", text );
 }
 
 static void log_print_prefix_f(const char *text, const char *fname)
@@ -91,13 +94,13 @@ static void log_print_prefix_f(const char *text, const char *fname)
     if( pgm_name )
         fprintf(pFLog, "%s%s:%s: %s", pgm_name, szPid, fname, text );
     else
-        fprintf(pFLog, "?%s:%s: %s", szPid, fname, text );
+        fprintf(pFLog, "%s:%s ", text, fname );
 }
 
 void _log_debug( const char* szSrc, int nSrcLine, const char* fmt, ... )
 {
     va_list arg_ptr ;
-    if (bDebug)
+    if ( nDebug >= FM_LOG_DEBUG )
     {
         log_print_prefix_f("DBG: ", szSrc);
         va_start( arg_ptr, fmt ) ;
@@ -110,126 +113,56 @@ void _log_debug( const char* szSrc, int nSrcLine, const char* fmt, ... )
 
 void _log_info( const char* szSrc, int nSrcLine, const char* fmt, ... )
 {
-    va_list arg_ptr ;
-    va_start( arg_ptr, fmt ) ;
-    vfprintf( stderr, fmt,arg_ptr) ;
-    fprintf( stderr, "\n");
-    va_end(arg_ptr);
-
-/*
-    if (bDebug)
+    if ( nDebug >= FM_LOG_DEBUG )
     {
         va_list arg_ptr ;
-        log_print_prefix_f("", szSrc);
+        log_print_prefix_f("[INF]", szSrc);
         va_start( arg_ptr, fmt ) ;
         vfprintf(pFLog,fmt,arg_ptr) ;
         va_end(arg_ptr);
-    }
 
-    fprintf(pFLog, "\n");
-    fflush(pFLog);
-*/
+	    fprintf(pFLog, "\n");
+	    fflush(pFLog);
+    }
 }
 
 
 void _log_prompt( const char* szSrc, int nSrcLine, const char* fmt, ... )
 {
-    //output the contens to console
-    va_list arg_ptr ;
-    va_start( arg_ptr, fmt ) ;
-    vfprintf( stderr, fmt,arg_ptr) ;
-    fprintf( stderr, "\n");
-    va_end(arg_ptr);
-
-/*    if (bDebug)
+    if ( nDebug >= FM_LOG_WARN )
     {
         va_list arg_ptr ;
-        log_print_prefix_f("", szSrc);
+        log_print_prefix_f("[*]", "");
         va_start( arg_ptr, fmt ) ;
         vfprintf(pFLog,fmt,arg_ptr) ;
         va_end(arg_ptr);
+
+	    fprintf(pFLog, "\n");
+	    fflush(pFLog);
     }
-    else
-    {
-        va_list arg_ptr ;
-        log_print_prefix("");
-
-        va_start( arg_ptr, fmt ) ;
-        vfprintf(pFLog,fmt,arg_ptr) ;
-        va_end(arg_ptr);
-    }
-
-    fprintf(pFLog, "\n");
-    fflush(pFLog);
-*/
-
 }
 
 void _log_error( const char* szSrc, int nSrcLine, const char*  fmt, ... )
 {
     va_list arg_ptr ;
+    log_print_prefix_f("[!]", "");
     va_start( arg_ptr, fmt ) ;
     vfprintf( stderr, fmt,arg_ptr) ;
     fprintf( stderr, "\n");
     va_end(arg_ptr);
-
-/*    if (bDebug)
-    {
-        va_list arg_ptr ;
-        log_print_prefix_f("", szSrc);
-        va_start( arg_ptr, fmt ) ;
-        vfprintf(pFLog,fmt,arg_ptr) ;
-        va_end(arg_ptr);
-        nErrorCount++;
-    }
-    else
-    {
-        va_list arg_ptr ;
-        log_print_prefix("");
-        va_start( arg_ptr, fmt ) ;
-        vfprintf(pFLog,fmt,arg_ptr) ;
-        va_end(arg_ptr);
-        nErrorCount++;
-    }
-
-    fprintf(pFLog, "\n");
-    fflush(pFLog);
-*/
 }
 
 void _log_fatal( const char* szSrc, int nSrcLine, const char*  fmt, ... )
 {
     va_list arg_ptr ;
+    log_print_prefix_f("[!]", "");
     va_start( arg_ptr, fmt ) ;
     vfprintf( stderr, fmt,arg_ptr) ;
     fprintf( stderr, "\n");
     va_end(arg_ptr);
 
-/*    if (bDebug)
-    {
-        va_list arg_ptr ;
-        log_print_prefix_f("fatal: ", szSrc);
-        va_start( arg_ptr, fmt ) ;
-        vfprintf(pFLog,fmt,arg_ptr) ;
-        va_end(arg_ptr);
-        //secmem_dump_stats();
-    }
-    else
-    {
-        va_list arg_ptr ;
-        log_print_prefix("fatal: ");
-        va_start( arg_ptr, fmt ) ;
-        vfprintf(pFLog,fmt,arg_ptr) ;
-        va_end(arg_ptr);
-        //secmem_dump_stats();
-    }
-
-    fprintf(pFLog, "\n");
-    fflush(pFLog);
-*/
-
     stop_log();
-    error("An Exception was caugth, please see log file.");
+    error("! An Exception was caugth, please see log file.");
 }
 
 void _log_hexdump( const char *text, const char *buf, size_t len )

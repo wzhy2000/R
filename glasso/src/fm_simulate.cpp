@@ -15,6 +15,8 @@
 #include "fm_rlogger.h"
 #include "fm_err.h"
 #include "fm_sys.h"
+#include "fm_new.h"
+
 
 CFmSimulate::CFmSimulate( SIMU_PARAM* par  )
 {
@@ -25,10 +27,12 @@ CFmSimulate::CFmSimulate( SIMU_PARAM* par  )
     m_nSnpP  = par->simu_p;
     m_nMesuTime = 1;
 
-    m_pPhenoY = new CFmMatrix( m_nSubjN, m_nMesuTime );
-    m_pCovarX = new CFmMatrix( m_nSubjN, par->simu_covar_len );
-    m_pSimuSnps= new CFmMatrix( m_nSnpP, m_nSubjN);
-    m_pCovarZ = NULL;
+	CFmNewTemp refNew;
+    m_pPhenoY  = new (refNew) CFmMatrix( m_nSubjN, m_nMesuTime );
+    m_pCovarX  = new (refNew) CFmMatrix( m_nSubjN, par->simu_covar_len );
+    m_pSimuSnps= new (refNew) CFmMatrix( m_nSnpP, m_nSubjN);
+    m_pCovarZ  = NULL;
+    m_pZRange  = NULL;
 
     _log_info( _HI_, "%d, %d, %d, %d, %d", par->simu_p, par->simu_n, par->sig_p, par->simu_a_len, par->simu_d_len);
 
@@ -43,15 +47,21 @@ CFmSimulate::CFmSimulate( SIMU_PARAM_LONGDT* par  )
     m_nSnpP  = par->simu_p;
     m_nMesuTime = par->simu_z_count[1];
 
-    m_pPhenoY = new CFmMatrix( m_nSubjN, m_nMesuTime );
-    m_pCovarZ = new CFmMatrix( m_nSubjN, m_nMesuTime );
-    m_pCovarX = new CFmMatrix( m_nSubjN, par->simu_covar_len );
-    m_pSimuSnps= new CFmMatrix( m_nSnpP, m_nSubjN);
-    m_pZRange = new CFmVector( m_nMesuTime, 0.0 );
+	CFmNewTemp refNew;
+    m_pPhenoY = new (refNew) CFmMatrix( m_nSubjN, m_nMesuTime );
+    m_pCovarZ = new (refNew) CFmMatrix( m_nSubjN, m_nMesuTime );
+    m_pCovarX = new (refNew) CFmMatrix( m_nSubjN, par->simu_covar_len );
+    m_pSimuSnps= new (refNew) CFmMatrix( m_nSnpP, m_nSubjN);
+    m_pZRange = new (refNew) CFmVector( m_nMesuTime, 0.0 );
 }
 
 CFmSimulate::~CFmSimulate()
 {
+	if(m_pPhenoY) destroy( m_pPhenoY );
+	if(m_pCovarZ) destroy( m_pCovarZ );
+	if(m_pCovarX) destroy( m_pCovarX );
+	if(m_pSimuSnps) destroy( m_pSimuSnps );
+	if(m_pZRange) destroy( m_pZRange );
 }
 
 int CFmSimulate::Simulate(char *szSnpoutFile, char* szPheoutFile, char* szGrpId)
@@ -88,7 +98,8 @@ int CFmSimulate::Simulate(char *szSnpoutFile, char* szPheoutFile, char* szGrpId)
         return(ret);
 
     //--create a list for the snps' name.
-    m_pSnpNames = new CFmVectorStr(m_nSnpP);
+	CFmNewTemp refNew;
+    m_pSnpNames = new (refNew) CFmVectorStr(m_nSnpP);
     for (int i=0;i<m_nSnpP;i++)
     {
         char szBuf[64]={0};
@@ -810,7 +821,7 @@ int CFmSimulate::SaveSnpFile( char* szSnpoutFile )
 
         _log_debug(_HI_, "SaveGenoFile: Start to output genotype data into the file%s.(Group:%d)", szNewName, k+1);
 
-        fprintf(fp, "GENO,CHR,POS");
+        fprintf(fp, "CHR,POS");
 
         for(int i=0; i<m_pSimuSnps->GetNumCols(); i++)
         {
@@ -855,16 +866,19 @@ int CFmSimulate::SavePhenoFile( char* szPheoutFile )
 
     _log_debug(_HI_, "SavePhenoFile: Start to write phenotype data into the file(%s)", szPheoutFile);
 
-    fprintf(fp, "PHENO");
+    fprintf(fp, "");
 
     if ( m_pCovarX->GetNumCols()==1)
-	    fprintf(fp, ",X");
+	    fprintf(fp, "X");
 
     if ( m_pCovarX->GetNumCols()>1)
-        for(int i=0; i<m_pCovarX->GetNumCols(); i++)
+    {
+		fprintf(fp, "X_1");
+        for(int i=1; i<m_pCovarX->GetNumCols(); i++)
         {
             fprintf(fp, ",X_%d", i+1);
         }
+	}
 
 	if(m_pCovarZ)
 	{
@@ -930,4 +944,11 @@ int CFmSimulate::SavePhenoFile( char* szPheoutFile )
     _log_debug(_HI_, "SavePhenoFile: Successful to save phenotype data");
 
     return(0);
+}
+
+void destroy(CFmSimulate* p)
+{
+	CFmNewTemp  fmRef;
+	p->~CFmSimulate();
+	operator delete(p, fmRef);
 }

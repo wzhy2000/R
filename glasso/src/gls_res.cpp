@@ -15,9 +15,11 @@
 #include "fm_vector.h"
 #include "fm_vector_str.h"
 #include "fm_rlogger.h"
+#include "fm_filematrix.h"
 #include "fm_err.h"
 #include "fm_rls.h"
-#include "fm_filematrix.h"
+#include "fm_new.h"
+
 #include "gls_cfg.h"
 #include "gls_res.h"
 
@@ -42,6 +44,7 @@ GLS_res::GLS_res(CMDOPTIONS *pCmd, GLS_cfg* pCfg)
     m_pVarsel_Ra      = NULL;
     m_pVarsel_Rd      = NULL;
     m_pVarsel_BestQ   = NULL;
+    m_pVarsel_PSRF    = NULL;
 
     m_pRefit_SnpName  = NULL;
     m_pRefit_SnpChr   = NULL;
@@ -51,6 +54,7 @@ GLS_res::GLS_res(CMDOPTIONS *pCmd, GLS_cfg* pCfg)
     m_pRefit_Ra       = NULL;
     m_pRefit_Rd       = NULL;
     m_pRefit_BestQ    = NULL;
+    m_pRefit_PSRF     = NULL;
 
     m_pRefitSnps  = NULL;
     m_pSigSnps	  = NULL;
@@ -61,29 +65,30 @@ GLS_res::GLS_res(CMDOPTIONS *pCmd, GLS_cfg* pCfg)
 
 GLS_res::~GLS_res()
 {
-    if(m_pVarsel_SnpName) delete m_pVarsel_SnpName;
-    if(m_pVarsel_SnpChr) delete m_pVarsel_SnpChr;
-    if(m_pVarsel_SnpPos) delete m_pVarsel_SnpPos;
-    if(m_pVarsel_Mu) delete m_pVarsel_Mu;
-    if(m_pVarsel_Alpha) delete m_pVarsel_Alpha;
-    if(m_pVarsel_Ra)   delete m_pVarsel_Ra;
-    if(m_pVarsel_Rd)   delete m_pVarsel_Rd;
-    if(m_pVarsel_BestQ) delete m_pVarsel_BestQ;
+    if(m_pVarsel_SnpName) destroy( m_pVarsel_SnpName );
+    if(m_pVarsel_SnpChr) destroy( m_pVarsel_SnpChr );
+    if(m_pVarsel_SnpPos) destroy( m_pVarsel_SnpPos );
+    if(m_pVarsel_Mu) destroy( m_pVarsel_Mu );
+    if(m_pVarsel_Alpha) destroy( m_pVarsel_Alpha );
+    if(m_pVarsel_Ra)   destroy( m_pVarsel_Ra );
+    if(m_pVarsel_Rd)   destroy( m_pVarsel_Rd );
+    if(m_pVarsel_BestQ) destroy( m_pVarsel_BestQ );
+    if(m_pVarsel_PSRF) destroy( m_pVarsel_PSRF );
 
-    if(m_pRefit_SnpName) delete m_pRefit_SnpName;
-    if(m_pRefit_SnpChr) delete m_pRefit_SnpChr;
-    if(m_pRefit_SnpPos) delete m_pRefit_SnpPos;
-    if(m_pRefit_Mu) delete m_pRefit_Mu;
-    if(m_pRefit_Alpha) delete m_pRefit_Alpha;
-    if(m_pRefit_Ra) delete m_pRefit_Ra;
-    if(m_pRefit_Rd) delete m_pRefit_Rd;
-    if(m_pRefit_BestQ) delete m_pRefit_BestQ;
+    if(m_pRefit_SnpName) destroy( m_pRefit_SnpName );
+    if(m_pRefit_SnpChr) destroy( m_pRefit_SnpChr );
+    if(m_pRefit_SnpPos) destroy( m_pRefit_SnpPos );
+    if(m_pRefit_Mu) destroy( m_pRefit_Mu );
+    if(m_pRefit_Alpha) destroy( m_pRefit_Alpha );
+    if(m_pRefit_Ra) destroy( m_pRefit_Ra );
+    if(m_pRefit_Rd) destroy( m_pRefit_Rd );
+    if(m_pRefit_BestQ) destroy( m_pRefit_BestQ );
+    if(m_pRefit_PSRF) destroy( m_pRefit_PSRF );
 
-	if(m_pRefitSnps) delete m_pRefitSnps;
-    if(m_pSigSnps) delete m_pSigSnps;
-    if(m_pSigAddSnps) delete m_pSigAddSnps;
-    if(m_pSigDomSnps) delete m_pSigDomSnps;
-
+	if(m_pRefitSnps) destroy( m_pRefitSnps );
+    if(m_pSigSnps) destroy( m_pSigSnps );
+    if(m_pSigAddSnps) destroy( m_pSigAddSnps );
+    if(m_pSigDomSnps) destroy( m_pSigDomSnps );
 
     _log_debug(_HI_, "GLS_res is released successfully.");
 }
@@ -126,49 +131,56 @@ int GLS_res::SetMcmcResults(bool bRefit, CFmVectorStr* pVctSnpName, CFmVector* p
 {
     _log_debug(_HI_, "SetMcmcResults: bRefit=%d, pMat.Dim(%d,%d)", bRefit?1:0, pMatRet->GetNumRows(), pMatRet->GetNumCols());
 
+	CFmNewTemp refNew;
     if (bRefit)
     {
 		int nSnp = m_nRefitSnp;
 
-        m_pRefit_SnpName = new CFmVectorStr(pVctSnpName);
-        m_pRefit_SnpChr = new CFmVector(pVctChr);
-        m_pRefit_SnpPos = new CFmVector(pVctPos);
+        m_pRefit_SnpName = new (refNew) CFmVectorStr(pVctSnpName);
+        m_pRefit_SnpChr  = new (refNew) CFmVector(pVctChr);
+        m_pRefit_SnpPos  = new (refNew) CFmVector(pVctPos);
 
-        m_pRefit_Mu = new CFmMatrix(1, LG*4+3);
-        m_pRefit_Alpha = new CFmMatrix(nCov-1, LG*4+3);
-        m_pRefit_Ra = new CFmMatrix(nSnp, LG*4+3);
-        m_pRefit_Rd = new CFmMatrix(nSnp, LG*4+3);
+        m_pRefit_Mu      = new (refNew) CFmMatrix(1, LG*4+3);
+        m_pRefit_Alpha   = new (refNew) CFmMatrix(nCov-1, LG*4+3);
+        m_pRefit_Ra      = new (refNew) CFmMatrix(nSnp, LG*4+3);
+        m_pRefit_Rd      = new (refNew) CFmMatrix(nSnp, LG*4+3);
 
 		SortoutMcmc(pMatRet, m_pRefit_Mu, m_pRefit_Alpha, m_pRefit_Ra, m_pRefit_Rd, nSnp, nCov);
 
 		m_pRefit_Ra->SetRowNames(m_pRefit_SnpName);
 		m_pRefit_Rd->SetRowNames(m_pRefit_SnpName);
 
-		m_pRefit_BestQ = new CFmMatrix(nSnp, (LG*4+3)*2 );
+		m_pRefit_BestQ = new (refNew) CFmMatrix(nSnp, (LG*4+3)*2 );
 		SortoutBestQ( pMatRet, m_pRefit_BestQ , nSnp, nCov );
 		m_pRefit_BestQ->SetRowNames( m_pRefit_SnpName );
+
+		m_pRefit_PSRF = new (refNew) CFmMatrix(0, 0 );
+		SortoutPSRF( pMatRet, m_pRefit_PSRF, nSnp, nCov);
     }
     else
     {
 		int nSnp = m_nSnpP;
 
-        m_pVarsel_SnpName = new CFmVectorStr(pVctSnpName);
-        m_pVarsel_SnpChr = new CFmVector(pVctChr);
-        m_pVarsel_SnpPos = new CFmVector(pVctPos);
+        m_pVarsel_SnpName = new (refNew) CFmVectorStr(pVctSnpName);
+        m_pVarsel_SnpChr  = new (refNew) CFmVector(pVctChr);
+        m_pVarsel_SnpPos  = new (refNew) CFmVector(pVctPos);
 
-        m_pVarsel_Mu = new CFmMatrix(1, LG*4+3);
-        m_pVarsel_Alpha = new CFmMatrix(nCov-1, LG*4+3);
-        m_pVarsel_Ra = new CFmMatrix(nSnp, LG*4+3);
-        m_pVarsel_Rd = new CFmMatrix(nSnp, LG*4+3);
+        m_pVarsel_Mu      = new (refNew) CFmMatrix(1, LG*4+3);
+        m_pVarsel_Alpha   = new (refNew) CFmMatrix(nCov-1, LG*4+3);
+        m_pVarsel_Ra      = new (refNew) CFmMatrix(nSnp, LG*4+3);
+        m_pVarsel_Rd      = new (refNew) CFmMatrix(nSnp, LG*4+3);
 
 		SortoutMcmc(pMatRet, m_pVarsel_Mu, m_pVarsel_Alpha, m_pVarsel_Ra, m_pVarsel_Rd, nSnp, nCov);
 
 		m_pVarsel_Ra->SetRowNames(m_pVarsel_SnpName);
 		m_pVarsel_Rd->SetRowNames(m_pVarsel_SnpName);
 
-		m_pVarsel_BestQ = new CFmMatrix(nSnp, (LG*4+3)*2);
+		m_pVarsel_BestQ = new (refNew) CFmMatrix(nSnp, (LG*4+3)*2);
 		SortoutBestQ( pMatRet, m_pVarsel_BestQ , nSnp, nCov );
 		m_pVarsel_BestQ->SetRowNames( m_pVarsel_SnpName );
+
+		m_pVarsel_PSRF = new (refNew) CFmMatrix(0, 0 );
+		SortoutPSRF( pMatRet, m_pVarsel_PSRF, nSnp, nCov);
     }
 
     return(0);
@@ -211,7 +223,7 @@ int GLS_res::SortoutMcmc(CFmFileMatrix* pMatRet, CFmMatrix* pMu, CFmMatrix* pAlp
 
 int GLS_res::GetMcmcInfo(CFmFileMatrix* pMatRet, int idx, CFmVector* pFmInfo, CFmVector* pFmModel, double fQval )
 {
-    int nMcmc= m_pCfg->m_nMaxIter - m_pCfg->GetBurnInRound();
+    int nMcmc = m_pCfg->m_nMcmcIter - m_pCfg->GetBurnInRound();
     int q1 = (int)floor( fQval *nMcmc);
     int q2 = (int)floor(( 1 - fQval )*nMcmc -1 );
 
@@ -276,9 +288,10 @@ int GLS_res::GetMcmcInfo(CFmFileMatrix* pMatRet, int idx, CFmVector* pFmInfo, CF
 
 int GLS_res::InitRefit(int nMcmcIter)
 {
-    if (m_pRefitSnps) delete m_pRefitSnps;
+    if (m_pRefitSnps) destroy( m_pRefitSnps );
 
-    m_pRefitSnps = new CFmVector( 0, 0.0 );
+	CFmNewTemp refNew;
+    m_pRefitSnps = new (refNew) CFmVector( 0, 0.0 );
     for(int i=0;i<m_nSnpP; i++)
     {
 		int nSumA=0;
@@ -307,13 +320,14 @@ int GLS_res::InitRefit(int nMcmcIter)
 
 int GLS_res::GetSigSNP()
 {
-    if (m_pSigSnps) delete m_pSigSnps;
-    if (m_pSigAddSnps) delete m_pSigAddSnps;
-    if (m_pSigDomSnps) delete m_pSigDomSnps;
+    if (m_pSigSnps) destroy( m_pSigSnps );
+    if (m_pSigAddSnps) destroy( m_pSigAddSnps );
+    if (m_pSigDomSnps) destroy( m_pSigDomSnps );
 
-    m_pSigSnps = new CFmVector( 0, 0.0 );
-    m_pSigAddSnps = new CFmVector( 0, 0.0 );
-    m_pSigDomSnps = new CFmVector( 0, 0.0 );
+	CFmNewTemp refNew;
+    m_pSigSnps    = new (refNew) CFmVector( 0, 0.0 );
+    m_pSigAddSnps = new (refNew) CFmVector( 0, 0.0 );
+    m_pSigDomSnps = new (refNew) CFmVector( 0, 0.0 );
 
     for(int i=0;i<m_nRefitSnp; i++)
     {
@@ -432,6 +446,8 @@ int GLS_res::SaveRData( char* szRdataFile )
 
     if (m_pVarsel_BestQ)
 		rls.SetData( (char*)"varsel.Qbest", m_pVarsel_BestQ);
+    if (m_pVarsel_PSRF)
+		rls.SetData( (char*)"varsel.PSRF", m_pVarsel_PSRF);
 
     if (m_pRefit_SnpName)
     {
@@ -461,6 +477,9 @@ int GLS_res::SaveRData( char* szRdataFile )
 
         if (m_pRefit_BestQ)
 			rls.SetData( (char*)"refit.Qbest", m_pRefit_BestQ);
+
+        if (m_pRefit_PSRF)
+			rls.SetData( (char*)"refit.PSRF", m_pRefit_PSRF);
     }
 
      int nRet = rls.SaveRData( szRdataFile );
@@ -476,8 +495,8 @@ SEXP GLS_res::GetRObj()
     _log_info(_HI_, "GetRObj: Start to save the matrix to R.");
 
 	SEXP sRet, t;
-	int nList = 4;
-	if (m_pRefit_SnpName) nList = 8;
+	int nList = 5;
+	if (m_pRefit_SnpName) nList = 10;
 
    	PROTECT(sRet = t = allocList(nList));
 
@@ -539,6 +558,13 @@ SEXP GLS_res::GetRObj()
 		t = CDR(t);
 	}
 
+    if (m_pVarsel_PSRF)
+    {
+  		SEXP expPSRF = GetSEXP(m_pVarsel_PSRF);
+		SETCAR( t, expPSRF );
+		SET_TAG(t, install("varsel_PSRF") );
+		t = CDR(t);
+	}
 
     // #NO2: ret.refit
     if (m_pRefit_SnpName)
@@ -597,6 +623,13 @@ SEXP GLS_res::GetRObj()
 			SEXP expQBest = GetSEXP(m_pRefit_BestQ);
 			SETCAR( t, expQBest );
 			SET_TAG(t, install("refit_Qbest") );
+		}
+
+		if (m_pRefit_PSRF)
+		{
+			SEXP expPSRF = GetSEXP(m_pRefit_PSRF);
+			SETCAR( t, expPSRF );
+			SET_TAG(t, install("refit_PSRF") );
 		}
     }
 
@@ -744,7 +777,7 @@ int GLS_res::SortoutBestQ(CFmFileMatrix* pMatRet, CFmMatrix* pBestQ, int nSnp, i
 
 int GLS_res::GetBestQInfo(CFmFileMatrix* pMatRet, int idx, CFmVector& fmQBest, CFmVector& fmQPosMean, CFmVector& fmQPosMin, CFmVector& fmQPosMax)
 {
-    int nMcmc= m_pCfg->m_nMaxIter - m_pCfg->GetBurnInRound();
+    int nMcmc= m_pCfg->m_nMcmcIter - m_pCfg->GetBurnInRound();
 
 	fmQBest.Resize( LG );
 	fmQPosMean.Resize( LG );
@@ -790,4 +823,125 @@ int GLS_res::GetBestQInfo(CFmFileMatrix* pMatRet, int idx, CFmVector& fmQBest, C
 	}
 
 	return(0);
+}
+
+double PSRF_fun_R(CFmVector* pMcmcVct0, CFmVector* pMcmcVct1)
+{
+	double M = 2;
+	double N = pMcmcVct0->GetLength();
+	double fMu0 = pMcmcVct0->GetMean();
+	double fMu1 = pMcmcVct1->GetMean();
+	double fMu  = (fMu0 + fMu1)/2;
+
+	double W = 0;
+	for(int i=0;i<pMcmcVct0->GetLength();i++)
+		W = W + ( pMcmcVct0->Get(i) - fMu0)*( pMcmcVct0->Get(i) - fMu0);
+	for(int i=0;i<pMcmcVct1->GetLength();i++)
+		W = W + ( pMcmcVct1->Get(i) - fMu1)*( pMcmcVct1->Get(i) - fMu1);
+
+	W = W/(N-1)/M;
+
+	double B = ( (fMu1-fMu)*(fMu1-fMu) + (fMu0-fMu)*(fMu0-fMu) )*N;
+	double S2 = (N-1)/N*W + B/N;
+	double R = (M+1)/M * S2 / W - ( N-1)/(M*N);
+
+	return(R);
+}
+
+int PSRF_fun(CFmVector& fmMcmcVct, CFmMatrix& fmMat)
+{
+	CFmVector fmVct0(0, 0.0);
+	CFmVector fmVct1(0, 0.0);
+	CFmVector fmR(2, 0.0);
+
+	for(int k=1;k<100;k++)
+	{
+		if ( fmMcmcVct.GetLength() < k*100 )
+			break;
+
+		fmVct0.Resize(0);
+		fmVct1.Resize(0);
+
+		int nLen = floor( k*100/3 );
+		for(int i=0;i<nLen;i++)
+			fmVct0.Put(fmMcmcVct[i]);
+		for(int i= k*100-nLen;i<k*100;i++)
+			fmVct1.Put(fmMcmcVct[i]);
+
+		double R = PSRF_fun_R(&fmVct0, &fmVct1);
+		fmR[0] = k*100.0;
+		fmR[1] = R;
+
+		fmMat.Cbind(fmR);
+	}
+
+	fmMat.Transpose();
+
+	return(0);
+}
+
+int GLS_res::GetPSRFInfo(CFmFileMatrix* pMatRet, int idx, CFmMatrix& fmMatR)
+{
+    int nMcmc= m_pCfg->m_nMcmcIter - m_pCfg->GetBurnInRound();
+
+	CFmMatrix fmMatTmp( 0, 0 );
+	CFmVector fmVct(nMcmc, 0.0);
+
+    for(int k=0; k< LG ; k++)
+    {
+        int ret = pMatRet->GetCacheCol(idx*LG + k, fmVct);
+        if(ret!=0) return(ret);
+
+		fmMatTmp.Resize(0,0);
+		PSRF_fun(fmVct, fmMatTmp);
+		if(k==0)
+			fmMatR = fmMatTmp;
+		else
+			fmMatR.Cbind( fmMatTmp.GetCol(1) );
+	}
+
+	return(0);
+}
+
+int GLS_res::SortoutPSRF(CFmFileMatrix* pMatRet, CFmMatrix* pMatPSRF, int nSnp, int nCov)
+{
+	_log_debug(_HI_, "SortoutPSRF: AD matrix file(%s). SNP=%d nCov=%d", pMatRet->GetFileName(), nSnp, nCov);
+
+	CFmMatrix fmMatR(0,0);
+	pMatPSRF->Resize(0,0);
+
+	GetPSRFInfo( pMatRet, 0, fmMatR );
+	//pMatPSRF->Cbind(fmMatR);
+
+	pMatPSRF->Cbind(fmMatR.GetCol(0));
+
+	for (long int i=0; i<nCov-1; i++)
+	{
+		GetPSRFInfo( pMatRet, i+1, fmMatR );
+		//for(int k=1;k<=LG;k++)
+		//	pMatPSRF->Cbind(fmMatR.GetCol(k));
+	}
+
+	for (long int i=0; i< nSnp; i++)
+    {
+		GetPSRFInfo( pMatRet, nCov+i*2, fmMatR );
+		for(int k=1;k<=LG;k++)
+			pMatPSRF->Cbind(fmMatR.GetCol(k));
+
+		GetPSRFInfo( pMatRet, nCov+i*2+1, fmMatR );
+		for(int k=1;k<=LG;k++)
+			pMatPSRF->Cbind(fmMatR.GetCol(k));
+    }
+
+	pMatPSRF->Transpose();
+
+    _log_debug(_HI_, "SortoutPSRF: Successful to sort out.");
+    return(0);
+}
+
+void destroy(GLS_res* p)
+{
+	CFmNewTemp  fmRef;
+	p->~GLS_res();
+	operator delete(p, fmRef);
 }

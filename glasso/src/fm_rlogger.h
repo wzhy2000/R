@@ -25,7 +25,7 @@ void _log_fatal( const char* szSrc, int nSrcLine, const char* log_text, ... );
 //unused now.
 void _log_hexdump( const char *text, const char *buf, size_t len );
 
-int start_log(bool bDebug);
+int start_log(int nDebug);
 
 
 void log_set_pid( int pid );

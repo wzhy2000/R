@@ -34,7 +34,7 @@ void bls_simulate( char** pszPhe_out,
 					 double* pfSimu_d_effect,
 					 double* pfSimu_covar_range,
 					 double* pfSimu_t_range,
-					 int* pbDebug,
+					 int* pnDebug,
 					 int* err)
 {
 	int ret = blasso_simulate(  *pszPhe_out,
@@ -57,79 +57,139 @@ void bls_simulate( char** pszPhe_out,
 						 pfSimu_d_effect,
 						 pfSimu_covar_range,
 						 pfSimu_t_range,
-					     *pbDebug);
+					     *pnDebug);
 	*err = ret;
 }
 
 SEXP bls_simple( SEXP szPhefile,
   		   	SEXP szSnpfile,
-  		   	SEXP szModel,
+  		   	SEXP szYname,
+  		   	SEXP szXname,
   		   	SEXP sbRefit,
-  		   	SEXP snMaxIter,
+  		   	SEXP sbAddUsed,
+  		   	SEXP sbDomUsed,
+  		   	SEXP snMcmcIter,
 		   	SEXP sfBurnInRound,
 		   	SEXP sfRhoTuning,
 	        SEXP sfQval_add,
 	        SEXP sfQval_dom,
-			SEXP sbDebug)
+			SEXP snDebug)
 {
 	const char* pszPhefile = CHAR(STRING_ELT(szPhefile,0));
 	const char* pszSnpfile = CHAR(STRING_ELT(szSnpfile,0));
-	const char* pszModel   = CHAR(STRING_ELT(szModel,0));
+	const char* pszYname   = CHAR(STRING_ELT(szYname,0));
+	const char* pszXname   = CHAR(STRING_ELT(szXname,0));
 	bool bRefit            = BOOLEAN_ELT(sbRefit, 0);
-	int  nMaxIter          = round(NUMERIC_ELT( snMaxIter, 0) );
+	bool bAddUsed          = BOOLEAN_ELT(sbAddUsed, 0);
+	bool bDomUsed          = BOOLEAN_ELT(sbDomUsed, 0);
+	int  nMcmcIter         = round(NUMERIC_ELT( snMcmcIter, 0) );
 	double fRhoTuning      = NUMERIC_ELT( sfRhoTuning, 0 );
 	double fBurnInRound    = NUMERIC_ELT( sfBurnInRound, 0 );
 	double fQval_add       = NUMERIC_ELT( sfQval_add, 0 );
 	double fQval_dom       = NUMERIC_ELT( sfQval_dom, 0 );
-	bool   bDebug          = BOOLEAN_ELT( sbDebug, 0 );
+	int    nDebug          = round(NUMERIC_ELT( snDebug, 0 ) );
 
 	SEXP ret = blasso_simple( pszPhefile,
   		   			pszSnpfile,
-  		   			pszModel,
+  		   			pszYname,
+  		   			pszXname,
   		   			bRefit,
-  		   			nMaxIter,
+  		   			bAddUsed,
+  		   			bDomUsed,
+  		   			nMcmcIter,
 		   			fBurnInRound,
 		   			fRhoTuning,
 	        		fQval_add,
 	        		fQval_dom,
-	        		bDebug);
+	        		nDebug);
 	return(ret);
 }
 
-SEXP bls_plink( SEXP szPhefile,
+SEXP bls_plink_tped( SEXP szPhefile,
   		   	SEXP szTpedfile,
   		   	SEXP szTfamfile,
-  		   	SEXP szModel,
+  		   	SEXP szYname,
+  		   	SEXP szXname,
   		   	SEXP sbRefit,
-  		   	SEXP snMaxIter,
+  		   	SEXP sbAddUsed,
+  		   	SEXP sbDomUsed,
+  		   	SEXP snMcmcIter,
 		   	SEXP sfBurnInRound,
 		   	SEXP sfRhoTuning,
 	        SEXP sfQval_add,
 	        SEXP sfQval_dom,
-			SEXP sbDebug )
+			SEXP snDebug )
 {
 	const char* pszPhefile = CHAR(STRING_ELT(szPhefile,0));
 	const char* pzTpedfile = CHAR(STRING_ELT(szTpedfile,0));
 	const char* pzTfamfile = CHAR(STRING_ELT(szTfamfile,0));
-	const char* pszModel = CHAR(STRING_ELT(szModel,0));
-	bool bRefit          = BOOLEAN_ELT(sbRefit, 0);
-	int  nMaxIter        = round( NUMERIC_ELT( snMaxIter, 0) );
-	double fRhoTuning    = NUMERIC_ELT( sfRhoTuning, 0);
-	double fBurnInRound  = NUMERIC_ELT( sfBurnInRound, 0);
-	double fQval_add     = NUMERIC_ELT( sfQval_add, 0);
-	double fQval_dom     = NUMERIC_ELT( sfQval_dom, 0);
-	bool   bDebug        = BOOLEAN_ELT(sbDebug, 0);
+	const char* pszYname   = CHAR(STRING_ELT(szYname,0));
+	const char* pszXname   = CHAR(STRING_ELT(szXname,0));
+	bool bRefit            = BOOLEAN_ELT(sbRefit, 0);
+	bool bAddUsed          = BOOLEAN_ELT(sbAddUsed, 0);
+	bool bDomUsed          = BOOLEAN_ELT(sbDomUsed, 0);
+	int  nMcmcIter         = round(NUMERIC_ELT( snMcmcIter, 0) );
+	double fRhoTuning      = NUMERIC_ELT( sfRhoTuning, 0);
+	double fBurnInRound    = NUMERIC_ELT( sfBurnInRound, 0);
+	double fQval_add       = NUMERIC_ELT( sfQval_add, 0);
+	double fQval_dom       = NUMERIC_ELT( sfQval_dom, 0);
+	int   nDebug           = round(NUMERIC_ELT(snDebug, 0) );
 
-	SEXP ret = blasso_plink( pszPhefile,
+	SEXP ret = blasso_plink_tped( pszPhefile,
   		   			pzTpedfile,
   		   			pzTfamfile,
-  		   			pszModel,
+  		   			pszYname,
+  		   			pszXname,
   		   			bRefit,
-  		   			nMaxIter,
+  		   			bAddUsed,
+  		   			bDomUsed,
+  		   			nMcmcIter,
 		   			fBurnInRound,
 		   			fRhoTuning,
 	        		fQval_add,
 	        		fQval_dom,
-	        		bDebug);
+	        		nDebug);
+	return(ret);
+}
+
+SEXP bls_snpmat( SEXP szPheMat,
+  		   	SEXP szSnpMat,
+  		   	SEXP szYname,
+  		   	SEXP szXname,
+  		   	SEXP sbRefit,
+  		   	SEXP sbAddUsed,
+  		   	SEXP sbDomUsed,
+  		   	SEXP snMcmcIter,
+		   	SEXP sfBurnInRound,
+		   	SEXP sfRhoTuning,
+	        SEXP sfQval_add,
+	        SEXP sfQval_dom,
+			SEXP snDebug)
+{
+	const char* pszYname   = CHAR(STRING_ELT(szYname,0));
+	const char* pszXname   = CHAR(STRING_ELT(szXname,0));
+	bool bRefit            = BOOLEAN_ELT(sbRefit, 0);
+	bool bAddUsed          = BOOLEAN_ELT(sbAddUsed, 0);
+	bool bDomUsed          = BOOLEAN_ELT(sbDomUsed, 0);
+	int  nMcmcIter         = round(NUMERIC_ELT( snMcmcIter, 0) );
+	double fRhoTuning      = NUMERIC_ELT( sfRhoTuning, 0 );
+	double fBurnInRound    = NUMERIC_ELT( sfBurnInRound, 0 );
+	double fQval_add       = NUMERIC_ELT( sfQval_add, 0 );
+	double fQval_dom       = NUMERIC_ELT( sfQval_dom, 0 );
+	int   nDebug           = round(NUMERIC_ELT( snDebug, 0 ) );
+
+	SEXP ret = blasso_snpmat( szPheMat,
+  		   			szSnpMat,
+  		   			pszYname,
+  		   			pszXname,
+  		   			bRefit,
+  		   			bAddUsed,
+  		   			bDomUsed,
+  		   			nMcmcIter,
+		   			fBurnInRound,
+		   			fRhoTuning,
+	        		fQval_add,
+	        		fQval_dom,
+	        		nDebug);
 	return(ret);
 }

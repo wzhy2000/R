@@ -63,5 +63,8 @@ private:
 };
 
 
+void destroy(GLS_par* p);
+
+
 #endif
 

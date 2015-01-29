@@ -33,7 +33,7 @@ void gls_simulate( char** pszPhe_out,
 					 double* pfSimu_dom_effect,
 					 double* pfSimu_z_range,
 					 int* pnSimu_z_count,
-					 int* pbDebug,
+					 int* pnDebug,
 					 int* err)
 {
 	int ret = glasso_simulate(  *pszPhe_out,
@@ -55,79 +55,158 @@ void gls_simulate( char** pszPhe_out,
 						 pfSimu_dom_effect,
 						 pfSimu_z_range,
 					     pnSimu_z_count,
-					     *pbDebug);
+					     *pnDebug);
 	*err = ret;
 }
 
 SEXP gls_simple( SEXP szPhefile,
   		   	SEXP szSnpfile,
-  		   	SEXP szModel,
+  		   	SEXP szYname,
+  		   	SEXP szZname,
+  		   	SEXP szXname,
   		   	SEXP sbRefit,
-  		   	SEXP snMaxIter,
+  		   	SEXP sbAddUsed,
+  		   	SEXP sbDomUsed,
+  		   	SEXP snMcmcIter,
 		   	SEXP sfBurnInRound,
 		   	SEXP sfRhoTuning,
 	        SEXP sfQval_add,
 	        SEXP sfQval_dom,
-			SEXP sbDebug)
+			SEXP snDebug)
 {
 	const char* pszPhefile = CHAR(STRING_ELT(szPhefile,0));
 	const char* pszSnpfile = CHAR(STRING_ELT(szSnpfile,0));
-	const char* pszModel = CHAR(STRING_ELT(szModel,0));
-	bool bRefit = BOOLEAN_ELT(sbRefit, 0);
-	int  nMaxIter   = round(NUMERIC_ELT( snMaxIter, 0) );
+
+	const char* pszYname   = CHAR(STRING_ELT(szYname,0));
+	const char* pszZname   = CHAR(STRING_ELT(szZname,0));
+	const char* pszXname   = CHAR(STRING_ELT(szXname,0));
+
+	bool bRefit    = BOOLEAN_ELT(sbRefit, 0);
+	bool bAddUsed  = BOOLEAN_ELT(sbAddUsed, 0);
+	bool bDomUsed  = BOOLEAN_ELT(sbDomUsed, 0);
+
+	int  nMcmcIter      = round(NUMERIC_ELT( snMcmcIter, 0) );
 	double fBurnInRound = NUMERIC_ELT( sfBurnInRound, 0);
-	double fRhoTuning = NUMERIC_ELT( sfRhoTuning,0);
+	double fRhoTuning   = NUMERIC_ELT( sfRhoTuning,0);
 	double fQval_add    = NUMERIC_ELT( sfQval_add, 0);
 	double fQval_dom    = NUMERIC_ELT( sfQval_dom, 0);
-	bool   bDebug   = BOOLEAN_ELT(sbDebug, 0);
+	int   nDebug        = round(NUMERIC_ELT(snDebug, 0));
 
 	SEXP ret = glasso_simple( pszPhefile,
   		   			pszSnpfile,
-  		   			pszModel,
+  		   			pszYname,
+  		   			pszZname,
+  		   			pszXname,
   		   			bRefit,
-  		   			nMaxIter,
+  		   			bAddUsed,
+  		   			bDomUsed,
+  		   			nMcmcIter,
 		   			fBurnInRound,
 		   			fRhoTuning,
 	        		fQval_add,
 	        		fQval_dom,
-	        		bDebug);
+	        		nDebug);
 	return(ret);
 }
 
-SEXP gls_plink( SEXP szPhefile,
+SEXP gls_plink_tped( SEXP szPhefile,
   		   	SEXP szTpedfile,
   		   	SEXP szTfamfile,
-  		   	SEXP szModel,
+  		   	SEXP szYname,
+  		   	SEXP szZname,
+  		   	SEXP szXname,
   		   	SEXP sbRefit,
-  		   	SEXP snMaxIter,
+  		   	SEXP sbAddUsed,
+  		   	SEXP sbDomUsed,
+  		   	SEXP snMcmcIter,
 		   	SEXP sfBurnInRound,
 		   	SEXP sfRhoTuning,
 	        SEXP sfQval_add,
 	        SEXP sfQval_dom,
-			SEXP sbDebug )
+			SEXP snDebug )
 {
 	const char* pszPhefile = CHAR(STRING_ELT(szPhefile,0));
 	const char* pzTpedfile = CHAR(STRING_ELT(szTpedfile,0));
 	const char* pzTfamfile = CHAR(STRING_ELT(szTfamfile,0));
-	const char* pszModel = CHAR(STRING_ELT(szModel,0));
-	bool bRefit = BOOLEAN_ELT(sbRefit, 0);
-	int  nMaxIter   = round( NUMERIC_ELT( snMaxIter, 0) );
+
+	bool bRefit   = BOOLEAN_ELT(sbRefit, 0);
+	bool bAddUsed = BOOLEAN_ELT(sbAddUsed, 0);
+	bool bDomUsed = BOOLEAN_ELT(sbDomUsed, 0);
+
+	const char* pszYname = CHAR(STRING_ELT(szYname,0));
+	const char* pszZname = CHAR(STRING_ELT(szZname,0));
+	const char* pszXname = CHAR(STRING_ELT(szXname,0));
+
+	int  nMcmcIter   = round( NUMERIC_ELT( snMcmcIter, 0) );
 	double fBurnInRound = NUMERIC_ELT( sfBurnInRound, 0);
 	double fRhoTuning = NUMERIC_ELT( sfRhoTuning,0);
 	double fQval_add  = NUMERIC_ELT( sfQval_add, 0);
 	double fQval_dom  = NUMERIC_ELT( sfQval_dom, 0);
-	bool   bDebug     = BOOLEAN_ELT(sbDebug, 0);
+	int    nDebug     = round( NUMERIC_ELT(snDebug, 0) );
 
-	SEXP ret = glasso_plink( pszPhefile,
+	SEXP ret = glasso_plink_tped( pszPhefile,
   		   			pzTpedfile,
   		   			pzTfamfile,
-  		   			pszModel,
+  		   			pszYname,
+  		   			pszZname,
+  		   			pszXname,
   		   			bRefit,
-  		   			nMaxIter,
+  		   			bAddUsed,
+  		   			bDomUsed,
+  		   			nMcmcIter,
 		   			fBurnInRound,
 		   			fRhoTuning,
 	        		fQval_add,
 	        		fQval_dom,
-	        		bDebug);
+	        		nDebug);
 	return(ret);
 }
+
+SEXP gls_snpmat( SEXP smatPhe,
+  		   	SEXP smatSnp,
+  		   	SEXP szYname,
+  		   	SEXP szZname,
+  		   	SEXP szXname,
+  		   	SEXP sbRefit,
+  		   	SEXP sbAddUsed,
+  		   	SEXP sbDomUsed,
+  		   	SEXP snMcmcIter,
+		   	SEXP sfBurnInRound,
+		   	SEXP sfRhoTuning,
+	        SEXP sfQval_add,
+	        SEXP sfQval_dom,
+			SEXP snDebug )
+{
+	bool bRefit   = BOOLEAN_ELT(sbRefit, 0);
+	bool bAddUsed = BOOLEAN_ELT(sbAddUsed, 0);
+	bool bDomUsed = BOOLEAN_ELT(sbDomUsed, 0);
+
+	const char* pszYname = CHAR(STRING_ELT(szYname,0));
+	const char* pszZname = CHAR(STRING_ELT(szZname,0));
+	const char* pszXname = CHAR(STRING_ELT(szXname,0));
+
+	int  nMcmcIter    = round( NUMERIC_ELT( snMcmcIter, 0) );
+	double fBurnInRound = NUMERIC_ELT( sfBurnInRound, 0);
+	double fRhoTuning = NUMERIC_ELT( sfRhoTuning,0);
+	double fQval_add  = NUMERIC_ELT( sfQval_add, 0);
+	double fQval_dom  = NUMERIC_ELT( sfQval_dom, 0);
+	int    nDebug     = round( NUMERIC_ELT( snDebug, 0) );
+
+	SEXP ret = glasso_snpmat( smatPhe,
+  		   			smatSnp,
+  		   			pszYname,
+  		   			pszZname,
+  		   			pszXname,
+  		   			bRefit,
+  		   			bAddUsed,
+  		   			bDomUsed,
+  		   			nMcmcIter,
+		   			fBurnInRound,
+		   			fRhoTuning,
+	        		fQval_add,
+	        		fQval_dom,
+	        		nDebug);
+	return(ret);
+}
+
+

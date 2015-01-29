@@ -3,23 +3,28 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "fm_err.h"
 #include "fm_filematrix.h"
 #include "fm_vector.h"
 #include "fm_matrix.h"
 #include "fm_rlogger.h"
+#include "fm_linux.h"
+#include "fm_err.h"
+#include "fm_new.h"
 
-CFmFileMatrix::CFmFileMatrix(char* szFile, bool bAppend, bool bAutodel=FALSE)
+
+CFmFileMatrix::CFmFileMatrix(char* szFile, bool bAppend, bool bAutodel=TRUE)
 {
 	m_bAutodel = bAutodel;
     m_nNumCols = 0;
     m_nNumRows = 0;
     m_pFile = NULL;
-    m_pszFile = strdup(szFile);
+    m_pszFile = Strdup(szFile);
 
     m_nCacheCol0 = -1;
     m_nCacheCol1 = -1;
-	m_pmatCache = new CFmMatrix(0,100);
+
+    CFmNewTemp refNew;
+	m_pmatCache = new (refNew) CFmMatrix(0,100);
 
     OpenFile(bAppend);
 }
@@ -37,8 +42,8 @@ CFmFileMatrix::~CFmFileMatrix()
         if (m_bAutodel) unlink(m_pszFile);
     }
 
-    if (m_pszFile) free(m_pszFile);
-    if (m_pmatCache) delete m_pmatCache;
+    if (m_pszFile)  Free(m_pszFile);
+    if (m_pmatCache) destroy( m_pmatCache );
 }
 
 char* CFmFileMatrix::GetFileName()
@@ -252,10 +257,11 @@ CFmMatrix* LoadFileMatrix(char* szFile)
         return( NULL );
     }
 
-    double* pBuf = (double*)malloc(sizeof(double)*fmt.nNumCols );
+    double* pBuf = Calloc( fmt.nNumCols, double );
 	memset( pBuf, 0, sizeof(double)*fmt.nNumCols );
 
-    CFmMatrix* pMat = new CFmMatrix(0, 0);
+	CFmNewTemp refNew;
+    CFmMatrix* pMat = new (refNew) CFmMatrix(0, 0);
 	for (long int j=0; j<fmt.nNumRows; j++)
 	{
 		size_t nSize = fread(pBuf, sizeof(double)*fmt.nNumCols, 1, pFile);
@@ -269,7 +275,14 @@ CFmMatrix* LoadFileMatrix(char* szFile)
 	}
 
     fclose(pFile);
-	free(pBuf);
+	Free(pBuf);
 
 	return(pMat);
+}
+
+void destroy(CFmFileMatrix* p)
+{
+	CFmNewTemp  fmRef;
+	p->~CFmFileMatrix();
+	operator delete(p, fmRef);
 }

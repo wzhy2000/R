@@ -16,10 +16,12 @@
 
 #include "Rmethods.h"
 #include "fm_rlogger.h"
-#include "fm_err.h"
-#include "fm_pcf.h"
 #include "fm_rsource.h"
 #include "fm_filematrix.h"
+#include "fm_err.h"
+#include "fm_pcf.h"
+#include "fm_new.h"
+
 #include "gls_model.h"
 #include "gls_dat.h"
 #include "gls_R.h"
@@ -41,9 +43,9 @@ GLS::GLS()
 
 GLS::~GLS()
 {
-    if (m_pDat) delete m_pDat;
-    if (m_pRes) delete m_pRes;
-    //if (m_pCfg) delete m_pCfg;
+    if (m_pDat) destroy( m_pDat );
+    if (m_pRes) destroy( m_pRes );
+    //if (m_pCfg) destroy( m_pCfg );
 
     _log_info(_HI_, "GLS is released successfully.");
 }
@@ -62,7 +64,8 @@ int GLS::LoadSimulate( CMDOPTIONS *pCmd, GLS_par* pPar  )
 
     _log_prompt(_HI_, "Start the data generation.");
 
-    m_pDat = new GLS_dat(pCmd);
+	CFmNewTemp refNew;
+    m_pDat = new (refNew) GLS_dat(pCmd);
 
     pcf.UpdatePcfFile(PCF_DAT_LOAD );
     //Simulate_test??
@@ -100,7 +103,8 @@ int GLS::LoadPlink( CMDOPTIONS *pCmd )
     CFmPcf pcf;
     pcf.UpdatePcfFile(PCF_DAT_LOAD );
 
-    m_pDat = new GLS_dat( pCmd );
+	CFmNewTemp refNew;
+    m_pDat = new (refNew) GLS_dat( pCmd );
     int ret = m_pDat->LoadPlink( pCmd->szTpedFile,
                                  pCmd->szTfamFile,
                                  pCmd->szPheFile,
@@ -136,13 +140,14 @@ int GLS::LoadSimple( CMDOPTIONS *pCmd )
     CFmPcf pcf;
     pcf.UpdatePcfFile(PCF_DAT_LOAD );
 
-    m_pDat = new GLS_dat( pCmd );
+	CFmNewTemp refNew;
+    m_pDat = new (refNew) GLS_dat( pCmd );
     int ret = m_pDat->LoadSimple(pCmd->szSnpFile,
                                  pCmd->szPheFile,
                                  pCmd->bZNormalized);
     if (ret!=0)
     {
-        _log_error(_HI_, "Failed to load the PLINK files.");
+        _log_error(_HI_, "Failed to load the SIMPLE files.");
         return(ret);
     }
 
@@ -152,29 +157,59 @@ int GLS::LoadSimple( CMDOPTIONS *pCmd )
     return(0);
 }
 
+int GLS::LoadSnpmat( CFmMatrix* pFmPhe, CFmMatrix* pFmSnp, CMDOPTIONS *pCmd )
+{
+    m_pCmd = pCmd;
+    m_nDataType = RUNMODE_SIMPLE;
+
+    _log_info(_HI_, "Check SNP/phenotype parameter.");
+
+    if ( pFmPhe->GetNumRows() != pFmSnp->GetNumCols()-2 )
+        return( ERR_TPEDFILE_LONG );
+
+    CFmPcf pcf;
+    pcf.UpdatePcfFile(PCF_DAT_LOAD );
+
+	CFmNewTemp refNew;
+    m_pDat = new (refNew) GLS_dat( pCmd );
+    int ret = m_pDat->AttachSnpmat( pFmPhe, pFmSnp, pCmd->bZNormalized);
+    if (ret!=0)
+    {
+        _log_error(_HI_, "Failed to attach the SNP dataset.");
+        return(ret);
+    }
+
+    _log_prompt(_HI_, "SNP data are loaded successfully.");
+
+    m_pDat->Summary();
+    return(0);
+}
+
 int GLS::Varsel(GLS_cfg *pCfg)
 {
     // Create Result object
     if (m_pRes!=NULL)
-		delete m_pRes;
+		destroy( m_pRes );
 
 	m_pCfg = pCfg;
 
     int P = m_pDat->m_nSnpP;
     int N = m_pDat->m_nSubjN;
 
-    _log_prompt( _HI_, "VARSEL: SnpP:%d, SubjN:%d, nMcmcIter:%d", P, N, m_pCfg->m_nMaxIter );
+    _log_prompt( _HI_, "VARSEL: SnpP:%d, SubjN:%d, nMcmcIter:%d", P, N, m_pCfg->m_nMcmcIter );
 
     m_bRefit = false;
-    m_pRes = new GLS_res(m_pCmd, m_pCfg);
-    m_pRes->InitVarsel( m_pCmd->nSimuRound, P, N, m_pCfg->m_nMaxIter);
+
+	CFmNewTemp refNew;
+    m_pRes = new (refNew) GLS_res(m_pCmd, m_pCfg);
+    m_pRes->InitVarsel( m_pCmd->nSimuRound, P, N, m_pCfg->m_nMcmcIter);
 
     CFmPcf pcf;
     pcf.UpdatePcfFile( PCF_VARSEL, 0, 1, -1, -1);
 
 	CFmFileMatrix* pMatRet=NULL;
 	if (m_pCmd->szMatadFile)
-		pMatRet = new CFmFileMatrix( m_pCmd->szMatadFile, FALSE, FALSE);
+		pMatRet = new (refNew) CFmFileMatrix( m_pCmd->szMatadFile, FALSE, FALSE);
 
     try
     {
@@ -199,14 +234,14 @@ int GLS::Varsel(GLS_cfg *pCfg)
     catch(const char* str)
     {
         pcf.UpdatePcfFile( PCF_EXCEPT, 1, 1,  -1, -1);
-        if (pMatRet) delete pMatRet;
+        if (pMatRet) destroy( pMatRet );
 
         //-- keep the trace tag into the log file.
         _log_error( _HI_, "VARSEL: Exception is caught in the procedure of MCMC.Tracetag=%s, Exception=%s", m_szTraceTag, str );
         return( ERR_EXCEPTION );
     }
 
-    if (pMatRet) delete pMatRet;
+    if (pMatRet) destroy( pMatRet );
 
     if (strlen( m_pCmd->szRdataFile) )
     {
@@ -244,7 +279,7 @@ int GLS::Refit(GLS_cfg *pCfg)
 
 	m_pCfg = pCfg;
 
-    int ret = m_pRes->InitRefit( m_pCfg->m_nMaxIter );
+    int ret = m_pRes->InitRefit( m_pCfg->m_nMcmcIter );
     if ( ret!=0 )
     {
         _log_error( _HI_, "REFIT: Failed to select siginificant snp." );
@@ -283,9 +318,10 @@ int GLS::Refit(GLS_cfg *pCfg)
     CFmPcf pcf;
     pcf.UpdatePcfFile( PCF_REFIT, 0, 1, -1, -1);
 
+	CFmNewTemp refNew;
 	CFmFileMatrix* pMatRet=NULL;
 	if (m_pCmd->szMatadFile)
-		pMatRet = new CFmFileMatrix( m_pCmd->szMatadFile, FALSE, FALSE);
+		pMatRet = new (refNew) CFmFileMatrix( m_pCmd->szMatadFile, FALSE, FALSE);
 
     try
     {
@@ -307,14 +343,14 @@ int GLS::Refit(GLS_cfg *pCfg)
     catch(const char* str)
     {
         pcf.UpdatePcfFile( PCF_EXCEPT, 1, 1,  -1, -1);
-        if (pMatRet) delete pMatRet;
+        if (pMatRet) destroy( pMatRet );
 
         //-- keep the trace tag into the log file.
         _log_error( _HI_, "REFIT: An exception is caught in the MCMC procedure. Tracetag=%s, Exception=%s", m_szTraceTag, str);
         return( ERR_EXCEPTION );
     }
 
-    if (pMatRet) delete pMatRet;
+    if (pMatRet) destroy( pMatRet );
 
     _log_info( _HI_, "REFIT: Select Sig. SNPs.");
 
@@ -361,12 +397,10 @@ int GLS::proc_mcmc( CFmMatrix& Y,  CFmMatrix& Z,  CFmMatrix& Z0, CFmMatrix& X, C
     int N = Y.GetNumRows();   //*[N,Q]
     int P = gen.GetNumSnps(); //*[N,P]
     int Q = Y.GetNumCols();
-    int R = m_pCfg->m_nMaxIter;
+    int R = m_pCfg->m_nMcmcIter;
     int nC = X.GetNumCols()-1;
 
 //**SEQTEST Rprintf("DEBUG:N=%d, P=%d, Q=%d, R=%d\n ", N, P, Q, R);
-
-Rprintf("DEBUG:M=%d, N=%d, Q=%d\n ", Y.GetNumRows(), Y.GetNumCols(), Y.GetNanCount() );
 
     int sum_Ji = Y.GetNumRows()*Y.GetNumCols()-Y.GetNanCount();
 
@@ -398,25 +432,26 @@ Rprintf("DEBUG:M=%d, N=%d, Q=%d\n ", Y.GetNumRows(), Y.GetNumCols(), Y.GetNanCou
     CFmMatrix r_tau_st2(0, 0, P, 1);
     CFmMatrix r_lambda_st2(0, 0, 1, 1);
 
-    CFmMatrix** all_corMat = (CFmMatrix**)malloc( sizeof(CFmMatrix*)* N );
+	CFmNewTemp refNew;
+    CFmMatrix** all_corMat = Calloc(N, CFmMatrix* );
     for (int i=0; i<N; i++)
-        all_corMat[i] = new CFmMatrix(0, 0, Q, Q);
+        all_corMat[i] = new (refNew) CFmMatrix(0, 0, Q, Q);
 
-    CFmMatrix** all_corMat_MH = (CFmMatrix**)malloc( sizeof(CFmMatrix*)* N );
+    CFmMatrix** all_corMat_MH = Calloc(N, CFmMatrix* );
     for (int i=0; i<N; i++)
-        all_corMat_MH[i] = new CFmMatrix(0, 0, Q, Q);
+        all_corMat_MH[i] = new (refNew)  CFmMatrix(0, 0, Q, Q);
 
-    CFmVector** all_yi = (CFmVector**)malloc( sizeof(CFmVector*)* N );
+    CFmVector** all_yi = Calloc(N, CFmVector* );
     for (int i=0; i<N; i++)
-        all_yi[i] = new CFmVector(Q, 0);
+        all_yi[i] = new  (refNew) CFmVector(Q, 0);
 
-    CFmVector** all_rd = (CFmVector**)malloc( sizeof(CFmVector*)* N );
+    CFmVector** all_rd = Calloc(N, CFmVector* );
     for (int i=0; i<N; i++)
-        all_rd[i] = new CFmVector(Q, 0);
+        all_rd[i] = new  (refNew) CFmVector(Q, 0);
 
-    CFmMatrix** all_ui = (CFmMatrix**)malloc( sizeof(CFmMatrix*)* N );
+    CFmMatrix** all_ui = Calloc(N, CFmMatrix* );
     for (int i=0; i<N; i++)
-        all_ui[i] = new CFmMatrix( 0, 0, Q, LG);
+        all_ui[i] = new  (refNew) CFmMatrix( 0, 0, Q, LG);
 
 //---------------------------------------------------
 // PART A in the R code
@@ -494,7 +529,7 @@ strcpy(m_szTraceTag, "A");
                     pcf->fProgress*100,
                     pcf->fELapsedSeconds+pcf->fEstimatedSeconds,
                     pcf->fEstimatedSeconds );
-            Rprintf(szBuf);
+            _log_info( _HI_, szBuf );
         }
 
 //---------------------------------------------------
@@ -603,6 +638,7 @@ strcat(m_szTraceTag, "F");
 
         // -- updating additive effects: a for each SNP
         //CFmMatrix diag(4, true, 1);
+        if(m_pCmd->bAddUsed)
         for(int j=0; j<P; j++)
         {
             tmp2 = 0;
@@ -679,7 +715,7 @@ strcat(m_szTraceTag, "F");
 //CFmMatrix::_DM=0;
 strcat(m_szTraceTag, "G");
 //**SEQTEST _log_debug( _HI_, "PART G.....round=%d/%d", round, R);
-    if(!m_bRefit)
+    if(!m_bRefit && m_pCmd->bAddUsed )
     {
 		int a_P1 =0 ;
 		int a_P2 =0 ;
@@ -726,6 +762,7 @@ strcat(m_szTraceTag, "H");
 
 		int d_P = 0;
         //-- Updating dominant effects: d, for each SNP
+        if(m_pCmd->bDomUsed)
         for(int j=0; j<P; j++)
         {
             tmp2 = 0;
@@ -805,7 +842,7 @@ strcat(m_szTraceTag, "H");
 //---------------------------------------------------
 strcat(m_szTraceTag, "I");
 //**SEQTEST _log_debug( _HI_, "PART I.....round=%d/%d", round, R);
-    if(!m_bRefit)
+    if(!m_bRefit && m_pCmd->bDomUsed)
     {
 		int d_P1 =0 ;
 		int d_P2 =0 ;
@@ -984,6 +1021,12 @@ strcat(m_szTraceTag, "M");
         if ( round%50 == 0 )
             pf.UpdatePcfFile( PCF_GOING, -1, -1, round+1, R);
     }
+
+    for (int i=0; i<N; i++) destroy( all_corMat[i]);   Free( all_corMat );
+    for (int i=0; i<N; i++) destroy( all_corMat_MH[i]); Free( all_corMat_MH );
+    for (int i=0; i<N; i++) destroy( all_yi[i]);  Free( all_yi );
+    for (int i=0; i<N; i++) destroy( all_rd[i]);  Free( all_rd );
+    for (int i=0; i<N; i++) destroy( all_ui[i]);  Free( all_ui );
 
     PutRNGstate();
 

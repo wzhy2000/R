@@ -14,6 +14,8 @@ extern "C" {
 
 #define MAX_PATH 4096
 
+#define Strdup(X) strcpy(Calloc(strlen(X)+1, char), X) ;
+
 int stricmp(const char* s1, const char* s2);
 
 //#endif

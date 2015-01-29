@@ -21,7 +21,7 @@ public:
     int m_nSectId;
     int m_nTaskId;
     int m_nMcmcHint;
-    int m_nMaxIter;
+    int m_nMcmcIter;
     int m_nMcmcSnps;
     bool m_bDebug;
     bool m_bRData;
@@ -43,5 +43,7 @@ protected:
     int Load(char* szCfgFile);
 
 };
+
+void destroy(GLS_cfg* p);
 
 #endif

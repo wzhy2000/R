@@ -31,6 +31,8 @@ public:
     int LoadSimple( char* szFile_snp, char* szFile_pheno, bool bZnorm );
     int LoadPhenoOnly(char* szFile_pheno, bool bZnorm );
 
+    int AttachSnpmat( CFmMatrix* pFmPhe, CFmMatrix* pFmSnp, bool bZnorm );
+
     int Simulate( GLS_par* par, CMDOPTIONS* pCmd );
     int Simulate_test( GLS_par* par, CMDOPTIONS* pCmd );
 
@@ -66,5 +68,7 @@ private:
     char* m_sPheno_file;
     char* m_sGeno_file;
 };
+
+void destroy( GLS_dat* p );
 
 #endif

@@ -114,5 +114,6 @@ private:
     void			FreeMemory();
 };
 
+void destroy(CFmSnpMat* p);
 
 #endif // !defined(_FM_SNPMAT_H_)

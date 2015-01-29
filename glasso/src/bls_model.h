@@ -35,6 +35,7 @@ public:
     int LoadSimulate( CMDOPTIONS *pCmd, BLS_par * pPar);
     int LoadPlink( CMDOPTIONS *pCmd );
     int LoadSimple( CMDOPTIONS *pCmd );
+    int LoadSnpmat( CFmMatrix* pFmPhe, CFmMatrix* pFmSnp, CMDOPTIONS *pCmd );
 
     int Varsel(BLS_cfg* pCfg);
     int Refit(BLS_cfg* pCfg);
@@ -62,6 +63,8 @@ private:
     char m_szTraceTag[128];
 
 };
+
+void destroy( BLS* p );
 
 #endif
 

@@ -56,5 +56,6 @@ private:
 } ;
 
 SEXP GetSEXP(CFmVectorStr* pVct);
+void destroy(CFmVectorStr* p);
 
 #endif // !defined(_FM_VECTOR_STR_H_)

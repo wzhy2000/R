@@ -12,16 +12,18 @@
 #include <Rdefines.h>
 #include <Rmath.h>
 
-#include "bls_cfg.h"
-#include "bls_dat.h"
-#include "bls_par.h"
 #include "fm_snpmat.h"
 #include "fm_packedsnp.h"
 #include "fm_matrix.h"
 #include "fm_vector.h"
-#include "fm_logger.h"
-#include "fm_err.h"
+#include "fm_rlogger.h"
 #include "fm_simulate.h"
+#include "fm_err.h"
+#include "fm_new.h"
+
+#include "bls_cfg.h"
+#include "bls_dat.h"
+#include "bls_par.h"
 
 BLS_dat::BLS_dat(CMDOPTIONS *pCmd)
 {
@@ -55,17 +57,17 @@ BLS_dat::~BLS_dat()
 
 void BLS_dat::ResetAllObjects()
 {
-    if (m_pPlink) delete m_pPlink;
-    if (m_pSimple) delete m_pSimple;
-    if (m_pSimulate) delete m_pSimulate;
-    if (m_pPhenoY) delete m_pPhenoY;
-    if (m_pCovars) delete m_pCovars;
+    if (m_pPlink) destroy( m_pPlink );
+    if (m_pSimple) destroy( m_pSimple );
+    if (m_pSimulate) destroy( m_pSimulate );
+    if (m_pPhenoY) destroy( m_pPhenoY );
+    if (m_pCovars) destroy( m_pCovars );
+    if (m_pPackedSNP) destroy(m_pPackedSNP);
 
     m_pSnpNames = NULL;
     m_pPhenoY = NULL;
     m_pCovars = NULL;
     m_pSimuSnps = NULL;
-    m_pSnpNames = NULL;
 
     m_bSimulate = false;
     m_nSubjN  = 0;
@@ -73,9 +75,9 @@ void BLS_dat::ResetAllObjects()
     m_nMesuTime = 0;
     m_nRound = 1;
 
-    if (m_sPheno_file) delete m_sPheno_file;
+    if (m_sPheno_file) Free( m_sPheno_file );
     m_sPheno_file = NULL;
-    if (m_sGeno_file) delete m_sGeno_file;
+    if (m_sGeno_file) Free( m_sGeno_file );
     m_sGeno_file = NULL;
 }
 
@@ -93,10 +95,11 @@ int BLS_dat::LoadPlink( char* szFile_tped, char* szFile_tfam, char* szFile_pheno
 
     ResetAllObjects();
 
-    m_sPheno_file = strdup(szFile_pheno);
-    m_sGeno_file = strdup(szFile_tped);
+    m_sPheno_file = Strdup(szFile_pheno);
+    m_sGeno_file = Strdup(szFile_tped);
 
-    m_pPlink = new CFmDat_Plink( szFile_tped, szFile_tfam);
+	CFmNewTemp refNew;
+    m_pPlink = new (refNew) CFmDat_Plink( szFile_tped, szFile_tfam);
     int ret = m_pPlink->Load(szFile_presig);
     if (ret!=0)
     {
@@ -112,7 +115,7 @@ int BLS_dat::LoadPlink( char* szFile_tped, char* szFile_tfam, char* szFile_pheno
     m_bSimulate = false;
 
     _log_info( _HI_, "LoadPlink: Start to read the phenotype file(%s, Znorm=%d)", szFile_pheno, bZnorm?1:0 );
-    CFmDat_Pheno* pPheno = new CFmDat_Pheno( szFile_pheno, bZnorm, m_pCmd->szModel );
+    CFmDat_Pheno* pPheno = new (refNew) CFmDat_Pheno( szFile_pheno, bZnorm, m_pCmd->szYname, m_pCmd->szZname, m_pCmd->szXname );
     ret = pPheno->LoadNonlongdt( m_pPackedSNP, m_pPlink->m_pSubIds );
     if (ret!=0)
     {
@@ -121,10 +124,10 @@ int BLS_dat::LoadPlink( char* szFile_tped, char* szFile_tfam, char* szFile_pheno
     }
 
     m_nSubjN  = pPheno->m_nSubjN;
-    m_pPhenoY = new CFmVector( pPheno->m_pPhenoY, 0, false );
-    m_pCovars = new CFmMatrix( pPheno->m_pCovars );
+    m_pPhenoY = new (refNew) CFmVector( pPheno->m_pPhenoY, 0, false );
+    m_pCovars = new (refNew) CFmMatrix( pPheno->m_pCovars );
 
-    delete pPheno;
+    destroy( pPheno );
 
     _log_info( _HI_, "LoadPlink: Successful, nSubjN=%d", m_nSubjN  );
     return(0);
@@ -134,12 +137,14 @@ int BLS_dat::LoadSimple( char* szFile_snp, char* szFile_pheno,bool bZnorm, char*
 {
     ResetAllObjects();
 
-    m_sPheno_file = strdup(szFile_pheno);
-    m_sGeno_file = strdup(szFile_snp);
+    m_sPheno_file = Strdup(szFile_pheno);
+    m_sGeno_file = Strdup(szFile_snp);
 
     _log_info( _HI_, "LoadSimple: Start to read the SNP file(%s)", szFile_snp);
 
-    m_pSimple = new CFmDat_Simple( szFile_snp );
+	CFmNewTemp refNew;
+
+    m_pSimple = new (refNew) CFmDat_Simple( szFile_snp );
     int ret =  m_pSimple->Load(szFile_presig);
     if (ret!=0)
     {
@@ -154,9 +159,9 @@ int BLS_dat::LoadSimple( char* szFile_snp, char* szFile_pheno,bool bZnorm, char*
     m_nRound =1;
     m_bSimulate = false;
 
-    _log_info( _HI_, "LoadSimple: Start to read the phenotype file(%s, Znorm=%d), model=%s", szFile_pheno, bZnorm?1:0, m_pCmd->szModel );
+    _log_info( _HI_, "LoadSimple: Start to read the phenotype file(%s, Znorm=%d), model=%s", szFile_pheno, bZnorm?1:0, m_pCmd->szYname, m_pCmd->szXname );
 
-    CFmDat_Pheno* pPheno = new CFmDat_Pheno( szFile_pheno, bZnorm, m_pCmd->szModel );
+    CFmDat_Pheno* pPheno = new (refNew) CFmDat_Pheno( szFile_pheno, bZnorm, m_pCmd->szYname, NULL, m_pCmd->szXname );
     ret = pPheno->LoadNonlongdt( m_pPackedSNP, m_pSimple->m_pSubIds );
     if (ret!=0)
     {
@@ -165,12 +170,99 @@ int BLS_dat::LoadSimple( char* szFile_snp, char* szFile_pheno,bool bZnorm, char*
     }
 
     m_nSubjN  = pPheno->m_nSubjN;
-    m_pPhenoY = new CFmVector( pPheno->m_pPhenoY, 0, false );
-    m_pCovars = new CFmMatrix( pPheno->m_pCovars );
+    m_pPhenoY = new (refNew) CFmVector( pPheno->m_pPhenoY, 0, false );
+    m_pCovars = new (refNew) CFmMatrix( pPheno->m_pCovars );
 
-    delete pPheno;
+    destroy(  pPheno );
 
     _log_info( _HI_, "LoadSimple: successful, nSubjN=%d", m_nSubjN );
+    return(0);
+}
+
+int BLS_dat::AttachSnpmat( CFmMatrix* pFmPhe, CFmMatrix* pFmSnp, bool bZnorm  )
+{
+    ResetAllObjects();
+
+    m_sPheno_file = Strdup("SNPMAT_dataset.csv");
+    m_sGeno_file = Strdup("SNPMAT_dataset.csv");
+
+    _log_info( _HI_, "AttachSnpmat: Start to read the SNPMAT" );
+
+	CFmNewTemp refNew;
+
+    m_pPackedSNP = new (refNew) CFmPackedSNP();
+    m_pPackedSNP->InitData( pFmSnp->GetNumCols()-2, pFmSnp->GetNumRows() );
+    for(int iSnp=0; iSnp<pFmSnp->GetNumRows(); iSnp++)
+    {
+        for(int jSub=0; jSub<pFmSnp->GetNumCols()-2; jSub++)
+        {
+            int snp_d = (int)(pFmSnp->Get( iSnp, jSub+2));
+            if (snp_d != 0 && snp_d != 1 && snp_d!= 2)
+                snp_d=3;
+
+            m_pPackedSNP->Set( jSub, iSnp, snp_d);
+            if ( m_pPackedSNP->Get( jSub, iSnp ) != snp_d )
+            {
+                _log_fatal(_HI_, "AttachSnpmat: Failed to check snp %d(%d != %d)", iSnp, snp_d, m_pPackedSNP->Get(jSub, iSnp ) );
+            }
+        }
+
+        char szChr[64] = {"0"};
+        char szPos[64] = {"0"};
+        sprintf(szChr, "%d", (int)pFmSnp->Get( iSnp, 0) );
+        sprintf(szPos, "%d", (int)pFmSnp->Get( iSnp, 1) );
+
+        m_pPackedSNP->SetSnpInfo(iSnp, pFmSnp->GetRowName(iSnp), (char*)szChr, (char*)szPos, (char*)szPos, 'C' );
+    }
+
+    int nSnpP = m_pPackedSNP->GetNumSnps();
+    int ret = m_pPackedSNP->RemoveRareSNP( 0.01 );
+    if (ret!=0)
+    {
+		_log_fatal( _HI_, "Failed to remove rare SNPs");
+		return( ERR_SNPFILE_LONG );
+	}
+	else
+	    _log_prompt( _HI_, "Total SNPs: %d, Rare SNPs: %d, Rare MAF= %.3f", nSnpP, nSnpP - m_pPackedSNP->GetNumSnps(), 0.01 );
+
+    m_pSnpNames = new (refNew) CFmVectorStr( m_pPackedSNP->GetNumSnps() );
+    for (int i=0;i<m_pPackedSNP->GetNumSnps();i++)
+    {
+        SNPINFO* pInfo;
+        if (m_pPackedSNP->GetSnpInfo(i, &pInfo))
+        {
+            m_pSnpNames->Set(i, pInfo->szSnpId);
+        }
+    }
+
+    m_nSubjN = m_pPackedSNP->GetNumSubjs();
+    m_nSnpP  = m_pPackedSNP->GetNumSnps();
+    m_nRound = 1;
+    m_bSimulate = false;
+
+    _log_info( _HI_, "AttachSnpmat: Start to read the phenotype file(Znorm=%d), model=%s,%s", bZnorm?1:0, m_pCmd->szYname, m_pCmd->szXname );
+
+    CFmDat_Pheno* pPheno = new (refNew) CFmDat_Pheno( pFmPhe, bZnorm, m_pCmd->szYname, NULL, m_pCmd->szXname );
+
+    CFmVectorStr* pSubids = new (refNew) CFmVectorStr( pFmSnp->GetColNames() );
+    pSubids->Remove(1);
+    pSubids->Remove(0);
+
+    ret = pPheno->LoadNonlongdt( m_pPackedSNP, pSubids );
+    if (ret!=0)
+    {
+        _log_info(_HI_, "AttachSnpmat: Failed to load SNPMAT");
+        return(ret);
+    }
+
+    m_nSubjN  = pPheno->m_nSubjN;
+    m_pPhenoY = new (refNew) CFmVector( pPheno->m_pPhenoY, 0, false );
+    m_pCovars = new (refNew) CFmMatrix( pPheno->m_pCovars );
+
+    destroy( pPheno );
+	destroy( pSubids);
+
+    _log_info( _HI_, "AttachSnpmat: successful, nSubjN=%d", m_nSubjN );
     return(0);
 }
 
@@ -178,13 +270,15 @@ int BLS_dat::LoadPhenoOnly(char* szFile_pheno, bool bZnorm )
 {
     _log_info( _HI_, "LoadPhenoOnly: Start to read the phenotype file(%s, Znorm=%d)", szFile_pheno, bZnorm?1:0 );
 
+	CFmNewTemp refNew;
+
 	CFmVectorStr* pSubjs = NULL;
 	if (m_pPlink)
 		pSubjs = m_pPlink->m_pSubIds;
 	if (m_pPlink)
 		pSubjs = m_pSimple->m_pSubIds;
 
-    CFmDat_Pheno* pPheno = new CFmDat_Pheno( szFile_pheno, bZnorm, m_pCmd->szModel );
+    CFmDat_Pheno* pPheno = new (refNew) CFmDat_Pheno( szFile_pheno, bZnorm, m_pCmd->szYname, NULL, m_pCmd->szXname);
     int ret = pPheno->LoadNonlongdt( m_pPackedSNP, pSubjs );
     if (ret!=0)
     {
@@ -193,8 +287,8 @@ int BLS_dat::LoadPhenoOnly(char* szFile_pheno, bool bZnorm )
     }
 
     m_nSubjN  = pPheno->m_nSubjN;
-    m_pPhenoY = new CFmVector( pPheno->m_pPhenoY, 0, false );
-    m_pCovars = new CFmMatrix( pPheno->m_pCovars );
+    m_pPhenoY = new (refNew) CFmVector( pPheno->m_pPhenoY, 0, false );
+    m_pCovars = new (refNew) CFmMatrix( pPheno->m_pCovars );
     return(0);
 }
 
@@ -202,8 +296,8 @@ int BLS_dat::Simulate( BLS_par* par, CMDOPTIONS* pCmd )
 {
     ResetAllObjects();
 
-    m_sPheno_file=strdup("simu.pheno.LS");
-    m_sGeno_file=strdup("simu.geno.LS");
+    m_sPheno_file = Strdup("simu.pheno.LS");
+    m_sGeno_file  = Strdup("simu.geno.LS");
 
     _log_info( _HI_, "Simulate: Start to Simulate");
 
@@ -230,7 +324,9 @@ int BLS_dat::Simulate( BLS_par* par, CMDOPTIONS* pCmd )
     simu_par.simu_covar_prange= par->simu_covar_range;
     simu_par.sig_p          = par->sig_p;
 
-    CFmSimulate* m_pSimulate = new CFmSimulate( &simu_par );
+	CFmNewTemp refNew;
+
+    CFmSimulate* m_pSimulate = new (refNew) CFmSimulate( &simu_par );
     int nRet = m_pSimulate->Simulate( pCmd->szSnpoutFile, pCmd->szPheoutFile, (char*)"0" );
     if (nRet)
         return(nRet);
@@ -360,8 +456,9 @@ int BLS_dat::AppendSnp(CFmSnpMat* pMat)
 {
     _log_debug(_HI_, "AppendSnp: pMat[%d,%d]", pMat->GetNumSnps(), pMat->GetNumSubjs() );
 
+	CFmNewTemp refNew;
     if (m_pPackedSNP == NULL)
-        m_pPackedSNP = new CFmPackedSNP();
+        m_pPackedSNP = new (refNew) CFmPackedSNP();
 
     int nSubj = pMat->GetNumSubjs();
     for(int k=0; k<pMat->GetNumSnps(); k++ )
@@ -431,7 +528,7 @@ int BLS_dat::Summary(char* szOutFile)
     sprintf(szTemp, "%s DATA GenoFile    = %s\n", szTemp, m_sGeno_file);
     sprintf(szTemp, "%s -------------------------------------------\n", szTemp );
 
-    _log_info(_HI_, szTemp);
+    _log_info(_HI_, szTemp );
 
     if(szOutFile!=NULL)
     {
@@ -448,4 +545,11 @@ int BLS_dat::Summary(char* szOutFile)
     }
 
     return(0);
+}
+
+void destroy(BLS_dat* p)
+{
+	CFmNewTemp  fmRef;
+	p->~BLS_dat();
+	operator delete(p, fmRef);
 }

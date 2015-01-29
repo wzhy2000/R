@@ -35,6 +35,7 @@ public:
     int LoadSimulate( CMDOPTIONS *pCmd, GLS_par *pPar );
     int LoadPlink( CMDOPTIONS *pCmd );
     int LoadSimple( CMDOPTIONS *pCmd );
+    int LoadSnpmat( CFmMatrix* pFmPhe, CFmMatrix* pFmSnp, CMDOPTIONS *pCmd );
 
     int Varsel(GLS_cfg* pCfg);
     int Refit(GLS_cfg* pCfg);

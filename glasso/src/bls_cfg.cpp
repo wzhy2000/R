@@ -13,9 +13,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "fm_logger.h"
-#include "fm_err.h"
+#include "fm_rlogger.h"
 #include "fm_sys.h"
+#include "fm_err.h"
+#include "fm_new.h"
+
 #include "bls_cfg.h"
 
 BLS_cfg::BLS_cfg():CFmSys()
@@ -24,7 +26,7 @@ BLS_cfg::BLS_cfg():CFmSys()
     m_nTaskId = 11;
     m_nMcmcHint = 100;
 
-    m_nMaxIter = 2000;
+    m_nMcmcIter = 2000;
     m_nMcmcSnps =500000;
     m_fRhoTuning = 0.095;
     m_fBurnInRound = 0.3; //30%
@@ -45,7 +47,7 @@ BLS_cfg::BLS_cfg(char* szCfgFiled):CFmSys()
     m_nTaskId = 11;
     m_nMcmcHint = 100;
 
-    m_nMaxIter = 2000;
+    m_nMcmcIter = 2000;
     m_nMcmcSnps =500000;
     m_fRhoTuning = 0.095;
     m_fBurnInRound = 0.3; //30%
@@ -116,7 +118,7 @@ int BLS_cfg::Load(char* szCfgFile)
         char tmp[256];
         if ( bls_extract_value(aLine, "max_iter", tmp ) )
         {
-            m_nMaxIter = atoi(tmp);
+            m_nMcmcIter = atoi(tmp);
             continue;
         }
         if ( bls_extract_value(aLine, "mcmc_snps", tmp ) )
@@ -185,6 +187,12 @@ int BLS_cfg::Load(char* szCfgFile)
 
 int BLS_cfg::GetBurnInRound()
 {
-    return((int)round(m_fBurnInRound*m_nMaxIter));
+    return((int)round(m_fBurnInRound*m_nMcmcIter));
 }
 
+void destroy(BLS_cfg* p)
+{
+	CFmNewTemp  fmRef;
+	p->~BLS_cfg();
+	operator delete(p, fmRef);
+}

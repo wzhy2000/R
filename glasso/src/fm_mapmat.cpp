@@ -17,6 +17,8 @@
 #include "fm_matrix.h"
 #include "fm_mapmat.h"
 #include "fm_dataframe.h"
+#include "fm_linux.h"
+#include "fm_new.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -42,8 +44,8 @@ CFmMapMat::CFmMapMat()
 
 CFmMapMat::~CFmMapMat()
 {
-    if(m_pMap) delete m_pMap;
-    if(m_pMarkers) delete m_pMarkers;
+    if(m_pMap) destroy( m_pMap );
+    if(m_pMarkers) destroy( m_pMarkers );
 }
 
 int CFmMapMat::GetNumChrs()
@@ -163,15 +165,17 @@ int CFmMapMat::LoadCSV(const char* filename)
     if (ret)
         return ret;
 
+	CFmNewTemp refNew;
+
     int nIdx = df.FindColumn("Marker");
     if (nIdx>=0)
-        m_pMarkers = new CFmVectorStr( df.GetStringCol(nIdx));
+        m_pMarkers = new (refNew) CFmVectorStr( df.GetStringCol(nIdx));
 
     int nIdx1 = df.FindColumn("grp_idx");
     int nIdx2 = df.FindColumn("Distance");
     if (nIdx1>=0 && nIdx2>=0)
     {
-        m_pMap = new CFmMatrix(0,0);
+        m_pMap = new (refNew) CFmMatrix(0,0);
         CFmVector& Vct1 = df.GetFloatCol(nIdx1);
         CFmVector& Vct2 = df.GetFloatCol(nIdx2);
         m_nChr = (int)Vct1.GetMax();
@@ -228,13 +232,13 @@ CFmDatPheno::CFmDatPheno(char* szFile_pheno )
     m_nSubjN = 0;
     m_nMesuQ = 0;
 
-    m_szFile_pheno = strdup(szFile_pheno);
+    m_szFile_pheno = Strdup(szFile_pheno);
 }
 
 CFmDatPheno::~CFmDatPheno()
 {
-    if (m_pTimes)
-        delete m_pTimes;
+	if (m_szFile_pheno) Free(m_szFile_pheno);
+    if (m_pTimes) destroy( m_pTimes );
 }
 
 int CFmDatPheno::Load()
@@ -246,8 +250,10 @@ int CFmDatPheno::Load()
     if (ret)
         return ret;
 
-    m_pPhenoY = new CFmMatrix(0,0);
-    m_pTimes = new CFmVector(0, 0.0);
+	CFmNewTemp refNew;
+
+    m_pPhenoY = new (refNew) CFmMatrix(0,0);
+    m_pTimes = new (refNew) CFmVector(0, 0.0);
     for (int i=0; i<df.GetNumCol(); i++ )
     {
         if ( strcmp(df.GetColName(i), "id")==0 ||
@@ -268,7 +274,7 @@ int CFmDatPheno::Load()
              strcmp(df.GetColName(i), "x")==0 )
         {
             CFmVector& Vct = df.GetFloatCol(i);
-            m_pCovarX = new CFmVector( &Vct );
+            m_pCovarX = new (refNew) CFmVector( &Vct );
         }
     }
 
@@ -286,18 +292,20 @@ CFmDatGeno::CFmDatGeno(char* szFile_snp )
 {
     m_pSnpMat = 0;
     m_pSnpNames = 0;
-    m_szFile_snp = strdup(szFile_snp);
+    m_szFile_snp = Strdup(szFile_snp);
 }
 
 CFmDatGeno::~CFmDatGeno()
 {
+	if(m_szFile_snp) Free(m_szFile_snp);
 }
 
 int CFmDatGeno::Load()
 {
     _log_info(_HI_, "m_nMesuQ: Start to load SNP data into a matrix from %s", m_szFile_snp);
 
-    m_pSnpMat = new CFmMatrix(0, 0);
+	CFmNewTemp refNew;
+    m_pSnpMat = new (refNew) CFmMatrix(0, 0);
     int ret = m_pSnpMat->ReadFromCSVFile( m_szFile_snp, true, true);
     if (ret!=0)
     {
@@ -309,4 +317,25 @@ int CFmDatGeno::Load()
                     m_pSnpMat->GetNumRows(), m_pSnpMat->GetNumCols());
 
     return(0);
+}
+
+void destroy(CFmMapMat* p)
+{
+	CFmNewTemp  fmRef;
+	p->~CFmMapMat();
+	operator delete(p, fmRef);
+}
+
+void destroy(CFmDatPheno* p)
+{
+	CFmNewTemp  fmRef;
+	p->~CFmDatPheno();
+	operator delete(p, fmRef);
+}
+
+void destroy(CFmDatGeno* p)
+{
+	CFmNewTemp  fmRef;
+	p->~CFmDatGeno();
+	operator delete(p, fmRef);
 }

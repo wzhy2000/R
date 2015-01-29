@@ -13,7 +13,7 @@
 #include "fm_matrix.h"
 #include "fm_vector.h"
 #include "fm_err.h"
-
+#include "fm_new.h"
 
 /*
 est_gen_Q.R<-function(y.delt, maf, Z, X, par_null)
@@ -88,12 +88,12 @@ est_gen_Q.R<-function(y.delt, maf, Z, X, par_null)
 int kronecker_vm( CFmVector& A, CFmMatrix& B, CFmMatrix* pRet )
 {
 	int NB = B.GetNumCols();
-	pRet->Resize( 1 * B.GetNumRows(), A.GetLength() * B.GetNumCols() );
+	pRet->Resize( 1 * B.GetNumRows(), A.GetLength() * NB );
 
 	for(int i=0; i<A.GetLength(); i++)
 	{
 		for(int j=0; j<B.GetNumRows(); j++)
-		for(int k=0; k<B.GetNumCols(); k++)
+		for(int k=0; k<NB; k++)
 			pRet->Set(j, k+i*NB, A[i]*B.Get(j,k) );
 	}
 
@@ -102,6 +102,8 @@ int kronecker_vm( CFmVector& A, CFmMatrix& B, CFmMatrix* pRet )
 
 SEXP Xest_gen_Q_C( CFmMatrix* pFmYDelt, CFmMatrix* pFmZ, CFmMatrix* pFmX, CFmVector* pFmMaf, CFmVector* pFmParNull)
 {
+	CFmNewTemp fmRef;
+
 	double sig_a2  = pow(pFmParNull->Get(0), 2);
 	double sig_b2  = pow(pFmParNull->Get(1), 2);
 	double sig_e2  = pow(pFmParNull->Get(2), 2);
@@ -111,28 +113,29 @@ SEXP Xest_gen_Q_C( CFmMatrix* pFmYDelt, CFmMatrix* pFmZ, CFmMatrix* pFmX, CFmVec
 	int M = pFmYDelt->GetNumCols();
 	int K = pFmMaf->GetLength();
 
-//Rprintf("N=%d, M=%d, K=%d a2=%f b2=%f e2=%f rho=%f", N, M, K, sig_a2, sig_b2, sig_e2, par_rho);
+//Rprintf("N=%d, M=%d, K=%d a2=%f b2=%f e2=%f rho=%f\n", N, M, K, sig_a2, sig_b2, sig_e2, par_rho);
 
 	CFmMatrix fmAR1( M, M );
 	for(int i=0; i<M; i++)
 	for(int j=0; j<M; j++)
 		fmAR1.Set( i, j, pow( par_rho, abs( i - j ) ) );
 
-	CFmMatrix fmDiag( M, true, 1.0 );
 	CFmMatrix fmV_j( M, M );
 	CFmMatrix fmV_j1( M, M );
+	//CFmMatrix fmDiag( M, true, 1.0 ); //???HERE
+	CFmMatrix fmDiag( M, M );
+	for(int i=0; i<M; i++) fmDiag.Set(i, i, 1.0);
 
 	fmV_j = (fmV_j + 1.0) * sig_a2 +  fmAR1 * sig_b2 + fmDiag * sig_e2;
 	fmV_j1 = fmV_j.GetInverted();
 
-	CFmMatrix* ppVj[N];
-	CFmVector* ppYj[N];
 	CFmVector fmVectMj_x(N, 0.0);
-
-	CFmMatrix fmMatTmp (M, M);
 	CFmVector fmVecTmp (M, 0.0);
 	CFmVector fmVecTmp2(M, 0.0);
 	CFmMatrix fmVj_i(M, M);
+
+	CFmMatrix** ppVj = Calloc(N, CFmMatrix*);
+	CFmVector** ppYj = Calloc( N, CFmVector*);
 
 	for(int i=0; i<N ;i++)
 	{
@@ -145,8 +148,9 @@ SEXP Xest_gen_Q_C( CFmMatrix* pFmYDelt, CFmMatrix* pFmZ, CFmMatrix* pFmX, CFmVec
 		}
 
 		int NonNA = fmVecTmp2.GetLength();
-		ppVj[i] = new CFmMatrix(NonNA, NonNA);
-		ppYj[i] = new CFmVector(NonNA, 0);
+
+		ppVj[i] = new (fmRef) CFmMatrix(NonNA, NonNA);
+		ppYj[i] = new (fmRef) CFmVector(NonNA, 0.0);
 
 		fmVj_i.Resize(NonNA, NonNA);
 		if (NonNA>0)
@@ -154,14 +158,14 @@ SEXP Xest_gen_Q_C( CFmMatrix* pFmYDelt, CFmMatrix* pFmZ, CFmMatrix* pFmX, CFmVec
 			for( int k=0; k<NonNA; k++)
 			for( int l=0; l<NonNA; l++)
 				fmVj_i.Set(k, l,fmV_j.Get( (int)fmVecTmp2[k], (int)fmVecTmp2[l] ) );
-
-			*(ppVj[i]) = fmVj_i.GetInverted();
+			*(ppVj[i]) = fmVj_i.GetInverted( );
 
 			fmVecTmp.RemoveNan();
 			*(ppYj[i]) = fmVecTmp;
 
 			fmVectMj_x[i] = fmVecTmp.GetLength();
 		}
+
 	}
 
 	CFmVector fmQi(1, 0.0);
@@ -211,14 +215,20 @@ SEXP Xest_gen_Q_C( CFmMatrix* pFmYDelt, CFmMatrix* pFmZ, CFmMatrix* pFmX, CFmVec
 	}
 
 	CFmMatrix fmQw( K, K );
+
 	fmQw = fmW0 - fmW1 * fmW2.GetInverted() * fmW3;
 	fmQw = fmQw / 2.0;
 
-	for(int i=0; i<N; i++) delete ppVj[i];
-	for(int i=0; i<N; i++) delete ppYj[i];
+	for(int i=0; i<N; i++) { destroy( ppVj[i] );}
+	for(int i=0; i<N; i++) { destroy( ppYj[i] );}
+	Free(ppVj);
+	Free(ppYj);
+
+	//double fQv = 0.5;
+	//CFmMatrix fmQw( K, K );
+	//for(int i=0; i<K; i++)  fmQw.Set(i, i, i+1);
 
 	SEXP sRet, t;
-
    	PROTECT(sRet = t = allocList(2));
 
 	SEXP expVS = GetSEXP(&fmQw);
@@ -237,7 +247,6 @@ SEXP Xest_gen_Q_C( CFmMatrix* pFmYDelt, CFmMatrix* pFmZ, CFmMatrix* pFmX, CFmVec
     return(sRet);
 }
 
-
 CFmMatrix* getMatrixData(SEXP pMat)
 {
 	SEXP Rdim = getAttrib(pMat, R_DimSymbol);
@@ -245,7 +254,9 @@ CFmMatrix* getMatrixData(SEXP pMat)
 	int ncol = INTEGER(Rdim)[1];
 
     double* p0 = REAL(pMat) ;
-    CFmMatrix* p = new CFmMatrix(nrow, ncol) ;
+
+ 	CFmNewTemp fmRef;
+ 	CFmMatrix* p = new (fmRef) CFmMatrix(nrow, ncol) ;
 
     int i,j;
     for( i=0; i<nrow; i++)
@@ -260,7 +271,9 @@ CFmVector* getVectorData(SEXP pVec)
 	int nlen = length(pVec);
 
     double* p0 = REAL(pVec) ;
-    CFmVector* p = new CFmVector( nlen, 0.0) ;
+
+ 	CFmNewTemp fmRef;
+    CFmVector* p = new (fmRef) CFmVector( nlen, 0.0) ;
 
     int i,j;
     for( i=0; i<nlen; i++)
@@ -275,12 +288,11 @@ SEXP _est_gen_Q_C( SEXP spYdelt,
   		   	SEXP spMaf,
 		   	SEXP spParNull)
 {
-	//int nUsed0, nTotal0;
-	//CFmVector::StatCache( &nTotal0, &nUsed0 );
-	//int nUsed1, nTotal1;
-	//CFmMatrix::StatCache( &nTotal1, &nUsed1 );
-	//
-	//Rprintf( "Enter C Range, Vec.count=%d, Mat.count=%d\n", nUsed0, nUsed1);
+	// int nUsed0, nTotal0;
+	// CFmVector::StatCache( &nTotal0, &nUsed0 );
+	// int nUsed1, nTotal1;
+	// CFmMatrix::StatCache( &nTotal1, &nUsed1 );
+	// Rprintf( "Enter C Range, Vec.count=%d, Mat.count=%d\n", nTotal0, nTotal1);
 
 	CFmMatrix* pFmYDelt = getMatrixData(spYdelt);
 	CFmMatrix* pFmZ     = getMatrixData(spZ);
@@ -299,16 +311,15 @@ SEXP _est_gen_Q_C( SEXP spYdelt,
         return( R_NilValue );
     }
 
+	destroy( pFmYDelt );
+	destroy( pFmZ );
+	destroy( pFmX );
+	destroy( pFmMaf );
+	destroy( pFmParNull );
 
-	delete pFmYDelt;
-	delete pFmZ;
-	delete pFmX;
-	delete pFmMaf;
-	delete pFmParNull;
-
-	//CFmVector::StatCache( &nTotal0, &nUsed0 );
-	//CFmMatrix::StatCache( &nTotal1, &nUsed1 );
-	//Rprintf( "Leave C Range, Vec.count=%d, Mat.count=%d\n", nUsed0, nUsed1);
+	// CFmVector::StatCache( &nTotal0, &nUsed0 );
+	// CFmMatrix::StatCache( &nTotal1, &nUsed1 );
+	// Rprintf( "Leave C Range, Vec.count=%d, Mat.count=%d\n", nTotal0, nTotal1);
 
 	return(ret);
 }
