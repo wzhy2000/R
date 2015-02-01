@@ -374,13 +374,13 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
 
 		x0 <- min(ll[,1])*(sub_rc[3]-sub_rc[1])/(xlim.cur[2]-xlim.cur[1]) + sub_rc[1];
 		x1 <- max(ll[,1])*(sub_rc[3]-sub_rc[1])/(xlim.cur[2]-xlim.cur[1]) + sub_rc[1];
-		if(!is,null(cutoff.05))
+		if(!is.null(cutoff.05))
 		{
 			y0 <- cutoff.05*(sub_rc[4]-sub_rc[2])/(ylim.cur[2]-ylim.cur[1]) + sub_rc[2];
 			segments( x0, y0, x1, y0, col="red", lwd=1, lty=22);
 		}
 
-		if(!is,null(cutoff.01))
+		if(!is.null(cutoff.01))
 		{
 			y0 <- cutoff.01*(sub_rc[4]-sub_rc[2])/(ylim.cur[2]-ylim.cur[1]) + sub_rc[2];
 			segments( x0, y0, x1, y0, col="orange", lwd=1, lty=22);
