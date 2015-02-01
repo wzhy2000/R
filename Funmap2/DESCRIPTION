@@ -1,0 +1,13 @@
+Package: Funmap2
+Version: 2.3
+Date: 05 Oct 2012
+Title: Functional Mapping Calculator.
+Author: Statistical Genetics Center of Penn State University.
+Maintainer: Zhong Wang <zhong.wang@yale.edu>
+Description: Analysis of experimental crosses to identify genes (called quantitative trait loci, QTLs) contributing to variation in quantitative traits.
+Depends: R (>= 2.4.0)
+License: GPL-3
+ZipData: yes
+Suggests: snow
+URL: http://statgen.psu.edu/software/funmap.html
+Packaged: 2014-12-07 00:15:41 UTC; zwang
