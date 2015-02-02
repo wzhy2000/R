@@ -531,7 +531,10 @@ FM2.report<-function( pdf.file, dat, res, perm=NULL, options=list() )
 		fre.report_res2(dat, res, perm) ;
 
 	if ( !is.null(perm) )	  
+	{
+		Report.AddHeadline( "Permutation Results", level=1 );
 		fre.report_perm(dat, perm) ;
+	}		
 
 	Report.Output( pdf.file );
 }

@@ -249,8 +249,10 @@ fpt.plot_qtl_map<-function( dat, res, cutoff.05=NULL, cutoff.01=NULL )
 {
 	chr_nums <- max( dat$marker_table[3] );
 	x <- (chr_nums)^0.5;
-
+	
 	level_cnt <- floor(x);
+	if(chr_nums<4) level_cnt <-1;
+
 	chr_logs <- res[, c(1,2,3) ];
 	
 	t1 <- dat$marker_table$grp_idx;
@@ -258,16 +260,15 @@ fpt.plot_qtl_map<-function( dat, res, cutoff.05=NULL, cutoff.01=NULL )
 	t3 <- dat$marker_table$Marker;
 
 	marker_list<-data.frame( t1,t2,t3 );
-	
+
 	fpt.internal_plot_qtl_map( chr_nums, level_cnt, chr_logs, marker_list=marker_list, cutoff.05=cutoff.05, cutoff.01=cutoff.01 );
-	
 }
 
 #--------------------------------------------------------------
 # internal_plot_qtl_map
 #
 #--------------------------------------------------------------
-fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=NA, cutoff.05=NULL, cutoff.01=NULL )
+fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=NULL, cutoff.05=NULL, cutoff.01=NULL )
 {
 	max_log <- 0;
 	min_log <- 0;
@@ -292,9 +293,9 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
 
 	nRowChrs <- array(1, level_cnt);
 	nRowChrs[1]<- chr_nums - (level_cnt-1)
-	delt_sd=100000;
+	delt_sd <- Inf;
 	delt_old_sd<-0;
-	if (chr_nums>2)
+	if (level_cnt>1)
 	{
 		while(delt_sd>10)
 		{
@@ -312,10 +313,7 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
 	}
 	else
 	{
-		if (chr_nums==2)
-			dm<-c(0, ch_ev[1,1] + ch_ev[2,1], 0 )
-		else
-			dm<-c(0, ch_ev[1,1], 0 );
+		dm<-c(0, sum(ch_ev[,1]), 0 )
 	}
 
 	pos <- matrix(0, nrow=chr_nums, ncol=4);
@@ -374,6 +372,7 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
 
 		x0 <- min(ll[,1])*(sub_rc[3]-sub_rc[1])/(xlim.cur[2]-xlim.cur[1]) + sub_rc[1];
 		x1 <- max(ll[,1])*(sub_rc[3]-sub_rc[1])/(xlim.cur[2]-xlim.cur[1]) + sub_rc[1];
+
 		if(!is.null(cutoff.05))
 		{
 			y0 <- cutoff.05*(sub_rc[4]-sub_rc[2])/(ylim.cur[2]-ylim.cur[1]) + sub_rc[2];
@@ -388,7 +387,7 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
 		
 		#marker
 		sticker_h<- ( max_log*1.3- min_log*0.9)/20;
-		if ( any(is.na(marker_list)))
+		if ( !is.null(marker_list))
 		{
 			for (j in 2:length(ll[,1]) )
 			{
@@ -420,7 +419,6 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
 		y0 <- (max_log*1.2)*(sub_rc[4]-sub_rc[2])/(ylim.cur[2]-ylim.cur[1]) + sub_rc[2];
 		
 		text(x0, y0, paste("",i) , font=4);
-		
 	}
 	
 	par(op);
@@ -437,7 +435,7 @@ fpt.get_SmallestVar2<-function( ch_ev, nRowChrs, iStart)
 	nRowBack[iStart+1]<- x2;	
 
 	delt_var <- fpt.get_deltvar(ch_ev, nRowBack, iStart , 2);
-	delt.set<-c( 2:(nSum-1) )
+	delt.set <- c( 2:(nSum-1) )
 	if (length(delt.set)==0) delt.set<-c(2);
 	
 	for ( i in delt.set)
@@ -886,6 +884,8 @@ fpt.plot_com_curve<-function( nMesa, nLong, f_curve_mu, dat = NULL, QQ_par=NULL,
 #--------------------------------------------------------------
 fpt.plot_permutation<-function( pmdat )
 {
+	op <- par(mar=c(2,3,1,1), bty="o");
+
 	plot(c(1:2), c(1:2),xlim=c(-6,1), ylim=c(0, max(pmdat[,2]) ), 
 		type="n", main="",xlab="p-value", ylab="cutoff", xaxt="n", yaxt="s", xaxs="i", yaxs="i");
 
@@ -924,6 +924,8 @@ fpt.plot_permutation<-function( pmdat )
 		str_max <- max(strwidth(str_legend));
 		legend("topright", legend = legend_left,text.width =str_max , title = "Cutoffs");
 	}
+	
+	par(op);
 }
 
 

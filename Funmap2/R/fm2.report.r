@@ -134,7 +134,8 @@ fre.report_res<-function( dat, res, perm=NULL )
 	perm.cutoff.01 <- fin.find_cutoff(perm, 0.01);
 	
 	c1 <- call("fpt.plot_qtl_map", dat, res$full_res, perm.cutoff.05, perm.cutoff.01 );
-	Report.AddFigure( c1, "QTL profile map", c(6, 6)*254, left.margin=0.5*254);
+	Report.AddFigure( c1, "QTL profile map", c(6, 6)*254, left.margin=0.5*254)
+
 	Report.AddParaBreak();
 
 	return();
@@ -264,8 +265,8 @@ fre.report_perm<-function(dat, perm)
 	}
 
 	p.pv <- c( 0.1, 0.05, 0.01, 0.005, 0.001, 0.0001, 0.00001);
-	p.cut <- perm$pv_table[ match(p.pv, perm$pv_table[,1]), 2];
-	
+	p.cut <- round( perm$pv_table[ match(p.pv, perm$pv_table[,1]), 2], digits = 2 );
+
 	p.df <- data.frame(N0="Cutoff", N1=p.cut[1], N2=p.cut[2], N3=p.cut[3], N4=p.cut[4], N5=p.cut[5], N6=p.cut[6], N7=p.cut[7])
 
 	Report.AddTable( p.df, 
@@ -277,9 +278,11 @@ fre.report_perm<-function(dat, perm)
 			offset.x = 50, 
 			max.show = 20)
 
-	Report.AddParaBreak(50);
+	Report.AddParaBreak();
 	
 	c2 <- call("fpt.plot_permutation", perm$pv_table);
+
+	Report.AddParaBreak();
 
 	Report.AddFigure( c2, "", c(3.5, 3.5)*254, left.margin=0*254);
 
