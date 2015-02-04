@@ -659,7 +659,7 @@ print.sum.BLS.ret<-function(r.sum.ret)
 {
 	if(!is.null(r.sum.ret$fgwas_sig))
 	{
-		cat("--- Significant SNPs Estimate by fGWAS method:\n");
+		cat("--- Significant SNPs Estimate by fGWAS method:", NROW(r.sum.ret$fgwas_sig), "SNPs\n");
 		if( NROW(r.sum.ret$fgwas_sig)>25 )
 		{
 			cat("Top 25 SNPs:\n");
@@ -677,7 +677,7 @@ print.sum.BLS.ret<-function(r.sum.ret)
 	
 	if(!is.null(r.sum.ret$varsel))
 	{
-		cat("--- Variable Selection Result\n");
+		cat("--- Variable Selection Result:", NROW(r.sum.ret$varsel), "SNPs\n" );
 		if( NROW(r.sum.ret$varsel)>25 )
 		{
 			cat("Top 25 SNPs:\n");
@@ -695,7 +695,7 @@ print.sum.BLS.ret<-function(r.sum.ret)
 	
 	if(!is.null(r.sum.ret$refit))
 	{
-		cat("--- Refit Result\n");
+		cat("--- Refit Result:", NROW(r.sum.ret$refit), "SNPs\n" );
 		show(r.sum.ret$refit);
 	}
 }
@@ -814,18 +814,12 @@ show_bls_parameters<-function( Y.name, covar.names, refit, add.used, dom.used, f
 }
 
 
-get_sig_bls_snp <- function( r.bls, snp.mat )
+get_sig_bls_snp <- function( r.bls )
 {
 	if(is.null(r.bls$varsel)) return( NULL );
 
 	idx.sig <- which( r.bls$varsel[,3]!=0 | r.bls$varsel[,7]!=0 )
 	if (length(idx.sig)==0) return(NULL);
 	
-	sig.names <- rownames(r.bls$varsel)[idx.sig];
-	sig.names <- unique(sig.names);
-	
-	snp.sel <- which( rownames(snp.mat) %in% sig.names );
-	if (length(snp.sel)==0) return(NULL);
-
-	return(list(idx.sig=snp.sel, snp.mat=snp.mat[snp.sel,,drop=F] ) );
+	return( idx.sig );
 }

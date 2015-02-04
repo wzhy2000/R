@@ -158,10 +158,10 @@ fpt.internal_plot_qtl_pos<-function(chr_logs, marker_list=NA, threshold=NA, cuto
 	
 	
 	if (!is.null(cutoff.05))
-		segments( 0, cutoff.05/(max_ylog - min_ylog)*75, 85, cutoff.05/(max_ylog - min_ylog)*75, lty="solid", lwd=1);
+		segments( 0, cutoff.05/(max_ylog - min_ylog)*75, 85, cutoff.05/(max_ylog - min_ylog)*75, lwd=1, lty="22", col="red");
 	
 	if (!is.null(cutoff.01))
-		segments( 0, cutoff.01/(max_ylog - min_ylog)*75, 85, cutoff.01/(max_ylog - min_ylog)*75, lty="solid", lwd=1);
+		segments( 0, cutoff.01/(max_ylog - min_ylog)*75, 85, cutoff.01/(max_ylog - min_ylog)*75, lwd=1, lty="22", col="orange");
 			
 	x_temp <- (max_xlim - min_xlim)/6;
 	x_temp <- 10*ceiling(x_temp/10);
@@ -376,13 +376,13 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
 		if(!is.null(cutoff.05))
 		{
 			y0 <- cutoff.05*(sub_rc[4]-sub_rc[2])/(ylim.cur[2]-ylim.cur[1]) + sub_rc[2];
-			segments( x0, y0, x1, y0, col="red", lwd=1, lty=22);
+			segments( x0, y0, x1, y0, col="red", lwd=1, lty="22");
 		}
 
 		if(!is.null(cutoff.01))
 		{
 			y0 <- cutoff.01*(sub_rc[4]-sub_rc[2])/(ylim.cur[2]-ylim.cur[1]) + sub_rc[2];
-			segments( x0, y0, x1, y0, col="orange", lwd=1, lty=22);
+			segments( x0, y0, x1, y0, col="orange", lwd=1, lty="22");
 		}
 		
 		#marker

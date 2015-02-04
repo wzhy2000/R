@@ -248,27 +248,33 @@ bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 	
 }
 
-
-get_sigsnp_nomulti_correction<-function( snp.mat, r.fgwas, fgwas.cutoff=0.05 )
+get_sigsnp_nomulti_correction<-function( f_get_snpmat, snp.obj, r.fgwas, n.snp, n.ind, fgwas.cutoff=0.05 )
 {
-	n.sample <- NCOL(snp.mat)-2;
-	n.snp    <- NROW(snp.mat);
-	if( n.snp <= n.sample)
-		return(list(error=F, snp.mat=snp.mat));
-		
-	pv.sort  <- sort.int( r.fgwas[,5], decreasing=F, index.return=T);
-	if ( pv.sort$x[n.sample] >= fgwas.cutoff)
+	if( n.snp <= n.ind )
 	{
-		sel.p <- pv.sort$ix[1:n.sample];
+		snp.mat <- f_get_snpmat( snp.obj, 1:n.snp );
+		return(list(error=F, snp.mat=snp.mat ));
+	}	
+	
+	n.sig <- length( which( r.fgwas[,5] <= fgwas.cutoff ) );
+	cat("  SNPs with p-value <=", fgwas.cutoff, ":", n.sig, "\n"); 
+	
+	#sorting pv field
+	pv.sort  <- sort.int( r.fgwas[,5], decreasing=F, index.return=T);
+	
+	if( n.sig < n.ind)
+	{
+		cat("  The count of significant SNPs is less than individual count.\n"); 
+		sel.p <- pv.sort$ix[1:n.ind];
 		sel.id <- r.fgwas[ sel.p, 1 ];
 	}
 	else
 	{
-		sel.p <- min( which(pv.sort$x > fgwas.cutoff) );
+		sel.p <- min( which(pv.sort$x > fgwas.cutoff) )-1;
 		sel.id <- r.fgwas[ pv.sort$ix[1:sel.p], 1 ];
 	}
 	
-	snp.mat <- snp.mat[ sel.id, ,drop=F ]
+	snp.mat <- f_get_snpmat( snp.obj, sel.id );
 	return(list(error=F, snp.mat=snp.mat));
 }
 
@@ -301,15 +307,18 @@ fgwas_filter<-function( n.snp, n.ind, f_get_snpmat, snp.obj, phe.mat, Y.name, Z.
 		if( r.fgwas0$error )
 			stop( r.fgwas0$err.info );
 		
+		#adjust SNP.ID field.
+		r.fgwas0$r[,1] <- r.fgwas0$r[,1] + snp.sect0[i]-1;
+
 		r.fgwas <- rbind( r.fgwas, r.fgwas0$r);
-
-		r.filter0 <- get_sigsnp_nomulti_correction( snp.mat0, r.fgwas0$r, fgwas.cutoff );
-		if( r.filter0$error )
-			stop( r.filter0$err.info );
-
-		snp.mat <- rbind( snp.mat, r.filter0$snp.mat);
-
 	}
+	
+	
+	r.filter0 <- get_sigsnp_nomulti_correction( f_get_snpmat, snp.obj, r.fgwas, n.snp, n.ind, fgwas.cutoff );
+	if( r.filter0$error )
+		stop( r.filter0$err.info );
+
+	snp.mat <- r.filter0$snp.mat;
 	
 	f.per <- round( NROW(snp.mat)/n.snp*100, digits=2);
 	cat("*", NROW(snp.mat), "SNPs(", f.per ,"%) are left after fGWAS filtering.\n" );
