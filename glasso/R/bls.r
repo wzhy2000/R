@@ -647,7 +647,11 @@ summary.BLS.ret<-function(r.bls)
 		re5 <- r.bls$fgwas.filter;
 		fgwas.sig <- which( re5[,5] <= r.bls$options$fgwas.cutoff );
 		if(length(fgwas.sig)>0)
-			r.sum.ret$fgwas_sig <- re5[ fgwas.sig, , drop=F];
+		{
+			fgwas_sigs <- re5[ fgwas.sig, , drop=F];
+			fgwas.sig.inc <- order(fgwas_sigs[,5]);
+			r.sum.ret$fgwas_sig <- fgwas_sigs[fgwas.sig.inc,];
+		}	
 	}
 
 	class(r.sum.ret) <- "sum.BLS.ret";

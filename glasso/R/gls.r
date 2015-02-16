@@ -725,7 +725,11 @@ summary.GLS.ret<-function(r.gls)
 		re5 <- r.gls$fgwas.filter;
 		fgwas.sig <- which( re5[,5] <= r.gls$options$fgwas.cutoff );
 		if(length(fgwas.sig)>0)
-			r.sum.ret$fgwas_sig <- re5[ fgwas.sig, , drop=F];
+		{
+			fgwas_sigs <- re5[ fgwas.sig, , drop=F];
+			fgwas.sig.inc <- order(fgwas_sigs[,5]);
+			r.sum.ret$fgwas_sig <- fgwas_sigs[fgwas.sig.inc,];
+		}
 	}
 
 	class(r.sum.ret) <- "sum.GLS.ret";
@@ -877,6 +881,8 @@ plot.GLS.ret<-function( r.gls, fig.prefix=NULL )
 
 		varsel<- cbind( varsel, ifelse (!is.null( r.gls$varsel_add), r.gls$varsel_add[,7], 0) );
 		varsel<- cbind( varsel, ifelse (!is.null( r.gls$varsel_dom), r.gls$varsel_dom[,7], 0) );
+		# H2
+		varsel<- cbind( varsel, 0 );
 		
 		draw_man_adh2( varsel, fig.prefix, "varsel" );
 	}
