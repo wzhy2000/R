@@ -54,7 +54,7 @@ public:
         show_vector2(m_pData, m_nActLen, szName);
     }
 
-    const double operator[](int row) const
+    double operator[](int row) const
     {
         if (row>=m_nActLen || row<0) throw("wrong index of vector");
             return m_pData[row] ;
