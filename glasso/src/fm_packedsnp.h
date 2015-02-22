@@ -85,22 +85,22 @@ public:
     int  AppendSnp();
     bool GetSnpRow(int nOutSnp, CFmVector* pVct);
     bool GetSnpRow(int nOutSnp, double* pValue);
-    bool SetSnpRow(int nOutSnp, double* pValue);
+    bool SetSnpRow(int nInSnp, double* pValue);
 
-    bool SetSnpInfo( int nOutSnp, char* szSnpId, char* szChrId, char* szGenDist, char* szBasePair, char sBigA );
+    bool SetSnpInfo( int nInSnp, char* szSnpId, char* szChrId, char* szGenDist, char* szBasePair, char sBigA );
     bool GetSnpInfo( int nOutSnp, SNPINFO** ppInfo );
     bool RemoveSNPs(CFmVector& nOutRemoves);
     bool RemoveSubjs(CFmVector& nOutRemoves);
-    int  RemoveRareSNP();
+    int  RemoveRareSNP( double fRareMaf );
 
     bool OrderByChrPos();
-	int WriteAsCSVFile(const char* filename);
+    int WriteAsCSVFile(const char* filename);
 
 private:
     void quickSort(SNPINFO** items, int left, int right);
-private:
 
-	long m_nBaseSubjN;
+private:
+    long m_nBaseSubjN;
     long m_nSubjN;
     long m_nSnpP;
     long m_nInsideSnpP;
@@ -111,5 +111,7 @@ private:
     SNPINFO** m_ppSnpInfo;
     unsigned char* m_pData;
 };
+
+void destroy(CFmPackedSNP* p);
 
 #endif

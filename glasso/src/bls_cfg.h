@@ -24,7 +24,7 @@ public:
     int m_nSectId;
     int m_nTaskId;
     int m_nMcmcHint;
-    int m_nMaxIter;
+    int m_nMcmcIter;
     int m_nMcmcSnps;
     bool m_bDebug;
     bool m_bRData;
@@ -45,5 +45,7 @@ public:
     int GetBurnInRound();
 
 };
+
+void destroy( BLS_cfg* p);
 
 #endif

@@ -88,4 +88,9 @@ private:
     char* m_szFile_snp;
 };
 
+
+void destroy(CFmMapMat* p);
+void destroy(CFmDatPheno* p);
+void destroy(CFmDatGeno* p);
+
 #endif // !defined(_FM_MAPMAT_H_)

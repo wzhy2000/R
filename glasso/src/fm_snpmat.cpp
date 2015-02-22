@@ -10,12 +10,13 @@
 
 #include <R.h>
 
-#include "fm_err.h"
 #include "fm_rlogger.h"
 #include "fm_snpmat.h"
 #include "fm_vector_str.h"
 #include "fm_vector.h"
 #include "fm_matrix.h"
+#include "fm_err.h"
+#include "fm_new.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -66,11 +67,11 @@ CFmSnpMat::~CFmSnpMat()
 
 void CFmSnpMat::FreeMemory()
 {
-    delete[] m_pData;
+    Free( m_pData );
     m_pData = NULL ;
 
-    if (m_pSnpInfos) delete m_pSnpInfos;
-    if (m_pSubjInfos) delete m_pSubjInfos;
+    if (m_pSnpInfos) destroy( m_pSnpInfos );
+    if (m_pSubjInfos) destroy( m_pSubjInfos );
 }
 
 char* CFmSnpMat::AllocateChar( int nSnps, int nSubjs )
@@ -79,7 +80,7 @@ char* CFmSnpMat::AllocateChar( int nSnps, int nSubjs )
     if (nSubjs * nSnps>1024*1024)
         _log_debug( _HI_ , "MEMORY: Try to allocate %.3fM bytes", (nSubjs * nSnps + 1)/1024.0/1024.0);
 
-    char* pData = (char*)malloc( nSubjs * nSnps + 1 ) ;
+    char* pData = Calloc( nSubjs * nSnps + 1, char ) ;
 	if (pData==NULL)
 	{
         _log_fatal( _HI_ , "MEMORY: failed to allocate %d bytes to CFmSnpMat[%d,%d].", (nSubjs * nSnps + 1)*4, nSnps, nSubjs );
@@ -115,10 +116,11 @@ bool CFmSnpMat::SetSnpInfo(int nSnp, char* szSnpName, char* szChr, char* szPos)
         return(false);
     }
 
+	CFmNewTemp refNew;
     if (szSnpName)
     {
         if (m_pSnpInfos==NULL)
-            m_pSnpInfos = new CFmVectorStr( m_nNumSnps, m_nMaxSnps );
+            m_pSnpInfos = new (refNew) CFmVectorStr( m_nNumSnps, m_nMaxSnps );
 
         if (m_nNumSnps>m_pSnpInfos->GetLength())
             m_pSnpInfos->Resize(m_nNumSnps);
@@ -139,10 +141,11 @@ bool CFmSnpMat::SetSubjName(int nSubj, char* szSubjName)
         return(false);
     }
 
+	CFmNewTemp refNew;
     if (szSubjName)
     {
         if (m_pSubjInfos==NULL)
-            m_pSubjInfos = new CFmVectorStr( m_nNumSubjs, m_nMaxSubjs );
+            m_pSubjInfos = new (refNew) CFmVectorStr( m_nNumSubjs, m_nMaxSubjs );
 
         if (m_nNumSubjs > m_pSubjInfos->GetLength())
             m_pSubjInfos->Resize(m_nNumSubjs);
@@ -309,25 +312,29 @@ int CFmSnpMat::WriteAsCSVFile(const char* filename)
 {
     CFmMatrix* pMat = this->ToMatrix();
     int ret = pMat->WriteAsCSVFile(filename);
-    delete pMat;
+    destroy(  pMat );
+
     return(ret);
 }
 
 int CFmSnpMat::ReadFromCSVFile(const char* filename,  bool bSubjName, bool bSnpName)
 {
-    CFmMatrix* pMat = new CFmMatrix(0,0);
+	CFmNewTemp refNew;
+    CFmMatrix* pMat = new (refNew) CFmMatrix(0,0);
     int ret = pMat->ReadFromCSVFile(filename, bSubjName, bSnpName);
     if (ret!=0)
         return(ret);
 
     this->FromMatrix(pMat);
-    delete pMat;
+    destroy(  pMat );
+
     return 0;
 }
 
 CFmMatrix* CFmSnpMat::ToMatrix()
 {
-    CFmMatrix* pMat = new CFmMatrix(m_nNumSnps, m_nNumSubjs);
+	CFmNewTemp refNew;
+    CFmMatrix* pMat = new (refNew) CFmMatrix(m_nNumSnps, m_nNumSubjs);
     for (int i=0;i<m_nNumSnps;i++)
         for (int j=0;j<m_nNumSubjs;j++)
             pMat->Set(i,j, Get_a(i,j)*1.0);
@@ -345,7 +352,8 @@ CFmMatrix* CFmSnpMat::GetAdd()
 
 CFmMatrix* CFmSnpMat::GetDom()
 {
-    CFmMatrix* pMat = new CFmMatrix(m_nNumSnps, m_nNumSubjs);
+	CFmNewTemp refNew;
+    CFmMatrix* pMat = new (refNew) CFmMatrix(m_nNumSnps, m_nNumSubjs);
     for (int i=0;i<m_nNumSnps;i++)
         for (int j=0;j<m_nNumSubjs;j++)
             pMat->Set(i,j, 1-(int)abs(Get_a(i,j))*1.0);
@@ -368,13 +376,15 @@ void CFmSnpMat::FromMatrix(CFmMatrix* pMat)
         for (int j = 0 ; j <m_nNumSubjs ; j++)
             Set(i, j, pMat->Get(i, j)) ;
 
-    m_pSnpInfos = new CFmVectorStr(pMat->GetRowNames());
-    m_pSubjInfos = new CFmVectorStr(pMat->GetColNames());
+	CFmNewTemp refNew;
+    m_pSnpInfos = new (refNew) CFmVectorStr(pMat->GetRowNames());
+    m_pSubjInfos = new (refNew) CFmVectorStr(pMat->GetColNames());
 }
 
 void CFmSnpMat::sd()
 {
-	m_pSD = new CFmVector( m_nNumSnps, 0 );
+	CFmNewTemp refNew;
+	m_pSD = new (refNew) CFmVector( m_nNumSnps, 0 );
 	CFmVector snpVct(m_nNumSnps);
 	for (int i=0; i<m_nNumSnps; i++)
 	{
@@ -385,4 +395,11 @@ void CFmSnpMat::sd()
 	}
 
 	m_bSD = TRUE;
+}
+
+void destroy(CFmSnpMat* p)
+{
+	CFmNewTemp  fmRef;
+	p->~CFmSnpMat();
+	operator delete(p, fmRef);
 }

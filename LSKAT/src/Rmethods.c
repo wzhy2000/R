@@ -463,26 +463,26 @@ int rmultnorm(int n, double* mu, double* vmat0, int m, double* ans)
 
     if (rmt_vs_d!=NULL && (rmt_dim<m || rmt_norm_n<n) )
     {
-        free(rmt_vs_d); rmt_vs_d = NULL;
-        free(rmt_vs_e); rmt_vs_e = NULL;
-        free(rmt_vs_u); rmt_vs_u = NULL;
-        free(rmt_vs_v); rmt_vs_v = NULL;
-        free(rmt_work); rmt_work = NULL;
-        free(rmt_vmat); rmt_vmat = NULL;
-        free(rmt_z);    rmt_z = NULL;
+        Free(rmt_vs_d); rmt_vs_d = NULL;
+        Free(rmt_vs_e); rmt_vs_e = NULL;
+        Free(rmt_vs_u); rmt_vs_u = NULL;
+        Free(rmt_vs_v); rmt_vs_v = NULL;
+        Free(rmt_work); rmt_work = NULL;
+        Free(rmt_vmat); rmt_vmat = NULL;
+        Free(rmt_z);    rmt_z = NULL;
    }
 
     if (rmt_vs_d==NULL)
     {
 //**MEMTEST: Rprintf("ALLOC MEMORY in Rmethods 1\n");
-        rmt_vs_d = (double*)malloc( sizeof(double)*m );
-        rmt_vs_e = (double*)malloc( sizeof(double)*m );
-        rmt_vs_u = (double*)malloc( sizeof(double)*m*m );
-        rmt_vs_v = (double*)malloc( sizeof(double)*m*m );
-        rmt_work = (double*)malloc( sizeof(double)*m );
-        rmt_vmat = (double*)malloc( sizeof(double)*m*m );
-        rmt_z    = (double*)malloc( sizeof(double)*m*m );
-        rmt_norm = (double*)malloc( sizeof(double)*n*m );
+        rmt_vs_d = (double*)Calloc( m,   double );
+        rmt_vs_e = (double*)Calloc( m,   double );
+        rmt_vs_u = (double*)Calloc( m*m, double );
+        rmt_vs_v = (double*)Calloc( m*m, double );
+        rmt_work = (double*)Calloc( m,   double );
+        rmt_vmat = (double*)Calloc( m*m, double );
+        rmt_z    = (double*)Calloc( m*m, double );
+        rmt_norm = (double*)Calloc( n*m, double );
         rmt_dim  = m;
         rmt_norm_n = n;
     }
@@ -576,16 +576,16 @@ int solve(double* a, int an, double* b, int bx, int by)
 
     if(sol_ipiv!=NULL && an>sol_an)
     {
-        free(sol_avals);sol_avals=NULL;
-        free(sol_ipiv);sol_ipiv=NULL;
+        Free(sol_avals);sol_avals=NULL;
+        Free(sol_ipiv);sol_ipiv=NULL;
         sol_an = 0;
     }
 
     if (sol_ipiv==NULL)
     {
 //**MEMTEST: Rprintf("ALLOC MEMORY in Rmethods 2 \n");
-        sol_ipiv = (int *) malloc( an * sizeof(int));
-        sol_avals = (double *) malloc(an * an * sizeof(double));
+        sol_ipiv = (int *) Calloc( an , int );
+        sol_avals = (double *) Calloc (an * an , double );
         sol_an = an;
     }
 
@@ -611,11 +611,11 @@ int solve(double* a, int an, double* b, int bx, int by)
 
     /*The following is checking the correction of answer???*/
     /*double* anorm = F77_CALL(dlange)("1", &an, &an, a, &an, (double*) NULL);
-    double* work = (double *) malloc(4*an*sizeof(double));
+    double* work = (double *) Calloc (4*an,  double );
     double rcond;
     F77_CALL(dgecon)("1", &an, a, &an, &anorm, &rcond, work, sol_ipiv, &info);
     double tol=0.0001;
-    free(work);
+    Free(work);
     if (rcond < tol)
         error("system is computationally singular: reciprocal condition number = %g",rcond);*/
 
@@ -679,16 +679,16 @@ double GetDeterminant( double* mat, int n )
 
     if (det_jpvt!=NULL && det_length<n )
     {
-        free(det_jpvt); det_jpvt = NULL;
-        free(det_pData); det_pData = NULL;
+        Free(det_jpvt); det_jpvt = NULL;
+        Free(det_pData); det_pData = NULL;
         det_length = 0;
    }
 
     if(det_jpvt==NULL)
     {
 //MEMTEST: Rprintf("ALLOC MEMORY in Rmethods 3 \n");
-        det_jpvt = (int *) malloc( n*sizeof(int) );
-        det_pData = (double*) malloc( n*n*sizeof(double));
+        det_jpvt = (int *) Calloc( n, int );
+        det_pData = (double*) Calloc( n*n, double );
         det_length = n;
     }
 

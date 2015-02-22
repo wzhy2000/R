@@ -1,0 +1,31 @@
+> library(Funmap2);
+||
+|| Funmap Package v.2.3-1
+|| Build date:  Sun Feb  1 16:13:56 2015 
+|| Copyright (C) 2011-2015, http://statgen.psu.edu
+|| Written by Zhong Wang(zhong.wang@yale.edu)
+||
+Covar Registration: parametric stationary autoregressive(AR) model ( AR1 )
+Covar Registration: Structured antedependence model (2) ( SAD2 )
+Cross Registration: Backcross ( BC )
+Cross Registration: F2 ( F2 )
+Cross Registration: RIL ( RIL )
+Curve Registration: Logistic Curve ( LC )
+Curve Registration: Bi-exponential Curve ( BI )
+Curve Registration: Pharmacology Curve ( PC )
+Curve Registration: Exponentiation Curve ( EXP )
+Curve Registration: Nonparametric Curve ( NP )
+> 
+> pheno_csv <- "LC.populus.pheno.csv";
+> geno_csv  <- "LC.populus.geno.csv";
+> marker_csv <- "LC.populus.marker.csv";
+> curve_type <- CURVE_LC;
+> cross_type <- CROSS_BC;
+> 
+> dat <- FM2.load_data(pheno_csv, geno_csv, marker_csv, curve_type, cross_type);
+Removing missing individuals 12 .
+> r <- FM2.permutation(dat, options=list(cluster_count=7, permu_loop=200))
+Execute the permutation, nCount=200...
+Starting parallel computing, snowfall/snow......
+R Version:  R version 3.0.2 (2013-09-25) 
+

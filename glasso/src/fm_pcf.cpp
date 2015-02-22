@@ -77,7 +77,6 @@ void CFmPcf::UpdatePcfFile( int nStatus, int nSnpSect,
     if (nMcmcRound!=-1) g_PCF.nMcmcRound = nMcmcRound;
     if (nTotalRound!=-1) g_PCF.nTotalMcmcRound = nTotalRound;
 
-    //
     if (nStatus == LONGPROC_1 || nStatus == LONGPROC_2)
     {
         g_PCF.start_timer = R_proc_time();

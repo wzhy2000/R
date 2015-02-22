@@ -63,6 +63,8 @@ private:
     CMDOPTIONS* m_pCmd;
 };
 
+void destroy( BLS_par* p );
+
 
 #endif
 

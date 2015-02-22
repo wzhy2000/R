@@ -15,15 +15,17 @@
 #include <stdlib.h>
 
 #include "Rmethods.h"
-#include "bls_model.h"
-#include "bls_dat.h"
-#include "bls_cfg.h"
 #include "fm_rlogger.h"
-#include "fm_err.h"
 #include "fm_pcf.h"
 #include "fm_sys.h"
 #include "fm_rtdump.h"
 #include "fm_rsource.h"
+#include "fm_err.h"
+#include "fm_new.h"
+
+#include "bls_model.h"
+#include "bls_dat.h"
+#include "bls_cfg.h"
 
 #define _t(x) ((x).GetTransposed())
 
@@ -39,10 +41,10 @@ BLS::BLS()
 
 BLS::~BLS()
 {
-    if (m_pDat) delete m_pDat;
-    if (m_pRes) delete m_pRes;
+    if (m_pDat) destroy( m_pDat );
+    if (m_pRes) destroy( m_pRes );
     //dont delete this point because its creator is not this class.
-    //if (m_pCfg) delete m_pCfg;
+    //if (m_pCfg) destroy( m_pCfg );
 
     _log_debug(_HI_, "BLS is released successfully.");
 }
@@ -63,7 +65,8 @@ int BLS::LoadSimulate( CMDOPTIONS *pCmd, BLS_par* pPar )
 
     _log_prompt(_HI_, "Start the data generation.");
 
-    m_pDat = new BLS_dat( pCmd );
+	CFmNewTemp  refNew;
+    m_pDat = new (refNew) BLS_dat( pCmd );
 
     pcf.UpdatePcfFile(PCF_DAT_LOAD );
     //Simulate_test??
@@ -102,7 +105,8 @@ int BLS::LoadPlink( CMDOPTIONS *pCmd )
     CFmPcf pcf;
     pcf.UpdatePcfFile(PCF_DAT_LOAD );
 
-    m_pDat = new BLS_dat(pCmd);
+	CFmNewTemp  refNew;
+    m_pDat = new (refNew) BLS_dat(pCmd);
     int ret = m_pDat->LoadPlink( pCmd->szTpedFile,
                                  pCmd->szTfamFile,
                                  pCmd->szPheFile,
@@ -139,7 +143,8 @@ int BLS::LoadSimple( CMDOPTIONS *pCmd )
     CFmPcf pcf;
     pcf.UpdatePcfFile(PCF_DAT_LOAD );
 
-    m_pDat = new BLS_dat(pCmd);
+	CFmNewTemp  refNew;
+    m_pDat = new (refNew) BLS_dat(pCmd);
     int ret = m_pDat->LoadSimple(pCmd->szSnpFile,
                                  pCmd->szPheFile,
                                  pCmd->bZNormalized,
@@ -156,11 +161,38 @@ int BLS::LoadSimple( CMDOPTIONS *pCmd )
     return(0);
 }
 
+int BLS::LoadSnpmat( CFmMatrix* pFmPhe, CFmMatrix* pFmSnp, CMDOPTIONS *pCmd )
+{
+    m_pCmd = pCmd;
+    m_nDataType = RUNMODE_SIMPLE;
+
+    _log_info(_HI_, "Check SNP/phenotype parameter.");
+
+    if ( pFmPhe->GetNumRows() != pFmSnp->GetNumCols()-2 )
+        return( ERR_TPEDFILE_LONG );
+
+    CFmPcf pcf;
+    pcf.UpdatePcfFile(PCF_DAT_LOAD );
+
+	CFmNewTemp  refNew;
+    m_pDat = new (refNew) BLS_dat(pCmd);
+    int ret = m_pDat->AttachSnpmat(pFmPhe, pFmSnp, pCmd->bZNormalized);
+    if (ret!=0)
+    {
+        _log_error(_HI_, "Failed to load the SNPMAT data.");
+        return(ret);
+    }
+
+    _log_prompt(_HI_, "SNPMAT data are loaded successfully.");
+
+    m_pDat->Summary();
+    return(0);
+}
+
 int BLS::Varsel(BLS_cfg* pCfg)
 {
     // Create Result object
-    if (m_pRes!=NULL)
-		delete m_pRes;
+    if (m_pRes!=NULL) destroy( m_pRes );
 
 	m_pCfg = pCfg;
 
@@ -175,12 +207,14 @@ int BLS::Varsel(BLS_cfg* pCfg)
     int nMcmcSnps = m_pCfg->m_nMcmcSnps;
     int nMcmcBlocks = (int)ceil(P*1.0/nMcmcSnps);
 
-    _log_prompt( _HI_, "VARSEL: SnpP:%d, SubjN:%d, nMcmcSnps: %d nMcmcBlocks: %d", P, N, nMcmcSnps, nMcmcBlocks );
+    _log_prompt(_HI_, "VARSEL: SnpP:%d, SubjN:%d, nMcmcSnps: %d nMcmcBlocks: %d", P, N, nMcmcSnps, nMcmcBlocks );
+
+	CFmNewTemp  refNew;
 
     m_bRefit = false;
-    m_pRes = new BLS_res( m_pCmd, m_pCfg );
+    m_pRes = new (refNew) BLS_res( m_pCmd, m_pCfg );
 
-    m_pRes->InitVarsel( m_pCmd->nSimuRound, P, N, nMcmcBlocks, nMcmcSnps, m_pCfg->m_nMaxIter, m_pDat->m_pCovars->GetColNames() );
+    m_pRes->InitVarsel( m_pCmd->nSimuRound, P, N, nMcmcBlocks, nMcmcSnps, m_pCfg->m_nMcmcIter, m_pDat->m_pCovars->GetColNames() );
 
     CFmPcf pcf;
     pcf.UpdatePcfFile( PCF_VARSEL, 0, nMcmcBlocks, -1, -1);
@@ -194,13 +228,13 @@ int BLS::Varsel(BLS_cfg* pCfg)
     if (strlen(m_pCmd->szRtdump)>0)
     {
         sprintf(m_szFileMat, "%s%s",m_pCmd->szRtdump, "bls.fmat");
-        r_pFileMat = new CFmFileMatrix( m_szFileMat, FALSE, TRUE);
+        r_pFileMat = new (refNew) CFmFileMatrix( m_szFileMat, FALSE, TRUE);
     }
     else
     {
 		CFmSys::GetTempFile(m_pCmd->szTmpFmat, "", MAX_PATH);
         sprintf(m_szFileMat, "%s%s",m_pCmd->szTmpFmat, "bls.fmat");
-		r_pFileMat = new CFmFileMatrix( m_szFileMat, FALSE, TRUE);
+		r_pFileMat = new (refNew) CFmFileMatrix( m_szFileMat, FALSE, TRUE);
     }
 
     CFmVector vctSnpChr(0, 0.0);
@@ -225,7 +259,7 @@ int BLS::Varsel(BLS_cfg* pCfg)
 		m_pRes->SetResult( false, gen_pA, m_pDat->m_pPhenoY->GetVar(), m_pDat->m_pCovars->GetNumCols(),
 							&vctSnpName, &vctSnpChr, &vctSnpPos, r_pFileMat );
 
-		delete gen_pA;
+		destroy( gen_pA );
 
     }
     catch(const char* str)
@@ -243,28 +277,28 @@ int BLS::Varsel(BLS_cfg* pCfg)
 
     if (strlen( m_pCmd->szRdataFile) )
     {
-        _log_prompt( _HI_, "VARSEL: Save the results into RDATA file(rdata.out=%s)", m_pCmd->szRdataFile );
+        _log_prompt(_HI_, "VARSEL: Save the results into RDATA file(rdata.out=%s)", m_pCmd->szRdataFile );
         m_pRes->SaveRData( m_pCmd->szRdataFile);
     }
 
     if (strlen( m_pCmd->szFigOutFile)>0 )
     {
-        _log_prompt( _HI_, "VARSEL: Save the figures into PDF file(fig.out=%s)", m_pCmd->szFigOutFile );
+        _log_prompt(_HI_, "VARSEL: Save the figures into PDF file(fig.out=%s)", m_pCmd->szFigOutFile );
         ExportFig(m_pCmd->szFigOutFile, false );
     }
 
     if (strlen( m_pCmd->szSigOutFile)>0 )
     {
-        _log_prompt( _HI_, "VARSEL: Save the significant SNP into CSV file(sig.out=%s)", m_pCmd->szSigOutFile);
+        _log_prompt(_HI_, "VARSEL: Save the significant SNP into CSV file(sig.out=%s)", m_pCmd->szSigOutFile);
 
 		char szSig1[MAX_PATH]={0};
 		CFmSys::GetSiblingFile( szSig1, m_pCmd->szSigOutFile, 1 );
         m_pRes->SaveSigFile( szSig1, false );
     }
 
-    delete r_pFileMat;
+    destroy( r_pFileMat );
 
-    _log_prompt( _HI_, "VARSEL: End" );
+    _log_prompt(_HI_, "VARSEL: End" );
 
     return 0;
 }
@@ -281,7 +315,7 @@ int BLS::Refit(BLS_cfg* pCfg)
 
     _log_info( _HI_, "REFIT: Start" );
 
-    int ret = m_pRes->InitRefit( m_pCfg->m_nMaxIter, m_pDat->m_pCovars->GetColNames());
+    int ret = m_pRes->InitRefit( m_pCfg->m_nMcmcIter, m_pDat->m_pCovars->GetColNames());
     if ( ret!=0 )
     {
         _log_error( _HI_, "REFIT: Failed to select siginificant snp." );
@@ -316,7 +350,9 @@ int BLS::Refit(BLS_cfg* pCfg)
     int nMcmcSnps = SnpList.GetLength();
     int nMcmcBlocks = 1;
 
-    _log_prompt( _HI_, "REFIT: SnpP:%d, SubjN:%d, nMcmcSnps: %d nMcmcBlocks: %d", P, N, nMcmcSnps, nMcmcBlocks );
+	CFmNewTemp  refNew;
+
+    _log_prompt(_HI_, "REFIT: SnpP:%d, SubjN:%d, nMcmcSnps: %d nMcmcBlocks: %d", P, N, nMcmcSnps, nMcmcBlocks );
     m_bRefit = true;
 
     CFmPcf pcf;
@@ -327,13 +363,13 @@ int BLS::Refit(BLS_cfg* pCfg)
     if (strlen(m_pCmd->szRtdump)>0)
     {
         sprintf(m_szFileMat, "%s%s",m_pCmd->szRtdump, "bls.fmat");
-        r_pFileMat = new CFmFileMatrix( m_szFileMat, FALSE, TRUE);
+        r_pFileMat = new (refNew) CFmFileMatrix( m_szFileMat, FALSE, TRUE);
     }
     else
     {
 		CFmSys::GetTempFile(m_pCmd->szTmpFmat, "", MAX_PATH);
         sprintf(m_szFileMat, "%s%s",m_pCmd->szTmpFmat, "bls.fmat");
-		r_pFileMat = new CFmFileMatrix( m_szFileMat, FALSE, TRUE);
+		r_pFileMat = new (refNew) CFmFileMatrix( m_szFileMat, FALSE, TRUE);
     }
 
     try
@@ -344,7 +380,7 @@ int BLS::Refit(BLS_cfg* pCfg)
         {
             _log_info( _HI_, "REFIT: Failed to do the MCMC procedure.");
 
-            delete r_pFileMat;
+            destroy( r_pFileMat );
             return(ret);
         }
 
@@ -357,7 +393,7 @@ int BLS::Refit(BLS_cfg* pCfg)
 		gen_pA->Transpose(); //[P, N]->[N, P]
 		m_pRes->SetResult( true, gen_pA, m_pDat->m_pPhenoY->GetVar(), m_pDat->m_pCovars->GetNumCols(),
 						 &vctSnpName, &vctSnpChr, &vctSnpPos, r_pFileMat );
-		delete gen_pA;
+		destroy( gen_pA );
     }
     catch(const char* str)
     {
@@ -366,7 +402,7 @@ int BLS::Refit(BLS_cfg* pCfg)
         //-- keep the trace tag into the log file.
         _log_error( _HI_, "REFIT: An exception is caught in the MCMC procedure. Tracetag=%s, Exception=%s", m_szTraceTag, str);
 
-        delete r_pFileMat;
+        destroy( r_pFileMat );
         return( ERR_EXCEPTION );
     }
 
@@ -377,34 +413,36 @@ int BLS::Refit(BLS_cfg* pCfg)
 
     if (strlen( m_pCmd->szRdataFile) )
     {
-        _log_prompt( _HI_, "REFIT: Save the results to RDATA file(rdata.out=%s).", m_pCmd->szRdataFile);
+        _log_prompt(_HI_, "REFIT: Save the results to RDATA file(rdata.out=%s).", m_pCmd->szRdataFile);
         m_pRes->SaveRData( m_pCmd->szRdataFile);
     }
 
     if (strlen( m_pCmd->szFigOutFile)>0 )
     {
-        _log_prompt( _HI_, "REFIT: Save the figures into PDF file(fig.out=%s)", m_pCmd->szFigOutFile );
+        _log_prompt(_HI_, "REFIT: Save the figures into PDF file(fig.out=%s)", m_pCmd->szFigOutFile );
         ExportFig(m_pCmd->szFigOutFile, true );
     }
 
     if (strlen( m_pCmd->szSigOutFile)>0 )
     {
-        _log_prompt( _HI_, "REFIT: Save the significant SNP into CSV file(sig.out=%s)", m_pCmd->szSigOutFile);
+        _log_prompt(_HI_, "REFIT: Save the significant SNP into CSV file(sig.out=%s)", m_pCmd->szSigOutFile);
 
 		char szSig1[MAX_PATH]={0};
 		CFmSys::GetSiblingFile( szSig1, m_pCmd->szSigOutFile, 2 );
         m_pRes->SaveSigFile( szSig1, true );
     }
 
-    delete r_pFileMat;
+    destroy( r_pFileMat );
 
-    _log_prompt( _HI_, "REFIT: End" );
+    _log_prompt(_HI_, "REFIT: End" );
 
     return 0;
 }
 
 int BLS::proc_mcmc( CFmVector& Y0, CFmMatrix& Covs, CFmSnpMat& gen, CFmFileMatrix* r_pFileMat)
 {
+	CFmNewTemp  refNew;
+
     //!!!TEST for R
     //int nSeed = 100;
     int nSeed = m_pCfg->GetTempId();
@@ -415,7 +453,7 @@ int BLS::proc_mcmc( CFmVector& Y0, CFmMatrix& Covs, CFmSnpMat& gen, CFmFileMatri
     CFmPcf pcf;
     int N = Y0.GetLength();   //*[N]
     int P = gen.GetNumSnps(); //*[N,P]
-    int R = m_pCfg->m_nMaxIter;
+    int R = m_pCfg->m_nMcmcIter;
 
 //**SEQTEST
     _log_debug( _HI_, "proc_mcmc() MCMC: N=%d, P=%d, Q=%d, R=%d", N, P, 1, R);
@@ -476,7 +514,7 @@ int BLS::proc_mcmc( CFmVector& Y0, CFmMatrix& Covs, CFmSnpMat& gen, CFmFileMatri
     //_log_debug( _HI_, "PART X.....McmcIter: %d", m_pCfg->m_nMaxIter);
 
     GetRNGstate();
-    for (int round=0; round<m_pCfg->m_nMaxIter; round++)
+    for (int round=0; round<m_pCfg->m_nMcmcIter; round++)
     {
         if ( round % m_pCfg->m_nMcmcHint ==0 || round<=0 )
         {
@@ -487,7 +525,8 @@ int BLS::proc_mcmc( CFmVector& Y0, CFmMatrix& Covs, CFmSnpMat& gen, CFmFileMatri
                     pDat->fProgress*100,
                     pDat->fELapsedSeconds + pDat->fEstimatedSeconds,
                     pDat->fEstimatedSeconds );
-            Rprintf( szBuf );
+            //Rprintf( szBuf );
+            _log_info( _HI_, szBuf );
         }
 
 //---------------------------------------------------
@@ -568,49 +607,51 @@ int BLS::proc_mcmc( CFmVector& Y0, CFmMatrix& Covs, CFmSnpMat& gen, CFmFileMatri
         tmp3 = Y_eps - ((*gen_pD) * d).GetCol(0);
 
         spdY_by_a = ((*gen_pA)*a).GetCol(0);
-        for (int j=0; j<P; j++)
-        {
-            spd_pA_col = gen_pA->GetCol(j);
 
-            double aMu_j = spd_pA_col.Prod( tmp3 - spdY_by_a + spd_pA_col*a[j] )/tmp[j];
-            double old_aj = a[j];
-            double new_a = rnorm( aMu_j, sqrt( aVar[j] ) );
-
-            //isnana(new_a) <==> new_a!=new_a
-            if ( new_a != new_a )
-            {
-                _log_debug( _HI_, "PART C_test.....j=%d, aMu_j=%f, var_a=%f", j, aMu_j, aVar[j]);
-
-                aVar.WriteAsCSVFile("aVar.csv");
-                a.WriteAsCSVFile("a.csv");
-                d.WriteAsCSVFile("d.csv");
-                tmp_genA.WriteAsCSVFile("tmp_genA.csv");
-                tmp.WriteAsCSVFile("tmp.csv");
-                tau2.WriteAsCSVFile("tau2.csv");
-                tmp3.WriteAsCSVFile("tmp3.csv");
-                spdY_by_a.WriteAsCSVFile("spdY_by_a.csv");
-                spd_pA_col.WriteAsCSVFile("spd_pA_col.csv");
-
-                _log_fatal( _HI_, "FAILED by NAN Problem");
-            }
-
-            a[j] = new_a;
-
+        if (m_pCmd->bAddUsed)
+			for (int j=0; j<P; j++)
 			{
-				int N_AA = 0;
-				int N_aa = 0;
-				for (int k=0;k<N;k++)
+				spd_pA_col = gen_pA->GetCol(j);
+
+				double aMu_j = spd_pA_col.Prod( tmp3 - spdY_by_a + spd_pA_col*a[j] )/tmp[j];
+				double old_aj = a[j];
+				double new_a = rnorm( aMu_j, sqrt( aVar[j] ) );
+
+				//isnana(new_a) <==> new_a!=new_a
+				if ( new_a != new_a )
 				{
-					if (spd_pA_col[k]>0) N_AA++;
-					if (spd_pA_col[k]<0) N_aa++;
+					_log_debug( _HI_, "PART C_test.....j=%d, aMu_j=%f, var_a=%f", j, aMu_j, aVar[j]);
+
+					aVar.WriteAsCSVFile("aVar.csv");
+					a.WriteAsCSVFile("a.csv");
+					d.WriteAsCSVFile("d.csv");
+					tmp_genA.WriteAsCSVFile("tmp_genA.csv");
+					tmp.WriteAsCSVFile("tmp.csv");
+					tau2.WriteAsCSVFile("tau2.csv");
+					tmp3.WriteAsCSVFile("tmp3.csv");
+					spdY_by_a.WriteAsCSVFile("spdY_by_a.csv");
+					spd_pA_col.WriteAsCSVFile("spd_pA_col.csv");
+
+					_log_fatal( _HI_, "FAILED by NAN Problem");
 				}
 
-				if (N_AA==0 || N_aa==0) a[j] = 0.0;
+				a[j] = new_a;
+
+				{
+					int N_AA = 0;
+					int N_aa = 0;
+					for (int k=0;k<N;k++)
+					{
+						if (spd_pA_col[k]>0) N_AA++;
+						if (spd_pA_col[k]<0) N_aa++;
+					}
+
+					if (N_AA==0 || N_aa==0) a[j] = 0.0;
+				}
+
+
+				spdY_by_a = spdY_by_a + spd_pA_col*(a[j]-old_aj);
 			}
-
-
-            spdY_by_a = spdY_by_a + spd_pA_col*(a[j]-old_aj);
-        }
 
 //---------------------------------------------------
 // part D in the R code
@@ -696,34 +737,36 @@ int BLS::proc_mcmc( CFmVector& Y0, CFmMatrix& Covs, CFmSnpMat& gen, CFmFileMatri
         tmp3 = Y_eps - ((*gen_pA) * a).GetCol(0);
 
         spdY_by_d = ((*gen_pD)*d).GetCol(0);
-        for (int j=0; j<P; j++)
-        {
-            spd_pD_col = gen_pD->GetCol(j);
-            double dMu_j = spd_pD_col.Prod( tmp3 - spdY_by_d + spd_pD_col*d[j] )/tmp[j];
-            double old_dj = d[j];
-            double new_d = rnorm( dMu_j, sqrt(dVar[j]));
 
-            if ( new_d != new_d )
-            {
-                _log_debug( _HI_, "PART E_test.....j=%d, dMu_j=%f, var_d=%f", j, dMu_j, dVar[j]);
+        if (m_pCmd->bDomUsed)
+			for (int j=0; j<P; j++)
+			{
+				spd_pD_col = gen_pD->GetCol(j);
+				double dMu_j = spd_pD_col.Prod( tmp3 - spdY_by_d + spd_pD_col*d[j] )/tmp[j];
+				double old_dj = d[j];
+				double new_d = rnorm( dMu_j, sqrt(dVar[j]));
 
-                dVar.WriteAsCSVFile("dVar.csv");
-                a.WriteAsCSVFile("a.csv");
-                d.WriteAsCSVFile("d.csv");
-                tmp_genD.WriteAsCSVFile("tmp_genD.csv");
-                tmp.WriteAsCSVFile("tmp.csv");
-                tau_st2.WriteAsCSVFile("tau_st2.csv");
-                tmp3.WriteAsCSVFile("tmp3.csv");
-                spdY_by_d.WriteAsCSVFile("spdY_by_d.csv");
-                spd_pD_col.WriteAsCSVFile("spd_pD_col.csv");
+				if ( new_d != new_d )
+				{
+					_log_debug( _HI_, "PART E_test.....j=%d, dMu_j=%f, var_d=%f", j, dMu_j, dVar[j]);
 
-                _log_fatal( _HI_, "FAILED by NAN Problem");
-            }
+					dVar.WriteAsCSVFile("dVar.csv");
+					a.WriteAsCSVFile("a.csv");
+					d.WriteAsCSVFile("d.csv");
+					tmp_genD.WriteAsCSVFile("tmp_genD.csv");
+					tmp.WriteAsCSVFile("tmp.csv");
+					tau_st2.WriteAsCSVFile("tau_st2.csv");
+					tmp3.WriteAsCSVFile("tmp3.csv");
+					spdY_by_d.WriteAsCSVFile("spdY_by_d.csv");
+					spd_pD_col.WriteAsCSVFile("spd_pD_col.csv");
+
+					_log_fatal( _HI_, "FAILED by NAN Problem");
+				}
 
 
-            d[j]  = new_d;
-            spdY_by_d = spdY_by_d + spd_pD_col*(d[j]-old_dj);
-        }
+				d[j]  = new_d;
+				spdY_by_d = spdY_by_d + spd_pD_col*(d[j]-old_dj);
+			}
 
 //---------------------------------------------------
 // part F in the R code
@@ -834,8 +877,8 @@ int BLS::proc_mcmc( CFmVector& Y0, CFmMatrix& Covs, CFmSnpMat& gen, CFmFileMatri
 
     PutRNGstate();
 
-    delete gen_pA;
-    delete gen_pD;
+    destroy( gen_pA );
+    destroy( gen_pD );
 
     return(0);
 }
@@ -920,7 +963,8 @@ CFmMatrix* BLS::GetPrePcaAd()
 
     _log_info( _HI_, "PREC2(ma=%.4f, md=%.4f)", fMarker_a, fMarker_d );
 
-    CFmMatrix* pSnp = new CFmMatrix(0, 0);
+	CFmNewTemp refNew;
+    CFmMatrix* pSnp = new (refNew) CFmMatrix(0, 0);
     for( int i=0; i<m_pDat->m_nSnpP; i++ )
     {
         if(fabs(vct_ca[i]) >= fMarker_a)
@@ -974,16 +1018,16 @@ int BLS::proc_prec( int nOrder )
 
     int ret = srcR.Run1(szCmd );
     if ( ret !=0 )
-        _log_prompt( _HI_, "!!proc_prec, Failed to save result to %s", szCmd );
+        _log_prompt(_HI_, "!!proc_prec, Failed to save result to %s", szCmd );
 
     CFmVector y_vect(0, 0.0);
     ret = srcR.GetGlobalVector("prec_y", &y_vect );
     if ( ret==0 )
         *(m_pDat->m_pPhenoY) =  y_vect;
     else
-        _log_prompt( _HI_, "!!proc_prec, Failed to load result from %s", szCmd );
+        _log_prompt(_HI_, "!!proc_prec, Failed to load result from %s", szCmd );
 
-    delete pPcaAd;
+    destroy( pPcaAd );
 
     return(ret);
 }
@@ -1021,9 +1065,9 @@ int BLS::ExportFig(char* szFigFile, bool bRefit )
     CFmRSource src2;
     int ret = src2.Run2(szRFile, szCmd );
     if ( ret ==0 )
-        _log_prompt( _HI_, "ExportFig,  Save the Add/Dom/H2 figure(%s)", szFig1 );
+        _log_prompt(_HI_, "ExportFig,  Save the Add/Dom/H2 figure(%s)", szFig1 );
     else
-        _log_prompt( _HI_, "!!ExportFig, Failed to Export the Add/Dom/H2 figure(%s)", szFig1 );
+        _log_prompt(_HI_, "!!ExportFig, Failed to Export the Add/Dom/H2 figure(%s)", szFig1 );
 
     //unlink(szTmpFile);
     return(ret);
@@ -1037,4 +1081,11 @@ SEXP BLS::GetRObj()
 		return(m_pRes->GetRObj());
 	else
 		return(R_NilValue);
+}
+
+void destroy(BLS* p)
+{
+	CFmNewTemp  fmRef;
+	p->~BLS();
+	operator delete(p, fmRef);
 }

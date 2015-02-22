@@ -31,7 +31,7 @@ public:
     int m_nSnpP;
     CFmPackedSNP m_PackedSNP;
     CFmVectorStr* m_pSnpNames;
-	CFmVectorStr* m_pSubIds;
+    CFmVectorStr* m_pSubIds;
 
 private:
     bool Extract_snpinfo( char* szLine, CFmVectorStr* pSigSnp );
@@ -51,7 +51,7 @@ public:
 
     CFmPackedSNP m_PackedSNP;
     CFmVectorStr* m_pSnpNames;
-	CFmVectorStr* m_pSubIds;
+    CFmVectorStr* m_pSubIds;
 
 private:
     char* m_szFile_snp;
@@ -60,13 +60,11 @@ private:
 class CFmDat_Pheno
 {
 public:
-    CFmDat_Pheno(char* szFile_pheno, bool bzNorm, char* szModel=NULL );
+    CFmDat_Pheno(char* szFile_pheno, bool bzNorm, char* szYname, char* szZname, char* szXname );
+    CFmDat_Pheno(CFmMatrix* pFmPhe, bool bzNorm, char* szYname, char* szZname, char* szXname );
     virtual ~CFmDat_Pheno();
-
-    int SetModel( char* szModel );
-    int GetModelCount( bool bIncludeEffect);
-    char* GetModelParam(int nIdx, bool bIncludeEffect);
-
+	
+    void Init();
     int LoadNonlongdt(  CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSubjs  );
     int LoadLongdt(  CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSubjs );
 
@@ -79,14 +77,24 @@ public:
     int m_nSubjN;
     int m_nMesuQ;
     int m_nCovCount;
-    CFmVectorStr* m_pModelPar;
+
+    char* m_pszXname;
+    char* m_pszYname;
+    char* m_pszZname;
+	
+    CFmVectorStr* m_pXnames;
 
 protected:
-	int RemoveMissing( CFmPackedSNP* pPackedSNP );
+    int RemoveMissing( CFmPackedSNP* pPackedSNP );
 
 private:
     char* m_szFile_pheno;
     bool m_bZnorm;
+    CFmMatrix* m_pAttachedPhe;
 };
+
+void destroy( CFmDat_Plink* p );
+void destroy( CFmDat_Simple* p );
+void destroy( CFmDat_Pheno* p );
 
 #endif

@@ -48,4 +48,6 @@ private:
 
 CFmMatrix* LoadFileMatrix(char* szFile);
 
+void destroy(CFmFileMatrix* p);
+
 #endif // _FM_FILEMATRIX_H_

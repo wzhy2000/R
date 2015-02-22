@@ -21,10 +21,16 @@ extern "C" {
 typedef struct cmd_param{
     bool bHelp;
     bool bVersion;
-    bool bDebug;
     bool bZNormalized;
+    bool bRefit;
+    bool bAddUsed;
+    bool bDomUsed;
+    int  nDebug;
     int  nRunmode;
     int  nSimuRound;
+    char szYname[MAX_PATH];
+    char szZname[MAX_PATH];
+    char szXname[MAX_PATH];
     char szAppName[MAX_PATH];
     char szParFile[MAX_PATH];
     char szTpedFile[MAX_PATH];
@@ -33,7 +39,6 @@ typedef struct cmd_param{
     char szLogFile[MAX_PATH];
     char szPheFile[MAX_PATH];
     char szSnpFile[MAX_PATH];
-    char szModel[MAX_PATH];
     char szMifFile[MAX_PATH];
     char szPcfFile[MAX_PATH];
     char szCfgFile[MAX_PATH];
@@ -68,31 +73,50 @@ int blasso_simulate( const char* szPhe_out,
 			 double* pfSimu_d_effect,
 			 double* pfSimu_covar_range,
 			 double* pfSimu_t_range,
-			 int bDebug );
+			 int nDebug );
 
-SEXP blasso_plink(  const char* pszPhefile,
+SEXP blasso_plink_tped(  const char* pszPhefile,
   		   	const char*  pzTpedFile,
   		   	const char*  szTfamFile,
-  		   	const char*  pzModel,
+  		   	const char*  pzYname,
+  		   	const char*  pzXname,
   		   	bool bRefit,
-  		   	int nMaxIter,
+  		   	bool bAddUsed,
+  		   	bool bDomUsed,
+  		   	int nMcmcIter,
 		   	double fBurnInRound,
 		   	double fRhoTuning,
 	        	double fQval_add,
 	        	double fQval_dom,
-	        	bool   bDebug);
+	        	int    nDebug);
 
 SEXP blasso_simple( const char* pszPhefile,
   		   	const char*  pzSnpfile,
-  		   	const char*  pzModel,
+  		   	const char*  pzYname,
+  		   	const char*  pzXname,
   		   	bool bRefit,
-  		   	int nMaxIter,
+  		   	bool bAddUsed,
+  		   	bool bDomUsed,
+  		   	int nMcmcIter,
 		   	double fBurnInRound,
 		   	double fRhoTuning,
 	        	double fQval_add,
 	        	double fQval_dom,
-		        bool   bDebug);
+		        int    nDebug);
 
+SEXP blasso_snpmat( SEXP pmatPhe,
+  		   	SEXP pmatSNP,
+  		   	const char*  pzYname,
+  		   	const char*  pzXname,
+  		   	bool bRefit,
+  		   	bool bAddUsed,
+  		   	bool bDomUsed,
+  		   	int nMcmcIter,
+		   	double fBurnInRound,
+		   	double fRhoTuning,
+	        	double fQval_add,
+	        	double fQval_dom,
+		        int    nDebug);
 
 
 #ifdef __cplusplus

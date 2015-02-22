@@ -144,11 +144,14 @@ protected:
 
 private:
     double*         AllocateMemory( int nLen );
+    void            FreeMemory( double* p );
     char*           m_pszBuf;
     CFmVectorStr*   m_pNames;
 } ;
 
 SEXP GetSEXP(CFmVector* pVct);
 int GetVector(SEXP pExp, CFmVector* pVct);
+void destroy(CFmVector* p);
+
 
 #endif // !defined(_FM_VECTOR_H_)

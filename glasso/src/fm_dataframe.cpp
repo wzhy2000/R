@@ -7,6 +7,7 @@
 #include "fm_vector_str.h"
 #include "fm_rlogger.h"
 #include "fm_err.h"
+#include "fm_new.h"
 
 
 #define MAX_LINE_WIDTH 256*256
@@ -27,21 +28,41 @@ CFmDataFrame::~CFmDataFrame()
     m_nNumRows = 0;
     m_nNumCols = 0;
 
-    delete m_pRowNames;
-    delete m_pColNames;
+	if (m_pRowNames) destroy( m_pRowNames );
+    if (m_pColNames) destroy( m_pColNames );
 
     for (int i=0; i<m_nNumRows; i++)
         for (int j=0; j<m_nNumCols; j++)
-            free(Get(i,j));
+        {
+			char* p = Get(i,j);
+			if(p) Free( p );
+		}
 
-    delete m_pData;
+    Free( m_pData );
+}
+
+CFmMatrix* CFmDataFrame::GetMatrix()
+{
+	CFmNewTemp refNew;
+	CFmMatrix* pMat = new (refNew) CFmMatrix(m_nNumRows, m_nNumCols);
+
+	for(int i=0; i<m_nNumCols; i++)
+	{
+		CFmVector& pVct = GetFloatCol(i);
+		pMat->SetCol(i, pVct);
+	}
+
+	pMat->SetRowNames(m_pRowNames);
+	pMat->SetColNames(m_pColNames);
+
+    return(pMat);
 }
 
 bool CFmDataFrame::Set(int nRow, int nCol, char* value)
 {
     if ( nCol<m_nNumCols && nRow < m_nNumRows )
     {
-        m_pData[  nRow*m_nNumCols + nCol] = strdup(value) ;
+        m_pData[  nRow*m_nNumCols + nCol] = Strdup(value) ;
         return true ;
     }
     else
@@ -62,7 +83,7 @@ char* CFmDataFrame::Get(int nRow, int nCol )
     {
         Rprintf("Error in DataFrame.set");
         throw("Error in DataFrame.set");
-        return false;
+        return NULL;
     }
 }
 
@@ -98,6 +119,9 @@ char* CFmDataFrame::GetColName(int idx)
 
 int CFmDataFrame::FindColumn(const char* szColumn)
 {
+	if(m_pColNames==NULL)
+		return(-1);
+
     for (int i=0;i<m_nNumCols; i++)
     {
         if ( strcasecmp ( m_pColNames->Get(i), szColumn)==0 )
@@ -109,7 +133,8 @@ int CFmDataFrame::FindColumn(const char* szColumn)
 
 CFmVector& CFmDataFrame::GetFloatCol(int idx)
 {
-    CFmVector* pNew= new CFmVector( 0, 0.0 );
+	CFmNewTemp refNew;
+    CFmVector* pNew= new (refNew) CFmVector( 0, 0.0 );
     for (int i=0;i<m_nNumRows; i++)
     {
         char* szVal = Get(i, idx) ;
@@ -131,7 +156,8 @@ CFmVector& CFmDataFrame::GetFloatCol(int idx)
 
 CFmVectorStr* CFmDataFrame::GetStringCol(int idx)
 {
-    CFmVectorStr* pNew= new CFmVectorStr( 0, 100 );
+	CFmNewTemp refNew;
+    CFmVectorStr* pNew= new (refNew) CFmVectorStr( 0, 100 );
     for (int i=0;i<m_nNumRows; i++)
         pNew->Put( Get(i, idx) );
 
@@ -153,7 +179,7 @@ int CFmDataFrame::AllocMemory( int nMaxRows, int nMaxCols )
     if( nMaxRows * nMaxCols * sizeof(char*)>1024*1024)
         _log_debug( _HI_ , "MEMORY: Try to allocate big memory(%.3fM bytes)", (nMaxRows * nMaxCols + 1)*sizeof(double)/1024.0/1024.0);
 
-    char** pData = (char**) malloc( sizeof(char*)*(nMaxRows * nMaxCols + 1) ) ;
+    char** pData = (char**) Calloc( nMaxRows * nMaxCols + 1, char* ) ;
     if (pData==NULL)
     {
         _log_fatal( _HI_ , "MEMORY: failed to allocate %d bytes to CFmMatrix[%d,%d].", (nMaxRows * nMaxCols + 1)*sizeof(double), nMaxRows, nMaxCols );
@@ -165,7 +191,7 @@ int CFmDataFrame::AllocMemory( int nMaxRows, int nMaxCols )
     if (m_pData)
     {
         memcpy(pData, m_pData, sizeof(char*) * (m_nNumCols * m_nNumRows) );
-        delete[] m_pData;
+        Free( m_pData );
     }
 
     m_pData = pData;
@@ -230,25 +256,26 @@ int CFmDataFrame::Load(const char* filename, bool bRowName, bool bColName)
     // count how many elements in the first lines
     const char seps1[] = ",\t\n\r";
 
-    char* running = strdup (aLine);
+    char* running = Strdup (aLine);
     char* runnptr = running;
     char* token = _strsep((char**)&running, seps1 );
     while(token)
     {
-        if (strlen(token)==0)
-            break;
+		if(strlen(token)!=0)
+		{
+			vctColNames.Put( token);
+		    col_size++;
+        }
 
-        vctColNames.Put( token);
-        token = _strsep( (char**)&running, seps1 );
-        col_size++;
+    	token = _strsep( (char**)&running, seps1 );
     }
 
-    free(runnptr);
+    Free(runnptr);
 
     _log_debug(_HI_, "CFmDataFrame::Load:  col_size: %d", col_size);
 
     CFmVector tmpRow(col_size, 0.0);
-    if (bRowName)
+    if (bRowName && !bColName)
         tmpRow.Resize(col_size-1);
 
     int nMaxRows = 20;
@@ -269,8 +296,8 @@ int CFmDataFrame::Load(const char* filename, bool bRowName, bool bColName)
         else
         {
             m_nNumCols = col_size-1;
-            for (int i=0; i<col_size-1; i++)
-                Set(0, i, vctColNames[i]);
+            for (int i=1; i<col_size+1; i++)
+                Set(0, i-1, vctColNames[i]);
             vctRowNames.Put( vctColNames[0] );
         }
 
@@ -283,7 +310,7 @@ int CFmDataFrame::Load(const char* filename, bool bRowName, bool bColName)
         if( fgets( aLine, MAX_LINE_WIDTH, fp ) == NULL)
             break;
 
-        char* running = strdup (aLine);
+        char* running = Strdup (aLine);
 
         vctTmpRow.Reset(0);
         char* token = _strsep( &running, seps1 );
@@ -300,7 +327,7 @@ int CFmDataFrame::Load(const char* filename, bool bRowName, bool bColName)
             token = _strsep( &running, seps1 );
         }
 
-        free(running);
+        Free(running);
         if (nNonEmty==0)
             break;
 
@@ -315,7 +342,7 @@ int CFmDataFrame::Load(const char* filename, bool bRowName, bool bColName)
         }
         else
         {
-            for (int i=1; i<col_size && i<vctTmpRow.GetLength(); i++)
+            for (int i=1; i<col_size+1 && i<vctTmpRow.GetLength(); i++)
             {
                 Set( m_nNumRows-1, i-1,  vctTmpRow[i] );
             }
@@ -326,18 +353,12 @@ int CFmDataFrame::Load(const char* filename, bool bRowName, bool bColName)
 
     fclose(fp);
 
+	CFmNewTemp refNew;
     if (bRowName)
-        m_pRowNames = new CFmVectorStr( &vctRowNames );
+        m_pRowNames = new (refNew) CFmVectorStr( &vctRowNames );
 
     if (bColName)
-    {
-        m_pColNames = new CFmVectorStr( &vctColNames );
-        if (bRowName)
-        {
-            CFmVector vct(1,0);
-            m_pColNames->RemoveElements(vct);
-        }
-    }
+        m_pColNames = new (refNew) CFmVectorStr( &vctColNames );
 
     _log_debug(_HI_, "CFmDataFrame::Load:%d,%d", m_nNumRows, m_nNumCols);
 
@@ -363,4 +384,11 @@ char *rtrim(char *s)
 char *trim(char *s)
 {
     return rtrim(ltrim(s));
+}
+
+void destroy(CFmDataFrame* p)
+{
+	CFmNewTemp  fmRef;
+	p->~CFmDataFrame();
+	operator delete(p, fmRef);
 }

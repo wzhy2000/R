@@ -3,6 +3,7 @@
 
 class CFmVectorStr;
 class CFmVector;
+class CFmMatrix;
 
 class CFmDataFrame
 {
@@ -25,6 +26,8 @@ public:
     CFmVectorStr* RGetColNames();
 
     int Load(const char* szFile, bool bRowName, bool bColName);
+	
+    CFmMatrix* GetMatrix();
 
 private:
     int AllocMemory( int nMaxRows, int nMaxCols );
@@ -39,5 +42,6 @@ private:
 
 };
 
+void destroy(CFmDataFrame* p);
 
 #endif // _FM_DATAFRAME_H_

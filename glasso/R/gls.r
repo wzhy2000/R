@@ -13,25 +13,25 @@
 #simu_d_effect[2] = 4, 1.045, 1.320, 1.905,  1.535
 #simu_d_effect[3] = 5, 1.265, -1.225, 2.710, -1.96
 
-gls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 200, simu_p, simu_snp_rho, simu_rho, simu_sigma2= 16, 
+gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n, simu_p, simu_snp_rho, simu_rho, simu_sigma2= 16, 
 		 simu_mu= c(13.395, -3.08, 1.875, -3.195), 
 		 simu_covar_effect = array(c(0,0,0,0), dim=c(1,4)), simu_covar_range = c(-1, 1),
 		 simu_add_effect=NA,  simu_dom_effect=NA, 
 		 simu_z_range = c(20,80), simu_z_count = c(5,12), debug=F)
 {
-	if( is.na(simu_grp) || length(simu_grp) > 1)
+	if( missing(simu_grp) || length(simu_grp) > 1)
 		stop("The parameter of simu_grp is not a single valid value.");
 
-	if( is.na(simu_n) || length(simu_n) > 1)
+	if( missing(simu_n) || length(simu_n) > 1)
 		stop("The parameter of simu_n is not a single valid value.");
 
-	if( is.na(simu_p) || length(simu_p) > 1)
+	if( missing(simu_p) || length(simu_p) > 1)
 		stop("The parameter of simu_n is not a single valid value.");
 	
-	if( is.na(simu_snp_rho) || length(simu_snp_rho) > 1)
+	if( missing(simu_snp_rho) || length(simu_snp_rho) > 1)
 		stop("The parameter of simu_snp_rho is not a single valid value.");
 
-	if( is.na(simu_rho) || length(simu_rho) > 1)
+	if( missing(simu_rho) || length(simu_rho) > 1)
 		stop("The parameter of simu_rho is not a single valid value.");
 	
 	if( is.na(simu_sigma2) || length(simu_sigma2) > 1)
@@ -78,8 +78,8 @@ gls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 200, simu_p, simu_
 	err <- 0;
 	
 	out <- .C("gls_simulate", 
-		   as.character(phe.out),			# char* szPhe_out
-  		   as.character(snp.out), 			# char* szSnp_out
+		   as.character(file.phe.out),			# char* szPhe_out
+  		   as.character(file.snp.out), 			# char* szSnp_out
   		   as.integer(simu_grp), 			# int nSimu_grp
   		   as.integer(simu_n), 				# int nSimu_n
   		   as.integer(simu_p), 				# int nSimu_p
@@ -103,127 +103,492 @@ gls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 200, simu_p, simu_
 	return(err);		   
 }
 
-gls.simple<-function(phe.file, snp.file, model, bRefit=T,    
-	    nMaxIter = 2000,
-	    fBurnInRound = 0.3,
-	    fRhoTuning = 0.09,
-	    fQval.add  = 0.05,
-	    fQval.dom  = 0.09,
-	    debug=F)
+gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL )  
 {
-	r <- .Call("gls_simple", 
-			phe.file,
-  		   	snp.file, 
-  		   	model, 
-  		   	bRefit,
-  		   	nMaxIter,
-		   	fBurnInRound,
-		   	fRhoTuning,
-	           	fQval.add,
-	           	fQval.dom,
-			debug);
-	add_c19 <- c("grp", "pos", "add.m1", "add.m2", "add.m3", "add.m4",
-		"add_L2.mu", "add.mu1", "add.mu2", "add.mu3", "add.mu4",
-		"add_L2.min", "add.min1", "add.min2", "add.min3", "add.min4",
-		"add_L2.max", "add.max1", "add.max2", "add.max3", "add.max4" );
-	dom_c19 <- c("grp", "pos", "dom.m1", "dom.m2", "dom.m3", "dom.m4",
-		"dom_L2.mu", "add.mu1", "add.mu2", "add.mu3", "dom.mu4",
-		"dom_L2.min", "dom.min1", "dom.min2", "dom.min3", "dom.min4",
-		"dom_L2.max", "dom.max1", "dom.max2", "dom.max3", "dom.max4" );
-	cov_c19 <- c("cov.m1", "cov.m2", "cov.m3", "cov.m4",
-		"co_L2.mu", "cov.mu1", "cov.mu2", "cov.mu3", "cov.mu4",
-		"co_L2.min", "cov.min1", "cov.min2", "cov.min3", "cov.min4",
-		"co_L2.max", "cov.max1", "cov.max2", "cov.max3", "cov.max4" );
+	cat( "[ GLASSO SIMPLE ] Procedure.\n");
+	cat( "Checking the parameters ......\n");
 
+	if ( missing(file.phe) || missing(file.snp) || missing(Y.prefix) || missing(Z.prefix) || missing(covar.names) )
+             stop("! file.phe, file.snp, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
 
-	if(!is.null(r) && !is.na(r))
+	if ( !(is.character(Y.prefix) && length(Y.prefix)==1 ) )
+		stop("! The parameter of Y.prefix should be assigned with a prefix of outcome column in the phenotypic data.");
+	if ( !(is.character(Z.prefix) && length(Z.prefix)==1 ) )
+		stop("! The parameter of Z.prefix should be assigned with a prefix of time column in the phenotypic data.");
+	if ( !missing("covar.names") && length(covar.names)>0 && !is.character(covar.names) )
+		stop("! The parameter of covar.names should be assigned with covariate names in the phenotypic data.");
+	if ( !(is.logical(refit) && length(refit)==1 ) )
+		stop("! The parameter of refit should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(add.used) && length(add.used)==1 ) )
+		stop("! The parameter of add.used should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(dom.used) && length(dom.used)==1 ) )
+		stop("! The parameter of dom.used should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(fgwas.filter) && length(fgwas.filter)==1 ) )
+		stop("! The parameter of fgwas.filter should be a logical value(TRUE or FALSE).");
+	
+	cat("* Phenotypic Data File = ",  file.phe, "\n");
+	cat("* Simpe SNP File = ",  file.snp, "\n");
+
+	show_gls_parameters( Y.prefix, Z.prefix, covar.names, refit, add.used, dom.used, fgwas.filter ) ;
+
+	if (missing(options)) 
+		options <- get_default_options()
+	else	
 	{
-		if (!is.null(r$varsel_add)) colnames(r$varsel_add) <- add_c19;
-		if (!is.null(r$varsel_dom)) colnames(r$varsel_dom) <- dom_c19;
-		if (!is.null(r$varsel_cov)) colnames(r$varsel_cov) <- cov_c19;
-		if (!is.null(r$refit_add)) colnames(r$refit_add) <- add_c19;
-		if (!is.null(r$refit_dom)) colnames(r$refit_dom) <- dom_c19;
-		if (!is.null(r$refit_cov)) colnames(r$refit_cov) <- cov_c19;
-		
-		row.cov <- c<-("Mu");
-		if(NROW(r$varsel_cov)>1)
-		{
-			for(k in 1:(NROW(r$varsel_cov)-1))
-				row.cov <- c(row.cov, paste("Cov_",k,sep=""));
-			rownames(r$varsel_cov) <- row.cov;
-		}
-		
-		row.cov <- c<-("Mu");
-		if(NROW(r$refit_cov)>1)
-		{
-			for(k in 1:(NROW(r$refit_cov)-1))
-				row.cov <- c(row.cov, paste("Cov_",k,sep=""));
-			rownames(r$refit_cov) <- row.cov;
-		}
-		
-		class(r) <- "GLS.ret";
-	}
+		options0 <- get_default_options();
+        	options0[names(options)] <- options;
+        	options <- options0;
+    	}
+	
+	cat( "Checking the optional items......\n");
+	show_options( options);
+	
+	r.gls <- list();
+	r.filter <- list();
 
+	if( options$nPiecewise.ratio==0 && fgwas.filter )
+	{
+		cat( "Genetic Effect Analysis by GLASSO method......\n");
+
+		r <- .Call("gls_simple", 
+				file.phe,
+				file.snp, 
+				Y.prefix, 
+				Z.prefix, 
+  		   		paste(covar.names, collapse=","), 
+				refit,
+				add.used,
+				dom.used,
+				options$nMcmcIter,
+				options$fBurnInRound,
+				options$fRhoTuning,
+				options$fQval.add,
+				options$fQval.dom,
+				ifelse( options$debug, 3, 1) );
+	}			
+	else
+	{
+		tb.phe <- read.csv(file.phe, header=T);
+		tb.snp <- read.csv(file.snp, header=T);
+
+		subset_op <- function(snpmat, sub.idx)
+		{
+			return( snpmat[sub.idx,,drop=F] );
+		}
+		
+		if(fgwas.filter)
+		{
+			r.filter <- snpmat_fgwas_filter( tb.phe, tb.snp, Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
+			if( r.filter$error )
+				stop(r.filter$err.info);
+		
+			r.gls <- snpmat_parallel(
+				NROW( r.filter$snp.mat ),
+				subset_op,
+				r.filter$snp.mat,
+				tb.phe,
+				Y.prefix, 
+				Z.prefix,
+				covar.names,
+				refit,
+				add.used,
+				dom.used,
+				options$nPiecewise.ratio,
+				options$nMcmcIter,
+				options$fBurnInRound,
+				options$fRhoTuning,
+				options$fQval.add,
+				options$fQval.dom,
+				options$debug,
+				options$nParallel.cpu,
+				"GLS");
+		}
+		else
+		{
+			r.gls <- snpmat_parallel(
+				NROW( tb.snp ),
+				subset_op,
+				tb.snp,
+				tb.phe,
+				Y.prefix, 
+				Z.prefix,
+				covar.names,
+				refit,
+				add.used,
+				dom.used,
+				options$nPiecewise.ratio,
+				options$nMcmcIter,
+				options$fBurnInRound,
+				options$fRhoTuning,
+				options$fQval.add,
+				options$fQval.dom,
+				options$debug,
+				options$nParallel.cpu,
+				"GLS");
+		}
+	}
+	
+	options$params <- list( file.phe       = file.phe, 
+				file.snp       = file.snp, 
+				Y.prefix       = Y.prefix, 
+				Z.prefix       = Z.prefix, 
+				covar.names    = covar.names, 
+				refit          = refit, 
+				add.used       = add.used, 
+				dom.used       = dom.used, 
+				fgwas.filter   = fgwas.filter);
+	
+	r <- wrap_GLS_ret(r.gls, r.filter, options);
+	
 	return(r);		   
 }
 
-gls.plink<-function( phe.file, tped.file, tfam.file, model, bRefit=TRUE,    
-	    nMaxIter   = 2000,
-	    fBurnInRound = 0.3,
-	    fRhoTuning = 0.095,
-	    fQval.add  = 0.05,
-	    fQval.dom  = 0.09,
-	    debug=F)
+gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL )        
 {
-	r <- .Call("gls_plink", 
-			phe.file,
-  		   	tped.file, 
-  		   	fam.file, 
-  		   	model, 
-  		   	bRefit,
-  		   	nMaxIter,
-		   	fBurnInRound,
-		   	fRhoTuning,
-	           	fQval.add,
-	           	fQval.dom,
-			debug);
+	cat( "[ GLASSO PLINK ] Procedure.\n");
+	cat( "Checking the parameters ......\n");
 
-	add_c19 <- c("grp", "pos", "add.m1", "add.m2", "add.m3", "add.m4",
-		"add_L2.mu", "add.mu1", "add.mu2", "add.mu3", "add.mu4",
-		"add_L2.min", "add.min1", "add.min2", "add.min3", "add.min4",
-		"add_L2.max", "add.max1", "add.max2", "add.max3", "add.max4" );
-	dom_c19 <- c("grp", "pos", "dom.m1", "dom.m2", "dom.m3", "dom.m4",
-		"dom_L2.mu", "add.mu1", "add.mu2", "add.mu3", "dom.mu4",
-		"dom_L2.min", "dom.min1", "dom.min2", "dom.min3", "dom.min4",
-		"dom_L2.max", "dom.max1", "dom.max2", "dom.max3", "dom.max4" );
-	cov_c19 <- c("cov.m1", "cov.m2", "cov.m3", "cov.m4",
-		"co_L2.mu", "cov.mu1", "cov.mu2", "cov.mu3", "cov.mu4",
-		"co_L2.min", "cov.min1", "cov.min2", "cov.min3", "cov.min4",
-		"co_L2.max", "cov.max1", "cov.max2", "cov.max3", "cov.max4" );
+	if ( missing(file.phe) || missing(file.plink.bed) || missing(file.plink.bim) || missing(file.plink.fam) || 
+             missing(Y.prefix) || missing(Z.prefix) || missing(covar.names) )
+             stop("! file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
 
-	if(!is.null(r) && !is.na(r))
+	if ( !(is.character(Y.prefix) && length(Y.prefix)==1 ) )
+		stop("! The parameter of Y.prefix should be assigned with a prefix of outcome column in the phenotypic data.");
+	if ( !(is.character(Z.prefix) && length(Z.prefix)==1 ) )
+		stop("! The parameter of Z.prefix should be assigned with a prefix of time column in the phenotypic data.");
+	if ( !missing("covar.names") && length(covar.names)>0 && !is.character(covar.names) )
+		stop("! The parameter of covar.names should be assigned with covariate names in the phenotypic data.");
+	if ( !(is.logical(refit) && length(refit)==1 ) )
+		stop("! The parameter of refit should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(add.used) && length(add.used)==1 ) )
+		stop("! The parameter of add.used should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(dom.used) && length(dom.used)==1 ) )
+		stop("! The parameter of dom.used should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(fgwas.filter) && length(fgwas.filter)==1 ) )
+		stop("! The parameter of fgwas.filter should be a logical value(TRUE or FALSE).");
+
+	cat("* Phenotypic Data File = ",  file.phe, "\n");
+	cat("* PLINK BED File = ",  file.plink.bed, "\n");
+	cat("* PLINK BIM File = ",  file.plink.bim, "\n");
+	cat("* PLINK FAM File = ",  file.plink.fam, "\n")
+	
+	show_gls_parameters( Y.prefix, Z.prefix, covar.names, refit, add.used, dom.used, fgwas.filter ) ;
+
+	if (missing(options)) 
+		options <- get_default_options()
+	else	
 	{
-		if (!is.null(r$varsel_add)) colnames(r$varsel_add) <- add_c19;
-		if (!is.null(r$varsel_dom)) colnames(r$varsel_dom) <- dom_c19;
-		if (!is.null(r$varsel_cov)) colnames(r$varsel_cov) <- cov_c19;
-		if (!is.null(r$refit_add)) colnames(r$refit_add) <- add_c19;
-		if (!is.null(r$refit_dom)) colnames(r$refit_dom) <- dom_c19;
-		if (!is.null(r$refit_cov)) colnames(r$refit_cov) <- cov_c19;
+		options0 <- get_default_options();
+        	options0[names(options)] <- options;
+        	options <- options0;
+    	}
+	
+	cat( "Checking the optional items......\n");
+	show_options( options);
 
-		row.cov <- c<-("Mu");
-		for(k in 1:NROW(r$varsel_cov))
-			row.cov <- c(row.cov, paste("Cov_",k,sep=""));
-		rownames(r$varsel_cov) <- row.cov;
+	if(!require(snpStats))
+		stop("Package snpStats is required to load PLINK dataset!");
 
-		row.cov <- c<-("Mu");
-		for(k in 1:NROW(r$refit_cov))
-			row.cov <- c(row.cov, paste("Cov_",k,sep=""));
-		rownames(r$refit_cov) <- row.cov;
+	pd <- load_plink_binary( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe );
+	if( is.null(pd) )
+		stop("Failed to load PLINK dataset!");
+	
+	r.filter <- list();
+	r.gls <- list();
+
+	if( fgwas.filter)
+	{
+		# call FGWAS.R to do FILTER and the gls__snpmat
+		r.filter <- plink_fgwas_filter( pd, Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
+		if( r.filter$error )
+			stop(r.filter$err.info);
 		
-		class(r) <- "GLS.ret";
+		subset_op <- function(snpmat, sub.idx)
+		{
+			return( snpmat[sub.idx,,drop=F] );
+		}
+
+		r.gls <- snpmat_parallel(
+			NROW( r.filter$snp.mat ),
+			subset_op,
+			r.filter$snp.mat,
+			pd$phe.mat,
+  		   	Y.prefix, 
+  		   	Z.prefix,
+  		   	covar.names,
+  		   	refit,
+  		   	add.used,
+  		   	dom.used,
+  		   	options$nPiecewise.ratio,
+  		   	options$nMcmcIter,
+		   	options$fBurnInRound,
+		   	options$fRhoTuning,
+	           	options$fQval.add,
+	           	options$fQval.dom,
+			options$debug,
+			options$nParallel.cpu,
+			"GLS");
+
 	}
+	else
+	{
+		subset_op <- function(snpmat, sub.idx)
+		{
+			snp.sub <- get_sub_snp(snpmat, sub.idx );
+			snp.mat <- cbind( snp.sub$info[,c(2,3)], snp.sub$snp )
+			return( snp.mat );
+		}
+		
+		r.gls <- snpmat_parallel(
+			NCOL( pd$snp.mat$genotypes ),
+			subset_op,
+			pd$snp.mat,
+			pd$phe.mat,
+  		   	Y.prefix, 
+  		   	Z.prefix,
+  		  	covar.names,
+  		   	refit,
+  		   	add.used,
+  		   	dom.used,
+  		   	options$nPiecewise.ratio,
+  		   	options$nMcmcIter,
+		   	options$fBurnInRound,
+		   	options$fRhoTuning,
+	           	options$fQval.add,
+	           	options$fQval.dom,
+			options$debug,
+			options$nParallel.cpu,
+			"GLS");
+	}
+	
+	options$params <- list( file.phe       = file.phe, 
+				file.plink.bed = file.plink.bed, 
+				file.plink.bim = file.plink.bim, 
+				file.plink.fam = file.plink.fam,				
+				Y.prefix       = Y.prefix, 
+				Z.prefix       = Z.prefix, 
+				covar.names    = covar.names, 
+				refit          = refit, 
+				add.used       = add.used, 
+				dom.used       = dom.used, 
+				fgwas.filter   = fgwas.filter);
+	
+	r <- wrap_GLS_ret(r.gls, r.filter, options);
 			
 	return(r);		   
+}
+
+gls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=T, dom.used=T, options=NULL )       
+{
+	cat( "[ GLASSO PLINK(tped) ] Procedure.\n");
+	cat( "Checking the parameters ......\n");
+
+	if ( missing(file.phe) || missing(file.plink.tped) || missing(file.plink.tfam) ||
+             missing(Y.prefix) || missing(Z.prefix) || missing(covar.names) )
+             stop("! file.phe, file.plink.tped, file.plink.tfam, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
+
+	if ( !(is.character(Y.prefix) && length(Y.prefix)==1 ) )
+		stop("! The parameter of Y.prefix should be assigned with a prefix of outcome column in the phenotypic data.");
+	if ( !(is.character(Z.prefix) && length(Z.prefix)==1 ) )
+		stop("! The parameter of Z.prefix should be assigned with a prefix of time column in the phenotypic data.");
+	if ( !missing("covar.names") && length(covar.names)>0 && !is.character(covar.names) )
+		stop("! The parameter of covar.names should be assigned with covariate names in the phenotypic data.");
+	if ( !(is.logical(refit) && length(refit)==1 ) )
+		stop("! The parameter of refit should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(add.used) && length(add.used)==1 ) )
+		stop("! The parameter of add.used should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(dom.used) && length(dom.used)==1 ) )
+		stop("! The parameter of dom.used should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(fgwas.filter) && length(fgwas.filter)==1 ) )
+		stop("! The parameter of fgwas.filter should be a logical value(TRUE or FALSE).");
+
+	cat("* Phenotypic Data File = ",  file.phe, "\n");
+	cat("* PLINK TPED File = ",  file.plink.tped, "\n");
+	cat("* PLINK TFAM File = ",  file.plink.tfam, "\n");
+
+	show_gls_parameters( Y.prefix, Z.prefix, covar.names, refit, add.used, dom.used, fgwas.filter ) ;
+
+	if (missing(options)) 
+		options <- get_default_options()
+	else	
+	{
+		options0 <- get_default_options();
+        	options0[names(options)] <- options;
+        	options <- options0;
+    	}
+	
+	cat( "Checking the optional items......\n");
+	show_options( options);
+
+	cat( "Genetic Effect Analysis by BLASSO method......\n");
+
+	r.filter <- list();
+	r.gls <- .Call("gls_plink_tped", 
+			file.phe,
+	   		file.plink.tped, 
+		   	file.plink.tfam, 
+ 		   	Y.prefix, 
+  		   	Z.prefix, 
+	   		paste(covar.names, collapse=","), 
+  		   	refit,
+  		   	add.used,
+  		   	dom.used,
+  		   	options$nMcmcIter,
+		   	options$fBurnInRound,
+		   	options$fRhoTuning,
+	           	options$fQval.add,
+	           	options$fQval.dom,
+			ifelse( options$debug,3 , 1) );
+
+	options$params <- list( file.phe       = file.phe, 
+				file.plink.tped= file.plink.tped, 
+				file.plink.tfam= file.plink.tfam, 
+				Y.prefix       = Y.prefix, 
+				Z.prefix       = Z.prefix, 
+				covar.names    = covar.names, 
+				refit          = refit, 
+				add.used       = add.used, 
+				dom.used       = dom.used );
+
+	r <- wrap_GLS_ret(r.gls, r.filter, options);
+			
+	return(r);		   
+}
+
+gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL)     
+{
+	cat( "[ GLASSO SNPMAT ] Procedure.\n");
+	cat( "Checking the parameters ......\n");
+
+	if ( missing(phe.mat) || missing(snp.mat) || missing(Y.prefix) || missing(Z.prefix) || missing(covar.names) )
+             stop("! phe.mat, snp.mat, file.plink.tfam, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
+
+	if ( !(is.character(Y.prefix) && length(Y.prefix)==1 ) )
+		stop("! The parameter of Y.prefix should be assigned with a prefix of outcome column in the phenotypic data.");
+	if ( !(is.character(Z.prefix) && length(Z.prefix)==1 ) )
+		stop("! The parameter of Z.prefix should be assigned with a prefix of time column in the phenotypic data.");
+	if ( !missing("covar.names") && length(covar.names)>0 && !is.character(covar.names) )
+		stop("! The parameter of covar.names should be assigned with covariate names in the phenotypic data.");
+	if ( !(is.logical(refit) && length(refit)==1 ) )
+		stop("! The parameter of refit should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(add.used) && length(add.used)==1 ) )
+		stop("! The parameter of add.used should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(dom.used) && length(dom.used)==1 ) )
+		stop("! The parameter of dom.used should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(fgwas.filter) && length(fgwas.filter)==1 ) )
+		stop("! The parameter of fgwas.filter should be a logical value(TRUE or FALSE).");
+
+	cat("* Phenotypic Matrix = ",  dim(phe.mat), "\n");
+	cat("* SNP Matrix = ",  dim(snp.mat), "\n");
+
+	show_gls_parameters( Y.prefix, Z.prefix, covar.names, refit, add.used, dom.used, fgwas.filter ) ;
+
+	if (missing(options)) 
+		options <- get_default_options()
+	else	
+	{
+		options0 <- get_default_options();
+        	options0[names(options)] <- options;
+        	options <- options0;
+    	}
+	
+	cat( "Checking the optional items......\n");
+	show_options( options);
+
+
+	r.gls <- list();
+	r.filter <- list();
+
+	if( options$nPiecewise.ratio==0 && fgwas.filter )
+	{
+		cat( "Genetic Effect Analysis by GLASSO method......\n");
+
+		r.gls <- .Call("gls_snpmat", 
+			phe.mat,
+  		   	snp.mat, 
+  		   	Y.prefix, 
+  		   	Z.prefix, 
+  		   	paste(covar.names, collapse=","), 
+  		   	refit,
+  		   	add.used,
+  		   	dom.used,
+  		   	options$nMcmcIter,
+		   	options$fBurnInRound,
+		   	options$fRhoTuning,
+	           	options$fQval.add,
+	           	options$fQval.dom,
+			ifelse( options$debug, 3, 1) );
+	}
+	else
+	{
+		subset_op <- function(snpmat, sub.idx)
+		{
+			return( snpmat[sub.idx,,drop=F] );
+		}
+
+		if(fgwas.filter)
+		{
+			r.filter <- snpmat_fgwas_filter( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
+			if( r.filter$error )
+				stop(r.filter$err.info);
+		
+			r.gls <- snpmat_parallel(
+				NROW(r.filter$snp.mat),
+				subset_op,
+				r.filter$snp.mat,
+				tb.phe,
+				Y.prefix, 
+				Z.prefix,
+				covar.names,
+				refit,
+				add.used,
+				dom.used,
+				options$nPiecewise.ratio,
+				options$nMcmcIter,
+				options$fBurnInRound,
+				options$fRhoTuning,
+				options$fQval.add,
+				options$fQval.dom,
+				options$debug,
+				options$nParallel.cpu,
+				"GLS");
+		}
+		else
+		{
+			r.gls <- snpmat_parallel(
+				NROW(snp.mat),
+				subset_op,
+				snp.mat,
+				phe.mat,
+				Y.prefix, 
+				Z.prefix,
+				paste(covar.names, collapse=","), 
+				refit,
+				add.used,
+				dom.used,
+				options$nPiecewise.ratio,
+				options$nMcmcIter,
+				options$fBurnInRound,
+				options$fRhoTuning,
+				options$fQval.add,
+				options$fQval.dom,
+				options$debug,
+				options$nParallel.cpu,
+				"GLS");
+		}
+	}
+
+	options$params <- list( Y.prefix       = Y.prefix, 
+				Z.prefix       = Z.prefix, 
+				covar.names    = covar.names, 
+				refit          = refit, 
+				add.used       = add.used, 
+				dom.used       = dom.used, 
+				fgwas.filter   = fgwas.filter);
+	
+	r <- wrap_GLS_ret( r.gls, r.filter, options );
+
+	return(r);
 }
 
 summary_output2<-function(re1, re_add, re_dom)
@@ -234,7 +599,10 @@ summary_output2<-function(re1, re_add, re_dom)
 		cat(sprintf("%s \t %s \t %d%d%d%d \t%.3f\t(%.3f,%.3f,%.3f,%.3f)\n", 
 			rownames(re1)[i], ifelse(re1[i,1], "Yes", "---"), 
 			re1[i,1], re1[i,2], re1[i,3], re1[i,4], 
-			re1[i,5], re1[i,6], re1[i,7], re1[i,8], re1[i,9] ));  
+			
+			re1[i,5], 
+			
+			re1[i,6], re1[i,7], re1[i,8], re1[i,9] ));  
 
 	cat("(2) Significant SNPs Estimate:\n");
 
@@ -252,10 +620,7 @@ summary_output2<-function(re1, re_add, re_dom)
 		
 		cat("\n");  
 	}	
-}
 
-summary.GLS.ret<-function(r.gls)
-{
 	if(!is.null(r.gls$refit_add))
 	{
 		cat("Refit Result\n");
@@ -268,210 +633,269 @@ summary.GLS.ret<-function(r.gls)
 	}
 }
 
-plot.GLS.ret<-function(r.gls, bRefit=T)
+
+merge_add_dom<-function( re_add, re_dom )
 {
-	ad <- NA;
-	if (bRefit)
+	if( is.null(re_add) && is.null(re_dom) ) 
+		return(NULL);
+		
+	idx.add <- c();
+	if(!is.null(re_add))
+		idx.add <- which( rowSums( re_add[,c(3:6)] ) > 0  )
+	idx.dom <- c();
+	if(!is.null(re_dom))
+		idx.dom <- which( rowSums( re_dom[,c(3:6)] ) > 0  )
+
+	idx.sig <- unique(c( idx.add, idx.dom ));	
+	
+	if( length(idx.sig)==0 ) return(NULL);
+	
+	sig.add <- NULL;
+	if(!is.null(re_add)) sig.add <- re_add[ idx.sig, c(1:11), drop=F];
+	sig.dom <- NULL;
+	if(!is.null(re_dom)) sig.dom <- re_dom[ idx.sig, c(1:11), drop=F];
+	
+	sig.mat <- c();
+	if( !is.null(sig.dom) && !is.null(sig.add) )
+		sig.mat <- data.frame(sig.add[,c(1,2),drop=F], 
+				Add.Sig = rowSums( sig.add[,c(3:6),drop=F]), 
+				sig.add[,c(7:11),drop=F], 
+				Dom.Sig = rowSums( sig.dom[,c(3:6),drop=F]), 
+				sig.dom[,c(7:11),drop=F] )
+	else if( !is.null(sig.add) )
+		sig.mat <- data.frame(sig.add[,c(1,2),drop=F], 
+				Add.Sig = rowSums( sig.add[,c(3:6),drop=F]), 
+				sig.add[,c(7:11),drop=F], 
+				array(NA, dim=c(length(idx.sig), 6)) )
+	else
+		sig.mat <- data.frame( sig.dom[,c(1,2),drop=F], 
+				array( NA, dim=c(length(idx.sig), 6) ), 
+				Dom.Sig = rowSums( sig.dom[, c(3:6), drop=F] ), 
+				sig.dom[,c(7:11),drop=F] );
+				
+	colnames(sig.mat) <- c( "chr", "pos", 
+				"add.sig", "add.mode", "add.mu1", "add.mu2", "add.mu3", "add.mu4",
+				"dom.sig", "dom.mode", "dom.mu1", "dom.mu2", "dom.mu3", "dom.mu4" );
+				
+	rownames(sig.mat) <- rownames( ifelse( is.null(sig.dom), sig.add, sig.dom) );
+
+	return(sig.mat);
+}
+
+summary.GLS.ret<-function(r.gls)
+{
+	r.sum.ret <- list();
+
+	if(!is.null( r.gls$refit_cov ) && NROW( r.gls$refit_cov )>0 )
 	{
-		if( !is.null(r.gls$refit_add) )
+		re1 <- r.gls$refit_cov;
+		r.sum.ret$refit_cov <- data.frame(  
+					Mode  = round(re1[,5], digits=3), 
+					L1    = round(re1[,6], digits=3), 
+					L2    = round(re1[,7], digits=3), 
+					L3    = round(re1[,8], digits=3), 
+					L4    = round(re1[,9], digits=3) );
+		rownames(r.sum.ret$refit_cov) <- rownames( re1 );
+	}
+
+	r.add <- !is.null( r.gls$refit_add ) && NROW( r.gls$refit_add )>0;
+	r.dom <- !is.null( r.gls$refit_dom ) && NROW( r.gls$refit_dom )>0;
+	if( r.add || r.dom )
+		r.sum.ret$refit <- merge_add_dom( r.gls$refit_add, r.gls$refit_dom);
+	
+	if(!is.null( r.gls$varsel_cov ) && NROW( r.gls$varsel_cov )>0 )
+	{
+		re3 <- r.gls$varsel_cov;
+		r.sum.ret$varsel_cov <- data.frame(  
+					Mode  = round(re3[,5], digits=3), 
+					L1    = round(re3[,6], digits=3), 
+					L2    = round(re3[,7], digits=3), 
+					L3    = round(re3[,8], digits=3), 
+					L4    = round(re3[,9], digits=3) );
+		rownames(r.sum.ret$varsel_cov) <- rownames( re3 );
+	}
+	
+	r.add <- !is.null( r.gls$varsel_add ) && NROW( r.gls$varsel_add )>0;
+	r.dom <- !is.null( r.gls$varsel_dom ) && NROW( r.gls$varsel_dom )>0;
+	if( r.add || r.dom )
+		r.sum.ret$refit <- merge_add_dom( r.gls$varsel_add, r.gls$varsel_dom);
+
+	if(!is.null(r.gls$fgwas.filter))
+	{
+		re5 <- r.gls$fgwas.filter;
+		fgwas.sig <- which( re5[,5] <= r.gls$options$fgwas.cutoff );
+		if(length(fgwas.sig)>0)
 		{
-			ad <- rbind( r.gls$refit_add[,7], r.gls$refit_dom[,7]);
+			fgwas_sigs <- re5[ fgwas.sig, , drop=F];
+			fgwas.sig.inc <- order(fgwas_sigs[,5]);
+			r.sum.ret$fgwas_sig <- fgwas_sigs[fgwas.sig.inc,];
+		}
+	}
+
+	class(r.sum.ret) <- "sum.GLS.ret";
+	
+	r.sum.ret
+}
+
+print.sum.GLS.ret<-function(r.sum.ret)
+{
+	if(!is.null(r.sum.ret$fgwas_sig))
+	{
+		cat("--- Significant SNPs Estimate by fGWAS method:", NROW(r.sum.ret$fgwas_sig), "SNPs\n");
+		if( NROW(r.sum.ret$fgwas_sig)>25 )
+		{
+			cat("Top 25 SNPs:\n");
+			show(r.sum.ret$fgwas_sig[1:25,,drop=F]);
+		}
+		else	
+			show(r.sum.ret$fgwas_sig);
+	}
+
+	if(!is.null(r.sum.ret$varsel_cov))
+	{
+		cat("--- Covariate Estimate in Varsel Procedure:\n");
+		show(r.sum.ret$varsel_cov);
+	}
+	
+	if(!is.null(r.sum.ret$varsel))
+	{
+		cat("--- Variable Selection Result:", NROW(r.sum.ret$varsel), "SNPs\n");
+		if( NROW(r.sum.ret$varsel)>25 )
+		{
+			cat("Top 25 SNPs:\n");
+			show(r.sum.ret$varsel[1:25,,drop=F]);
 		}
 		else
-			stop("No refit results\n");		
+			show(r.sum.ret$varsel );
+	}
+
+	if(!is.null(r.sum.ret$refit_cov))
+	{
+		cat("--- Covariate Estimate in Refit Procedure:\n");
+		show(r.sum.ret$refit_cov);
+	}
+	
+	if(!is.null(r.sum.ret$refit))
+	{
+		cat("--- Refit Result:", NROW(r.sum.ret$refit), "SNPs\n");
+		show(r.sum.ret$refit);
+	}
+}
+
+wrap_GLS_ret<-function(r.gls, r.filter, options )
+{
+	cat( "Wrapping the results ......\n");
+
+	add_c19 <- c("grp", "pos", "add.m1", "add.m2", "add.m3", "add.m4",
+		"add_L2.mu", "add.mu1", "add.mu2", "add.mu3", "add.mu4",
+		"add_L2.min", "add.min1", "add.min2", "add.min3", "add.min4",
+		"add_L2.max", "add.max1", "add.max2", "add.max3", "add.max4" );
+	dom_c19 <- c("grp", "pos", "dom.m1", "dom.m2", "dom.m3", "dom.m4",
+		"dom_L2.mu", "dom.mu1", "dom.mu2", "dom.mu3", "dom.mu4",
+		"dom_L2.min", "dom.min1", "dom.min2", "dom.min3", "dom.min4",
+		"dom_L2.max", "dom.max1", "dom.max2", "dom.max3", "dom.max4" );
+	cov_c19 <- c("cov.m1", "cov.m2", "cov.m3", "cov.m4",
+		"co_L2.mu", "cov.mu1", "cov.mu2", "cov.mu3", "cov.mu4",
+		"co_L2.min", "cov.min1", "cov.min2", "cov.min3", "cov.min4",
+		"co_L2.max", "cov.max1", "cov.max2", "cov.max3", "cov.max4" );
+
+	if(!is.null(r.gls) && !is.na(r.gls))
+	{
+		if (!is.null(r.gls$varsel_add)) colnames(r.gls$varsel_add) <- add_c19;
+		if (!is.null(r.gls$varsel_dom)) colnames(r.gls$varsel_dom) <- dom_c19;
+		if (!is.null(r.gls$varsel_cov)) colnames(r.gls$varsel_cov) <- cov_c19;
+		if (!is.null(r.gls$refit_add))  colnames(r.gls$refit_add) <- add_c19;
+		if (!is.null(r.gls$refit_dom))  colnames(r.gls$refit_dom) <- dom_c19;
+		if (!is.null(r.gls$refit_cov))  colnames(r.gls$refit_cov) <- cov_c19;
+		
+		row.cov <- c("Intercept", options$params$covar.names);
+		if( !is.null(r.gls$varsel_cov) && NROW(r.gls$varsel_cov)>0)
+			rownames(r.gls$varsel_cov) <- row.cov;
+		
+		if( !is.null(r.gls$refit_cov) && NROW(r.gls$refit_cov)>0)
+			rownames(r.gls$refit_cov) <- row.cov;
+	
+		if(!is.null(r.gls$varsel_PSRF))
+		{
+			colnames(r.gls$varsel_PSRF) <- r.gls$varsel_PSRF[1,];
+			r.gls$varsel_PSRF <- r.gls$varsel_PSRF[-1,]
+		}	
+
+		if(!is.null(r.gls$refit_PSRF))
+		{
+			colnames(r.gls$refit_PSRF) <- r.gls$refit_PSRF[1,];
+			r.gls$refit_PSRF <- r.gls$refit_PSRF[-1,]
+			
+		}	
+
+		if(!is.null(r.filter)) r.gls$fgwas.filter <- r.filter$r;
+		
+		r.gls$options <- options;
+
+		class(r.gls) <- "GLS.ret";
+	}		
+	
+	return(r.gls);
+}
+
+show_gls_parameters<-function( Y.prefix, Z.prefix, covar.names, refit, add.used, dom.used, fgwas.filter ) 
+{
+	cat( "* Response Variable =",   Y.prefix, "\n");
+	cat( "* Time Variable =",   Z.prefix, "\n");
+	cat( "* Covariate Columns =",  covar.names, "\n");
+	cat( "* fGWAS Filter Used =",  ifelse( fgwas.filter, "Yes", "No"), "\n");
+	cat( "* Additive Effects Used =",  ifelse( add.used, "Yes", "No"), "\n");
+	cat( "* Dominant Effects Used =",  ifelse( dom.used, "Yes", "No"), "\n");
+	cat( "* Refit Procedure =",   ifelse( refit, "Yes", "No"), "\n");
+}
+
+get_sig_gls_snp <- function( r.gls )
+{
+	if( is.null(r.gls$varsel_add) && is.null(r.gls$varsel_dom) ) return( NULL );
+
+	idx.sig.add <- which( rowSums(r.gls$varsel_add[,c(3:6)]) > 0 );
+	idx.sig.dom <- which( rowSums(r.gls$varsel_dom[,c(3:6)]) > 0 );
+	idx.sig <- unique(c(idx.sig.dom, idx.sig.add));
+	
+	if (length( idx.sig )==0) return(NULL);
+	
+	return(idx.sig);
+}
+
+
+plot.GLS.ret<-function( r.gls, fig.prefix=NULL )
+{
+	if(!is.null(r.gls$fgwas.filter))
+	{
+		filter.man <- r.gls$fgwas.filter[, c(1,2,5), drop=F]
+		draw_man_fgwas( filter.man, fig.prefix, "fgwas" );
 	}
 	else
+		cat("! No fGWAS filter results.\n");		
+		
+	if( !is.null(r.gls$varsel_add) || !is.null(r.gls$varsel_dom))
 	{
-		if( !is.null(r.gls$varsel_add) )
-		{
-			ad <- rbind( r.gls$varsel_add[,7], r.gls$varsel_dom[,7]);
-		}
-		else
-			stop("No varible selection results\n");		
-	}
-	
-	par(mar=c(4.5, 4, 0.5, 2) + 0.1);
-	plot.new();
-  	par(mfrow=c(2,1));
-	
-	par(mfg=c(1, 1));
-	draw_snplist( ad[,1], "Estimated additive effect", sigpos_list=NULL);
-	par(mfg=c(2, 1));
-	draw_snplist( ad[,2], "Estimated dominant effect", sigpos_list=NULL);
-}
+		varsel <- ifelse( !is.null(r.gls$varsel_add), 
+				r.gls$varsel_add[, c(1,2), drop=F], 
+				r.gls$varsel_dom[, c(1,2), drop=F] );
 
-
-gls.outputpdf<-function( r.gls, fig.file, bRefit=T)
-{
-	ad <- NA;
-	if (bRefit)
-	{
-		if( !is.null(r.gls$refit_add) )
-		{
-			ad <- rbind( r.gls$refit_add[,7], r.gls$refit_dom[,7]);
-		}
-		else
-			stop("No refit results\n");		
+		varsel<- cbind( varsel, ifelse (!is.null( r.gls$varsel_add), r.gls$varsel_add[,7], 0) );
+		varsel<- cbind( varsel, ifelse (!is.null( r.gls$varsel_dom), r.gls$varsel_dom[,7], 0) );
+		# H2
+		varsel<- cbind( varsel, 0 );
+		
+		draw_man_adh2( varsel, fig.prefix, "varsel" );
 	}
 	else
-	{
-		if( !is.null(r.gls$varsel_add) )
-		{
-			ad <- rbind( r.gls$varsel_add[,7], r.gls$varsel_dom[,7]);
-		}
-		else
-			stop("No varible selection results\n");		
-	}
-	
-	pdf(fig.file, width=6, height=4.5);
+		cat("! No varible selection results.\n");		
 
-	par(mar=c(4.5, 4, 0.5, 2) + 0.1);
-	plot.new();
-  	par(mfrow=c(2,1));
-	
-	par(mfg=c(1, 1));
-	draw_snplist( ad[,1], "Estimated additive effect", sigpos_list=NULL);
-	par(mfg=c(2, 1));
-	draw_snplist( ad[,2], "Estimated dominant effect", sigpos_list=NULL);
-	
-	dev.off();
+	if( !is.null(r.gls$refit_add) || !is.null(r.gls$refit_dom) )
+	{
+		refit<- merge_add_dom( r.gls$refit_add, r.gls$refit_dom);
+
+		draw_refit_curve( refit, fig.prefix, "curve" );
+	}
+	else
+		cat("! No refit results.\n");		
 }
 
-draw_snplist<-function( values, yLabel, sigpos_list=NULL)
-{
-	xlim <- c(0, length(values));
-	ylim <- range(values);
-	nB <- length(values);
-	snps <- c(0:nB);
-
-	plot(1:10,1:10, xlim=xlim, ylim=ylim, type="n", xlab="SNP", ylab=yLabel);
-	rect(snps[-(nB+1)], 0, snps[-1L], values,  col = "blue", border = "black");
-}
-
-#--------------------------------------------------------------
-# plot_sig_curve
-# 
-# Input:pvs[,1]  snp_name
-#       pvs[,2]  chromoseom no
-#       pvs[,3]  position
-#       pvs[,4-7]    QQ or Additive
-#       pvs[,8-11]   Qq or Dominant
-#       pvs[,12-15]  qq
-# fig.file: pdf file name
-#
-# Used by: GLS,DYN
-#--------------------------------------------------------------
-plot_sig_curve<-function( pvs.csv, fig.file, n.lgr = 4)
-{
-	pvs <- read.csv( pvs.csv, header=TRUE);
-
-	n.row <- (length(pvs[,2])-1)%/%3 + 1;
-	n.col <- 3;
-
-	pdf(fig.file, width=6, height=n.row*2);
-	
-  	par( mfrow=c(n.row,n.col) );
-
-	for (i in 1:n.row )
-	for (j in 1:n.col )
-	{
-		if ( (i-1)*3+j > length(pvs[,2]) )
-			break;
-
-		n.par <- (i-1)*3+j;
-		par(mfg=c(i, j));
-		QQ.par<- pvs[n.par ,4:(4+n.lgr-1)];
-		Qq.par<- pvs[n.par ,(4+n.lgr):(4+n.lgr*2-1)];
-		qq.par <- NULL;
-		if ( length(pvs[1,])>=(4+n.lgr*2) )
-			qq.par<- pvs[n.par ,(4+n.lgr*2):(4+n.lgr*3-1)];
-
-		if ( length(pvs[1,])>=(4+n.lgr*2) )
-			draw_single_curve( pvs[n.par, 1], QQ=QQ.par, Qq=Qq.par, qq=qq.par )
-		else
-			draw_single_curve( pvs[n.par, 1], add=QQ.par, dom=Qq.par);
-	}
-
-	dev.off();
-}
-
-draw_single_curve<-function( snp_name, QQ=NULL, Qq=NULL, qq=NULL, add=NULL, dom=NULL )
-{
-	old.p1 <- par( mar=c(2,2,1,1)+0.1);
-	on.exit(par(old.p1),add = T);
-
-	tp <- seq(-1, 1, 0.05);
-	#ui <- cbind( rep(1, length(tp)), tp, (3*tp^2-1)/2, (5*tp^3-3*tp)/2 ) ;
-	ui <- cbind( rep(1, length(tp)), tp, (3*tp^2-1)/2, (5*tp^3-3*tp)/2, (35*tp^4-30*tp^2+3)/8 ) ;
-	
-	y <- c();
-	if (!is.null(QQ))  y <- cbind(y, ui%*%t(QQ))
-	if (!is.null(Qq))  y <- cbind(y, ui%*%t(Qq))
-	if (!is.null(qq))  y <- cbind(y, ui%*%t(qq))
-	if (!is.null(add)) y <- cbind(y, ui%*%t(add))
-	if (!is.null(dom)) y <- cbind(y, ui%*%t(dom))
-
-	ylim.max <- max(y, na.rm=T)*1.1;
-	ylim.min <- min(y, na.rm=T)*1.1;
-	if (ylim.min > 0)
-	   ylim.min - min(y, na.rm=T)*0.9;
-	if (ylim.min>0) ylim.min = 0;
-
-	y.num <- length(tp);
-
-	plot( c(0,0), c(0,0), type="n", xaxt="s", yaxt="s", yaxs="i", main=snp_name, 
-		  xlab="Time", ylab="Y", xlim=c(-1, 1.2), ylim=c( ylim.min, ylim.max ) );
-
-	cur.lab <- c();
-	cur.col <- c();
-
-	if (!is.null(QQ))
-	{
-		y <- ui%*%t(QQ);
-		lines(tp, y, col="red");
-		cur.lab <- c( cur.lab, "QQ");
-		cur.col <- c( cur.col, "red");
-	}
-
-	if (!is.null(Qq))
-	{
-		y <- ui%*%t(Qq);
-		lines(tp, y, col="green");
-		cur.lab <- c( cur.lab, "Qq");
-		cur.col <- c( cur.col, "green");
-	}
-
-	if (!is.null(qq))
-	{
-		y <- ui%*%t(qq);
-		lines(tp, y, col="blue");
-		cur.lab <- c( cur.lab, "qq");
-		cur.col <- c( cur.col, "blue");
-	}
-
-	if (!is.null(add))
-	{
-		y <- ui%*%t(add);
-		lines(tp, y, col="orange");
-		cur.lab <- c( cur.lab, "Add");
-		cur.col <- c( cur.col, "orange");
-	}
-
-	if (!is.null(dom))
-	{
-		y <- ui%*%t(dom);
-		lines(tp, y, col="purple");
-		cur.lab <- c( cur.lab, "Dom");
-		cur.col <- c( cur.col, "purple");
-	}
-
-	legend( "topright", 
-				   legend = cur.lab,
-	               text.width = strwidth("ABC"),
-				   text.col = cur.col,
-	               col = cur.col,
-				   lty=1,
-	               xjust = 1, 
-	               yjust = 1,
-				   cex=0.8)
-}

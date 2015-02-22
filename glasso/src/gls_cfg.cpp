@@ -16,6 +16,7 @@
 
 #include "fm_rlogger.h"
 #include "fm_err.h"
+#include "fm_new.h"
 #include "gls_cfg.h"
 
 GLS_cfg::GLS_cfg():CFmSys()
@@ -24,7 +25,7 @@ GLS_cfg::GLS_cfg():CFmSys()
 	m_nTaskId = 11;
     m_nMcmcHint = 100;
 
-    m_nMaxIter = 2000;
+    m_nMcmcIter = 2000;
     m_nMcmcSnps =100000;
     m_fRhoTuning = 0.095;
     m_fBurnInRound = 0.3; //30%
@@ -45,7 +46,7 @@ GLS_cfg::GLS_cfg(char* szCfgFile):CFmSys()
 	m_nTaskId = 11;
     m_nMcmcHint = 100;
 
-    m_nMaxIter = 2000;
+    m_nMcmcIter = 2000;
     m_nMcmcSnps =100000;
     m_fRhoTuning = 0.095;
     m_fBurnInRound = 0.3; //30%
@@ -113,7 +114,7 @@ int GLS_cfg::Load(char* szCfgFile)
         char tmp[256];
         if ( extract_value(aLine, "max_iter", tmp ) )
         {
-            m_nMaxIter = atoi(tmp);
+            m_nMcmcIter = atoi(tmp);
             continue;
         }
         if ( extract_value(aLine, "mcmc_snps", tmp ) )
@@ -181,6 +182,12 @@ int GLS_cfg::Load(char* szCfgFile)
 
 int GLS_cfg::GetBurnInRound()
 {
-    return((int)round(m_fBurnInRound*m_nMaxIter));
+    return((int)round(m_fBurnInRound*m_nMcmcIter));
 }
 
+void destroy(GLS_cfg* p)
+{
+	CFmNewTemp  fmRef;
+	p->~GLS_cfg();
+	operator delete(p, fmRef);
+}

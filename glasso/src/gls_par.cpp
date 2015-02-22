@@ -11,12 +11,14 @@
 #include <Rdefines.h>
 #include <Rmath.h>
 
-#include "gls_dat.h"
-#include "gls_cfg.h"
-#include "gls_par.h"
 #include "Rmethods.h"
 #include "fm_rlogger.h"
 #include "fm_err.h"
+#include "fm_new.h"
+
+#include "gls_dat.h"
+#include "gls_cfg.h"
+#include "gls_par.h"
 
 GLS_par::GLS_par( CMDOPTIONS* pCmd )
 {
@@ -28,7 +30,7 @@ GLS_par::GLS_par( CMDOPTIONS* pCmd )
 GLS_par::~GLS_par()
 {
     if(m_szParFile)
-        free(m_szParFile);
+        Free(m_szParFile);
 
     _log_info(_HI_, "GLS_par is released successfully.");
 }
@@ -333,7 +335,7 @@ int GLS_par::Load(char* szParFile)
     fclose( fp );
 
     sig_p = Get_SigP();
-    m_szParFile = strdup(szParFile);
+    m_szParFile = Strdup(szParFile);
 
     _log_info(_HI_, "parameter file is loaded successfully.(sig_p:%d)", sig_p);
 
@@ -400,4 +402,12 @@ int GLS_par::Summary( char* szOutFile )
     }
 
     return(0);
+}
+
+
+void destroy(GLS_par* p)
+{
+	CFmNewTemp  fmRef;
+	p->~GLS_par();
+	operator delete(p, fmRef);
 }

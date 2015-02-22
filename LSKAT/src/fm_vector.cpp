@@ -15,6 +15,7 @@
 #include "fm_vector.h"
 #include "fm_rlogger.h"
 #include "fm_err.h"
+#include "fm_new.h"
 
 int CFmVector::_DV=0;
 CFmVector** CFmVector::g_pReused =NULL;
@@ -118,8 +119,10 @@ CFmVector::CFmVector(const CFmVector& pOther)
 
 CFmVector::~CFmVector()
 {
-    if (m_pszBuf) delete m_pszBuf;
+    if (m_pszBuf) Free(m_pszBuf);
     m_pszBuf = NULL;
+
+ //Rprintf("Destructor Vector(%X)\n", this);
 
 	Release();
 }
@@ -413,7 +416,7 @@ void CFmVector::operator=(CFmVector& other)
 	if (m_nMaxLen<other.GetLength())
     {
         double* pData = AllocateMemory(other.GetLength() + 100);
-        delete []m_pData ;
+        FreeMemory(m_pData);
         m_pData = pData;
         m_nMaxLen = other.GetLength() + 100;
     }
@@ -435,7 +438,7 @@ void CFmVector::Set(CFmVector& other)
         Rprintf(" %x, OP  Ve = Vo%d, %d\n",this, m_nMaxLen, other.GetLength() );
 
         double* pData = AllocateMemory(other.GetLength() + 100);
-        delete []m_pData ;
+        FreeMemory( m_pData );
         m_pData = pData;
         m_nMaxLen = other.GetLength() + 100;
     }
@@ -584,7 +587,7 @@ void CFmVector::Put(double fValue)
         m_nMaxLen += 100;
         double* pData = AllocateMemory( m_nMaxLen );
         memcpy( pData, m_pData, m_nActLen*sizeof(double));
-        delete[] m_pData;
+        FreeMemory( m_pData );
         m_pData=pData;
     }
 
@@ -599,7 +602,7 @@ void CFmVector::Append(CFmVector& other)
         m_nMaxLen += (other.GetLength()+100);
         double* pData = AllocateMemory( m_nMaxLen );
         memcpy( pData, m_pData, m_nActLen*sizeof(double));
-        delete[] m_pData;
+        FreeMemory( m_pData );
         m_pData=pData;
     }
 
@@ -710,7 +713,8 @@ void CFmVector::Release()
 	{
 		if (!m_bReuse)
 		{
-			delete []m_pData ;
+//Rprintf("DOUBLEs Freed:%X!\n", m_pData);
+			FreeMemory(m_pData);
 			m_pData = NULL ;
 		}
 		else
@@ -720,9 +724,16 @@ void CFmVector::Release()
 	}
 }
 
+void CFmVector::FreeMemory( double* p )
+{
+	Free(p);
+}
+
 double* CFmVector::AllocateMemory( int nLen )
 {
-    double	*pData = new double[ nLen + 1 ] ;
+    double	*pData = Calloc( nLen + 1, double);
+//Rprintf("%d DOUBLEs allocated(%X)!\n", nLen + 1, this);
+
 //**MEMTEST:fprintf(stderr,"ALLOC MEMORY(CFmVector): %d[%d], %s\n", (nLen + 1)*sizeof(double),nLen, m_bReuse?"YES":"NO" );
 
 	if (pData==NULL)
@@ -743,7 +754,7 @@ void CFmVector::Resize(int nLen, bool reset)
 {
 	if (m_nMaxLen < nLen )
     {
-        delete[] m_pData;
+        FreeMemory( m_pData );
         m_nMaxLen = nLen+100;
         m_pData = AllocateMemory(m_nMaxLen);
     }
@@ -759,7 +770,7 @@ CFmVector* CFmVector::FindReuseVector( int nLen)
 {
 	if (g_pReused==NULL)
 	{
-        g_pReused = (CFmVector**)malloc( sizeof(CFmVector*)*REUSE_VECTOR_COUNT );
+        g_pReused = (CFmVector**)Calloc( REUSE_VECTOR_COUNT,  CFmVector* );
         memset(g_pReused, 0, sizeof(CFmVector*)*REUSE_VECTOR_COUNT );
 	}
 
@@ -778,7 +789,8 @@ CFmVector* CFmVector::FindReuseVector( int nLen)
 		}
 	}
 
-    CFmVector* pVct = new CFmVector(nLen, 0.0, -1, true);
+	CFmNewTemp fmRef;
+    CFmVector* pVct = new (fmRef) CFmVector(nLen, 0.0, -1, true);
 	if (_DV) Rprintf("***NEW VECTOR(%d): Len=%d\n", pVct->m_nObjId, nLen);
 	if ( pVct->m_nObjId > 5000 )
 		_DV=1;
@@ -966,7 +978,7 @@ char* CFmVector::GetCommaString(const char* szFormat)
 {
     if (!m_pszBuf)
     {
-        m_pszBuf = (char*)malloc(1024+128);
+        m_pszBuf = (char*)Calloc(1024+128, char);
         memset( m_pszBuf, 0, 1024+128);
     }
     else
@@ -992,8 +1004,9 @@ char* CFmVector::GetCommaString(const char* szFormat)
 
 void CFmVector::SetNames( CFmVectorStr* pNames)
 {
-    if ( m_pNames ) delete m_pNames;
-    m_pNames = new CFmVectorStr(pNames);
+    if ( m_pNames ) destroy( m_pNames );
+    CFmNewTemp fmRef;
+    m_pNames = new (fmRef) CFmVectorStr(pNames);
 }
 
 CFmVectorStr* CFmVector::GetNames()
@@ -1102,4 +1115,11 @@ void CFmVector::StatCache(int* pnTotal, int* pnUsed)
 	}
 
 	return;
+}
+
+void destroy(CFmVector* p)
+{
+	CFmNewTemp fmRef;
+	p->~CFmVector();
+	operator delete(p, fmRef);
 }

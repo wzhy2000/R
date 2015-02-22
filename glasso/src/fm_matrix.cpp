@@ -10,9 +10,10 @@
 
 #include <R.h>
 
-#include "fm_err.h"
 #include "fm_matrix.h"
 #include "fm_rlogger.h"
+#include "fm_err.h"
+#include "fm_new.h"
 
 #define MAX_MARGIN_COL  20
 #define MAX_MARGIN_ROW  20
@@ -23,9 +24,10 @@ static char THIS_FILE[]=__FILE__;
 //#define new DEBUG_NEW
 #endif
 
+#define Strdup(X) strcpy(Calloc(strlen(X)+1, char), X) ;
 #define MI(rows, cols, nrow, ncol) (nrow+ncol*rows)
 
-std::list<CFmMatrix*> CFmMatrix::g_matList;
+//std::list<CFmMatrix*> CFmMatrix::g_matList;
 CFmMatrix** CFmMatrix::g_pReused =NULL;
 int CFmMatrix::g_nObjCount=0;
 
@@ -96,8 +98,10 @@ CFmMatrix::CFmMatrix(const CFmMatrix *pOther, bool bReused )
 
     m_pRowNames = NULL;
     m_pColNames = NULL;
-    if( pOther->m_pRowNames) m_pRowNames = new CFmVectorStr( pOther->m_pRowNames );
-    if( pOther->m_pColNames) m_pColNames = new CFmVectorStr( pOther->m_pColNames );
+
+    CFmNewTemp fmRef;
+    if( pOther->m_pRowNames) m_pRowNames = new (fmRef) CFmVectorStr( pOther->m_pRowNames );
+    if( pOther->m_pColNames) m_pColNames = new (fmRef) CFmVectorStr( pOther->m_pColNames );
 
     AddRef() ;
 }
@@ -148,8 +152,8 @@ CFmMatrix::CFmMatrix(int size, bool set_diagonal, double init_val, bool bReused 
 	m_bReuse = bReused;
 	m_nNumCols = size ;
 	m_nNumRows = size ;
-    m_nMaxCols = m_nNumCols>=MAX_MARGIN_COL?m_nNumCols:MAX_MARGIN_COL;
-    m_nMaxRows = m_nNumRows>=MAX_MARGIN_ROW?m_nMaxRows:MAX_MARGIN_ROW;
+    m_nMaxCols = size>=MAX_MARGIN_COL?size:MAX_MARGIN_COL;
+    m_nMaxRows = size>=MAX_MARGIN_ROW?size:MAX_MARGIN_ROW;
 
     m_pData = AllocateDouble(m_nMaxRows, m_nMaxCols) ;
 
@@ -198,25 +202,33 @@ CFmMatrix::~CFmMatrix()
 #ifdef _DEBUG
     TRACE("Destroying CFmMatrix object %1d\n", m_nObjId) ;
 #endif
+//    Rprintf("Destroying CFmMatrix object %X\n", this ) ;
+
 	Release() ;
 }
 
 void CFmMatrix::SetId(const char* szId)
 {
-    if (m_pId) free(m_pId);
-    m_pId = strdup(szId);
+    if (m_pId) Free(m_pId);
+    m_pId = Strdup(szId);
 }
 
 void CFmMatrix::FreeMemory()
 {
-    if (m_pId) free(m_pId);
+    if (m_pId) Free(m_pId);
     m_pId = NULL;
 
-    delete[] m_pData;
+    FreeDouble(m_pData);
     m_pData = NULL ;
 
-    if (m_pRowNames) delete m_pRowNames;
-    if (m_pColNames) delete m_pColNames;
+    if (m_pRowNames) destroy( m_pRowNames);
+    if (m_pColNames) destroy( m_pColNames);
+}
+
+void CFmMatrix::FreeDouble( double* pData )
+{
+//Rprintf("%X DOUBLEs Freed!\n", pData);
+    Free(pData);
 }
 
 #ifdef _DEBUG
@@ -271,7 +283,9 @@ double* CFmMatrix::AllocateDouble( int nRows, int nCols )
     if( nCols * nRows * sizeof(double)>1024*1024)
         _log_debug( _HI_ , "MEMORY: Try to allocate big memory(%.3fM bytes) for %s", (nCols * nRows + 1)*sizeof(double)/1024.0/1024.0, m_pId);
 
-    pData = new double[ nCols * nRows + 1] ;
+    pData = Calloc( nCols * nRows + 1, double);
+//Rprintf("%d DOUBLEs allocated(%X)!\n",  nCols * nRows + 1, pData);
+
 	if (pData==NULL)
 	{
         _log_fatal( _HI_ , "MEMORY: failed to allocate %d bytes to CFmMatrix[%d,%d] for %s.", (nCols * nRows + 1)*sizeof(double), nRows, nCols, m_pId );
@@ -544,7 +558,7 @@ void CFmMatrix::operator=( CFmMatrix &other)
 	if (m_nMaxCols*m_nMaxRows < other.m_nNumCols*other.m_nNumRows)
     {
         double* pData = AllocateDouble(other.m_nMaxRows, other.m_nMaxCols);
-        delete[] m_pData;
+        FreeDouble( m_pData );
         m_pData = pData;
         m_nMaxRows = other.m_nMaxRows;
         m_nMaxCols = other.m_nMaxCols;
@@ -769,8 +783,8 @@ double CFmMatrix::Get(int nRow, int nCol) const
 void CFmMatrix::AddRef()
 {
 	m_nRefer ++;
-    if (m_nRefer==1 && !m_bReuse)
-        g_matList.push_back( this );
+    //if (m_nRefer==1 && !m_bReuse)
+    //    g_matList.push_back( this );
 
     //if (!m_bReuse)
     //    Rprintf("CFmMatrix:[REUSE:%s]%d, %s,%d[%d,%d]\n", m_bReuse?"YES":"NO", g_matList.size(), m_pId, m_nObjId, m_nNumCols, m_nNumRows );
@@ -778,10 +792,10 @@ void CFmMatrix::AddRef()
 
 void CFmMatrix::GlobalDump()
 {
-    std::list<CFmMatrix*>::iterator it;
+    //std::list<CFmMatrix*>::iterator it;
     Rprintf( "CFmMatrix::GlobalDump:\n" );
-    for ( it=g_matList.begin() ; it != g_matList.end(); it++ )
-        Rprintf( "%s:%d[%d,%d]\n", (*it)->m_pId, (*it)->m_nObjId, (*it)->m_nNumRows, (*it)->m_nNumCols );
+    //for ( it=g_matList.begin() ; it != g_matList.end(); it++ )
+    //    Rprintf( "%s:%d[%d,%d]\n", (*it)->m_pId, (*it)->m_nObjId, (*it)->m_nNumRows, (*it)->m_nNumCols );
 }
 
 void CFmMatrix::Release()
@@ -792,7 +806,7 @@ void CFmMatrix::Release()
 		if (!m_bReuse)
 		{
             //Rprintf("Before CFmMatrix:%d, %s,%d[%d,%d]\n", g_matList.size(), m_pId, m_nObjId, m_nNumCols, m_nNumRows );
-            g_matList.remove(this);
+            //g_matList.remove(this);
             //Rprintf("After CFmMatrix:%d\n", g_matList.size());
 
             FreeMemory();
@@ -1141,7 +1155,7 @@ void CFmMatrix::Cbind(CFmMatrix &other)
         {
             m_nMaxRows = m_nNumRows;
             double* pData= AllocateDouble( m_nMaxRows, m_nMaxCols);
-            delete[] m_pData;
+            FreeDouble( m_pData );
             m_pData = pData;
         }
     }
@@ -1211,7 +1225,7 @@ void CFmMatrix::Cbind(CFmVector &other, char* szColName)
         {
             m_nMaxRows = m_nNumRows;
             double* pData= AllocateDouble( m_nMaxRows, m_nMaxCols);
-            delete[] m_pData;
+            FreeDouble( m_pData );
             m_pData = pData;
         }
     }
@@ -1269,7 +1283,7 @@ void CFmMatrix::Cbind(const double *pData, int nLen, char* szColName)
         {
             m_nMaxRows = m_nNumRows;
             double* pData= AllocateDouble( m_nMaxRows, m_nMaxCols);
-            delete[] m_pData;
+            FreeDouble( m_pData );
             m_pData = pData;
         }
     }
@@ -1320,7 +1334,7 @@ void CFmMatrix::Cbind(const double val, int nLen, char* szColName)
         {
             m_nMaxRows = m_nNumRows;
             double* pData= AllocateDouble( m_nMaxRows, m_nMaxCols);
-            delete[] m_pData;
+            FreeDouble( m_pData);
             m_pData = pData;
         }
     }
@@ -1370,8 +1384,9 @@ bool CFmMatrix::SetRowName(int nRow, char* szRowName)
 
     if (szRowName)
     {
+		CFmNewTemp fmRef;
         if (m_pRowNames==NULL)
-            m_pRowNames = new CFmVectorStr( m_nNumRows, m_nMaxRows );
+            m_pRowNames = new (fmRef) CFmVectorStr( m_nNumRows, m_nMaxRows );
 
         if (m_nNumRows > m_pRowNames->GetLength())
             m_pRowNames->Resize(m_nNumRows);
@@ -1391,8 +1406,9 @@ bool CFmMatrix::SetColName(int nCol, char* szColName)
 
     if (szColName)
     {
+		CFmNewTemp fmRef;
         if (m_pColNames==NULL)
-            m_pColNames = new CFmVectorStr( m_nNumCols, m_nMaxCols );
+            m_pColNames = new (fmRef) CFmVectorStr( m_nNumCols, m_nMaxCols );
 
         if (m_nNumCols > m_pColNames->GetLength())
             m_pColNames->Resize(m_nNumCols);
@@ -1834,7 +1850,7 @@ int CFmMatrix::ReadFromCSVFile(const char* filename, bool bColName, bool bRowNam
     m_nMaxRows = m_nNumRows;
     m_nMaxCols = m_nNumCols;
 
-    if (m_pData) delete(m_pData);
+    if (m_pData) FreeDouble( m_pData );
     m_pData = AllocateDouble( m_nNumRows, m_nNumCols );
 
     for(int i=0; i<m_nNumRows; i++)
@@ -1891,7 +1907,7 @@ void CFmMatrix::Resize(int nRows, int nCols, bool reset)
         double *pNew = AllocateDouble(nRows, nCols );
         memcpy( pNew, m_pData, m_nNumRows*m_nNumCols*sizeof(double) );
 
-        delete[] m_pData;
+        FreeDouble( m_pData );
         m_pData = pNew;
 
         m_nMaxRows = nRows;
@@ -1912,7 +1928,7 @@ CFmMatrix* CFmMatrix::FindReuseMatrix(int nRows, int nCols)
 {
 	if (g_pReused==NULL)
 	{
-        g_pReused = (CFmMatrix**)malloc( sizeof(CFmMatrix*)*REUSE_MATRIX_COUNT );
+        g_pReused = (CFmMatrix**)Calloc( REUSE_MATRIX_COUNT, CFmMatrix* );
         memset(g_pReused, 0, sizeof(CFmMatrix*)*REUSE_MATRIX_COUNT );
 
 //**MEMTEST: Rprintf("ALLOC MEMORY: %d\n", sizeof(CFmMatrix*)*REUSE_MATRIX_COUNT);
@@ -1934,12 +1950,13 @@ CFmMatrix* CFmMatrix::FindReuseMatrix(int nRows, int nCols)
         if (_DM && pTmp) Rprintf("***------TMP M(%d, %d)\n", pTmp->m_nObjId, pTmp->GetRefer());
     }
 
-    CFmMatrix* pMat = new CFmMatrix(nRows, nCols, true);
+	CFmNewTemp fmRef;
+    CFmMatrix* pMat = new (fmRef)CFmMatrix(nRows, nCols, true);
     if (_DM)
         Rprintf("***NEW M(%d): Len=%d\n", pMat->m_nObjId, nRows*nCols);
-	if ( pMat->m_nObjId > 20 )
+	if ( pMat->m_nObjId > 5000 )
 		_DM=1;
-	if ( pMat->m_nObjId > 50 )
+	if ( pMat->m_nObjId > 5000*2 )
         throw("Resue Matrics have big problem\n...");
 
 	for(int i=0; i<REUSE_MATRIX_COUNT; i++)
@@ -1995,7 +2012,7 @@ void CFmMatrix::EnlargeCols( int nMaxCols )
 {
     double* pData = AllocateDouble(m_nMaxRows, nMaxCols);
     memcpy(pData, m_pData, sizeof(double)*m_nNumRows*m_nNumCols );
-    delete[] m_pData;
+    FreeDouble( m_pData );
 
     m_nMaxCols = nMaxCols;
     m_pData = pData;
@@ -2017,9 +2034,10 @@ bool CFmMatrix::SetColNames(CFmVectorStr* pNames)
         return (false);
 
     if (m_pColNames)
-        delete m_pColNames;
+        destroy( m_pColNames);
 
-    m_pColNames = new CFmVectorStr( pNames );
+	CFmNewTemp fmRef;
+    m_pColNames = new (fmRef) CFmVectorStr( pNames );
     return(true);
 }
 
@@ -2029,10 +2047,25 @@ bool CFmMatrix::SetRowNames(CFmVectorStr* pNames)
         return (false);
 
     if (m_pRowNames)
-        delete m_pRowNames;
+        destroy( m_pRowNames);
 
-    m_pRowNames = new CFmVectorStr( pNames );
+	CFmNewTemp fmRef;
+    m_pRowNames = new (fmRef)CFmVectorStr( pNames );
     return(true);
+}
+
+int CFmMatrix::FindColumn(const char* szColumn)
+{
+	if (m_pColNames==NULL)
+		return(-1);
+
+    for (int i=0;i<m_nNumCols; i++)
+    {
+        if ( strcasecmp ( m_pColNames->Get(i), szColumn)==0 )
+            return(i);
+    }
+
+    return( -1 );
 }
 
 SEXP GetSEXP(CFmMatrix* pMat)
@@ -2113,5 +2146,46 @@ int GetMatrix(SEXP pExp, CFmMatrix* pMat)
         pMat->Set(i, j, pExp_r[j*nRow+i] );
     }
 
+
+	SEXP dimnames = getAttrib( pExp, R_DimNamesSymbol );
+	SEXP colnames = VECTOR_ELT(dimnames, 1);
+
+	for (int j = 0; j < length(colnames); j++)
+		pMat->SetColName( j, (char*)CHAR( STRING_ELT( colnames, j) ) );
+
+	SEXP rownames = VECTOR_ELT(dimnames, 0);
+	for (int i = 0; i < length(rownames); i++)
+		pMat->SetRowName( i, (char*)CHAR( STRING_ELT( rownames, i) ) );
+
     return(0);
+}
+
+void CFmMatrix::StatCache(int* pnTotal, int* pnUsed)
+{
+	if (g_pReused==NULL)
+	{
+		*pnTotal = 0;
+		*pnUsed = 0;
+		return;
+	}
+
+	for(int i=0; i<REUSE_MATRIX_COUNT; i++)
+	{
+        CFmMatrix* pTmp = (CFmMatrix* )(g_pReused[i]);
+		if ( pTmp==NULL )
+			continue;
+
+		*pnTotal = *pnTotal + 1;
+		if( pTmp->GetRefer()> 0)
+			*pnUsed = *pnUsed + 1;
+	}
+
+	return;
+}
+
+void destroy(CFmMatrix* p)
+{
+	CFmNewTemp  fmRef;
+	p->~CFmMatrix();
+	operator delete(p, fmRef);
 }

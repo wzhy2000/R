@@ -62,6 +62,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <R.h>
+
 #include "fm_inifile.h"
 
 //#ifdef LINUX
@@ -159,7 +161,7 @@ BOOL CFmIniFile::OpenIniFile (CCHR * FileName)
 		}
 		#endif
 
-		pEntry->pText = (char *)malloc (strlen (Str)+1);
+		pEntry->pText = Calloc (strlen (Str)+1, char);
 		if (pEntry->pText == NULL)
 		{
 			FreeAllMem ();
@@ -258,7 +260,7 @@ void CFmIniFile::WriteString (CCHR *pSection, CCHR *pKey, CCHR *pValue)
 	{
 		sprintf (Str, "%s=%s%s", List.KeyText, pValue, List.Comment);
 		FreeMem (List.pKey->pText);
-		List.pKey->pText = (char *)malloc (strlen (Str)+1);
+		List.pKey->pText = Calloc (strlen (Str)+1, char);
 		strcpy (List.pKey->pText, Str);
 	}
 	else
@@ -389,7 +391,7 @@ bool CFmIniFile::DeleteKey (CCHR *pSection, CCHR *pKey)
 
 void CFmIniFile::FreeMem (void *pPtr)
 {
-	if (pPtr != NULL) { free (pPtr); }
+	if (pPtr != NULL) { Free (pPtr); }
 }
 
 void CFmIniFile::FreeAllMem (void)
@@ -495,10 +497,10 @@ BOOL CFmIniFile::AddItem (char Type, CCHR *pText)
 	struct ENTRY *pEntry = MakeNewEntry ();
 	if (pEntry == NULL) { return FALSE; }
 	pEntry->Type = Type;
-	pEntry->pText = (char*)malloc (strlen (pText) +1);
+	pEntry->pText = Calloc (strlen (pText) +1, char);
 	if (pEntry->pText == NULL)
 	{
-		free (pEntry);
+		Free (pEntry);
 		return FALSE;
 	}
 	strcpy (pEntry->pText, pText);
@@ -512,12 +514,12 @@ bool CFmIniFile::AddItemAt (struct ENTRY *pEntryAt, char Mode, CCHR *pText)
 {
 	struct ENTRY *pNewEntry;
 	if (pEntryAt == NULL)  { return FALSE; }
-	pNewEntry = (struct ENTRY*) malloc (sizeof (ENTRY));
+	pNewEntry = (struct ENTRY*) Calloc (1, ENTRY );
 	if (pNewEntry == NULL) { return FALSE; }
-	pNewEntry->pText = (char *) malloc (strlen (pText)+1);
+	pNewEntry->pText = (char *) Calloc (strlen (pText)+1, char);
 	if (pNewEntry->pText == NULL)
 	{
-		free (pNewEntry);
+		Free (pNewEntry);
 		return FALSE;
 	}
 	strcpy (pNewEntry->pText, pText);
@@ -555,7 +557,7 @@ void CFmIniFile::AddKey (struct ENTRY *pSecEntry, CCHR *pKey, CCHR *pValue)
 struct ENTRY *CFmIniFile::MakeNewEntry (void)
 {
 	struct ENTRY *pEntry;
-	pEntry = (struct ENTRY *)malloc (sizeof (ENTRY));
+	pEntry = (struct ENTRY *)Calloc (1, ENTRY);
 	if (pEntry == NULL)
 	{
 		FreeAllMem ();

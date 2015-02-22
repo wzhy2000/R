@@ -101,8 +101,8 @@ public:
     double          Prod(CFmVector& other);
     void            UniquePut(double fValue);
     void            Put(double fValue);
-	void			Join(double fvalue);
-    void            Remove(double fValue);
+    void            Join(double fvalue);
+    void            Remove(int nPos);
     void            RemoveNan();
     int             GetLengthNonvalue(double fvalue);
     int             GetLengthNonNan();
@@ -129,6 +129,8 @@ public:
 public:
     static          int _DV;
     static          int g_nObjCount;
+    static void     StatCache(int* pnTotal, int* pnUsed);
+
     static          CFmVector** g_pReused;
     static          CFmVector* FindReuseVector( int nLen );
 
@@ -142,11 +144,14 @@ protected:
 
 private:
     double*         AllocateMemory( int nLen );
+    void            FreeMemory( double* p );
     char*           m_pszBuf;
     CFmVectorStr*   m_pNames;
 } ;
 
 SEXP GetSEXP(CFmVector* pVct);
 int GetVector(SEXP pExp, CFmVector* pVct);
+void destroy(CFmVector* p);
+
 
 #endif // !defined(_FM_VECTOR_H_)

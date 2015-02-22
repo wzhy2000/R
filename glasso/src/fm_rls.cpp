@@ -12,23 +12,26 @@
 #include <Rmath.h>
 
 #include "fm_matrix.h"
+#include "fm_linux.h"
 #include "fm_vector.h"
 #include "fm_vector_str.h"
 #include "fm_rlogger.h"
 #include "fm_err.h"
 #include "fm_rls.h"
+#include "fm_new.h"
+
 
 
 #define _t(x) ((x).GetTransposed())
 
 CFmRls::CFmRls(const char* szRlsFile)
 {
-    m_szRlsFile = strdup(szRlsFile);
+    m_szRlsFile = Strdup(szRlsFile);
 }
 
 CFmRls::~CFmRls()
 {
-    free(m_szRlsFile);
+    Free(m_szRlsFile);
 }
 
 CFmMatrix* CFmRls::GetMatrix(char* szVar)
@@ -329,6 +332,8 @@ int CFmRls::LoadResFile()
         return( ERR_READ_FILE );
     }
 
+	CFmNewTemp refNew;
+
     int nRet = 0;
     int nPos = sizeof(fmt);
     for(int i=0;i<MAX_CONT_ITEM;i++)
@@ -339,26 +344,28 @@ int CFmRls::LoadResFile()
         if (strlen(szOrgVar)==0)
             continue;
 
-        char* szVar = strdup(szOrgVar);
+        char* szVar = Strdup(szOrgVar);
         if ( fmt.varCont[i].dimCol == 1 )
         {
-            CFmVector* pVec = new CFmVector( fmt.varCont[i].dimRow, 0 );
+            CFmVector* pVec = new (refNew) CFmVector( fmt.varCont[i].dimRow, 0 );
             nRet += LoadVarInfo(fp, pVec, nPos,  &(fmt.varCont[i]) );
             m_VecMap.insert( std::pair<char*,CFmVector*>( szVar, pVec ) );
         }
         else
         if ( fmt.varCont[i].varType == VAR_TYPE_STRING )
         {
-            CFmVectorStr* pVecStr = new CFmVectorStr( fmt.varCont[i].dimRow );
+            CFmVectorStr* pVecStr = new  (refNew) CFmVectorStr( fmt.varCont[i].dimRow );
             nRet += LoadVarInfo(fp, pVecStr, nPos, &(fmt.varCont[i]) );
             m_VecStrMap.insert( std::pair<char*,CFmVectorStr*>( szVar, pVecStr ) );
         }
         else if (fmt.varCont[i].dimRow>0 && fmt.varCont[i].dimCol>1)
         {
-            CFmMatrix* pMat = new CFmMatrix( (int)(fmt.varCont[i].dimRow), (int)(fmt.varCont[i].dimCol) );
+            CFmMatrix* pMat = new  (refNew) CFmMatrix( (int)(fmt.varCont[i].dimRow), (int)(fmt.varCont[i].dimCol) );
             nRet += LoadVarInfo(fp, pMat, nPos, &(fmt.varCont[i]) );
             m_MatMap.insert( std::pair<char*,CFmMatrix*>( szVar, pMat ) );
         }
+
+		Free(szVar);
 
         if(nRet!=0)
             break;
@@ -437,6 +444,13 @@ int CFmRls::SaveRData( const char* szRdataFile )
     _log_info(_HI_, "SaveRData: Successfule to save file(%s).", szRdataFile);
 
     return(0);
+}
+
+void destroy(CFmRls* p)
+{
+	CFmNewTemp  fmRef;
+	p->~CFmRls();
+	operator delete(p, fmRef);
 }
 
 

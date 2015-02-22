@@ -11,13 +11,14 @@
 #include "fm_rlogger.h"
 #include "fm_pcf.h"
 #include "fm_err.h"
+#include "fm_new.h"
+
 #include "bls_R.h"
 #include "bls_model.h"
 
 int _blasso_simulate( CMDOPTIONS *pCmd, BLS_par *pPar)
 {
-    _log_prompt(_HI_, "Simulation will be performed.\n Total rounds:%d parameter:%s, pcf_file=%s",
-              pCmd->nSimuRound, pCmd->szParFile,  pCmd->szPcfFile);
+    _log_prompt(_HI_, "Simulation will be performed, Total rounds:%d parameter:%s", pCmd->nSimuRound, pCmd->szParFile);
 
     CFmPcf pcf(pCmd->szPcfFile);
     pcf.UpdatePcfFile( PCF_START );
@@ -44,7 +45,7 @@ int _blasso_simulate( CMDOPTIONS *pCmd, BLS_par *pPar)
 
 _Abort1:
     pcf.UpdatePcfFile( PCF_EXCEPT, 0, 0, 0, 0, status );
-    _log_prompt( _HI_, "Simulation is exit abnormally with code(%d),", status);
+    _log_error(_HI_, "Simulation is exit abnormally with code(%d),", status);
     return(status);
 }
 
@@ -68,18 +69,19 @@ int blasso_simulate( const char* szPhe_out,
 					 double* pfSimu_d_effect,
 					 double* pfSimu_covar_range,
 					 double* pfSimu_t_range,
-					 int bDebug )
+					 int nDebug )
 {
 	CMDOPTIONS cmd;
 	memset(&cmd, 0, sizeof(CMDOPTIONS));
 
 	strcpy( cmd.szPheoutFile, szPhe_out);
 	strcpy( cmd.szSnpoutFile, szSnp_out);
-	cmd.bDebug = bDebug;
+	cmd.nDebug = nDebug;
 
-    start_log( cmd.bDebug );
+    start_log( cmd.nDebug );
 
-	BLS_par *pPar = new BLS_par(&cmd);
+	CFmNewTemp refNew;
+	BLS_par *pPar = new (refNew) BLS_par(&cmd);
 
     pPar->simu_grps    = nSimu_grp;
     pPar->simu_n       = nSimu_n;
@@ -117,15 +119,15 @@ int blasso_simulate( const char* szPhe_out,
 
 
     int nRet = _blasso_simulate( &cmd, pPar );
-	delete pPar;
+	destroy( pPar );
 
     return(nRet);
 
 }
 
-SEXP _blasso_plink(  CMDOPTIONS* pCmd, BLS_cfg *pCfg  )
+SEXP _blasso_plink_tped(  CMDOPTIONS* pCmd, BLS_cfg *pCfg  )
 {
-    _log_prompt(_HI_, "PLINK will be performed.\n");
+    _log_prompt(_HI_, "PLINK(tped) will be performed. Files: %s, %s, %s.", pCmd->szPheFile, pCmd->szTpedFile, pCmd->szTfamFile);
 
 	SEXP sRet = R_NilValue;
     CFmPcf pcf(pCmd->szPcfFile );
@@ -143,7 +145,7 @@ SEXP _blasso_plink(  CMDOPTIONS* pCmd, BLS_cfg *pCfg  )
 		if (status!=0)
 			goto _Abort2;
 
-        if(pCmd->nRunmode != _RUN_VARSEL)
+        if(pCmd->bRefit)
         {
             status = sm.Refit(pCfg);
             if ( status!=0 && status!=ERR_NO_ITEMS )
@@ -154,32 +156,35 @@ SEXP _blasso_plink(  CMDOPTIONS* pCmd, BLS_cfg *pCfg  )
     }
     catch( char const* str )
     {
-        _log_error( _HI_, "PLINK has an exception(%s).", str);
+        _log_error( _HI_, "PLINK(tped) has an exception(%s).", str);
         status = ERR_EXCEPTION;
         goto _Abort2;
     }
 
     pcf.UpdatePcfFile( PCF_END );
-    _log_prompt(_HI_, "PLINK is done successfully.");
+    _log_prompt(_HI_, "PLINK(tped) is done successfully.");
     return( sRet );
 
 _Abort2:
     pcf.UpdatePcfFile( PCF_EXCEPT );
-    _log_prompt( _HI_, "PLINK is exit abnormally with code(%d),", status);
+    _log_error(_HI_, "PLINK(tped) is exit abnormally with code(%d),", status);
     return(R_NilValue);
 }
 
-SEXP blasso_plink(  const char* pszPheFile,
+SEXP blasso_plink_tped(  const char* pszPheFile,
   		   	const char*  pszTpedFile,
   		   	const char*  pszTfamFile,
-  		   	const char*  pszModel,
+  		   	const char*  pszYname,
+  		   	const char*  pszXname,
   		   	bool bRefit,
-  		   	int nMaxIter,
+  		   	bool bAddUsed,
+  		   	bool bDomUsed,
+  		   	int nMcmcIter,
 		   	double fBurnInRound,
 		   	double fRhoTuning,
 	        double fQval_add,
 	        double fQval_dom,
-	        bool   bDebug)
+	        int    nDebug)
 {
 	CMDOPTIONS cmd;
 	memset(&cmd, 0, sizeof(CMDOPTIONS));
@@ -187,13 +192,20 @@ SEXP blasso_plink(  const char* pszPheFile,
 	strcpy( cmd.szPheFile,  pszPheFile);
 	strcpy( cmd.szTpedFile, pszTpedFile);
 	strcpy( cmd.szTfamFile, pszTfamFile);
-	strcpy( cmd.szModel,    pszModel);
-	cmd.bDebug = bDebug;
+	strcpy( cmd.szYname,    pszYname);
+	strcpy( cmd.szXname,    pszXname);
 
-    start_log( cmd.bDebug );
+	cmd.nDebug = nDebug;
+	cmd.bRefit = bRefit;
+	cmd.bAddUsed = bAddUsed;
+	cmd.bDomUsed = bDomUsed;
 
-	BLS_cfg *pCfg = new BLS_cfg();
-	pCfg->m_nMaxIter  	  = nMaxIter,
+    start_log( cmd.nDebug );
+
+	CFmNewTemp refNew;
+
+	BLS_cfg *pCfg = new (refNew) BLS_cfg();
+	pCfg->m_nMcmcIter  	  = nMcmcIter,
     pCfg->m_fRhoTuning    = fRhoTuning;
     pCfg->m_fBurnInRound  = fBurnInRound;
 	pCfg->m_fQval_add	  = fQval_add;
@@ -217,16 +229,15 @@ SEXP blasso_plink(  const char* pszPheFile,
     }
 
     SEXP sRet;
-    sRet = _blasso_plink(&cmd, pCfg);
-    delete pCfg;
+    sRet = _blasso_plink_tped(&cmd, pCfg);
+    destroy( pCfg );
 
     return(sRet);
 }
 
 SEXP _blasso_simple(  CMDOPTIONS* pCmd, BLS_cfg *pCfg )
 {
-    _log_prompt(_HI_, "SIMPLE will be performed. \nTotal rounds:%d parameter:%s,%s,%s, pcf_file=%s",
-              pCmd->nSimuRound, pCmd->szTpedFile, pCmd->szTfamFile, pCmd->szPheFile, pCmd->szPcfFile);
+    _log_prompt(_HI_, "SIMPLE will be performed. Files:%s,%s.",  pCmd->szPheFile, pCmd->szSnpFile );
 
     SEXP sRet = R_NilValue;
 	CFmPcf pcf( pCmd->szPcfFile );
@@ -244,7 +255,7 @@ SEXP _blasso_simple(  CMDOPTIONS* pCmd, BLS_cfg *pCfg )
 		if (status!=0)
 			goto _Abort3;
 
-        if(pCmd->nRunmode != _RUN_VARSEL)
+        if(pCmd->bRefit)
         {
             status = sm.Refit( pCfg );
             if ( status!=0 && status!=ERR_NO_ITEMS )
@@ -267,33 +278,43 @@ SEXP _blasso_simple(  CMDOPTIONS* pCmd, BLS_cfg *pCfg )
 
 _Abort3:
     pcf.UpdatePcfFile( PCF_EXCEPT, 0, 0, 0, 0, status );
-    _log_prompt( _HI_, "SIMPLE is exit abnormally with code(%d),", status);
+    _log_error(_HI_, "SIMPLE is exit abnormally with code(%d),", status);
     return(R_NilValue);
 }
 
 SEXP blasso_simple( const char* pszPheFile,
   		   	const char*  pszSnpFile,
-  		   	const char*  pszModel,
+  		   	const char*  pszYname,
+  		   	const char*  pszXname,
   		   	bool bRefit,
-  		   	int nMaxIter,
+  		   	bool bAddUsed,
+  		   	bool bDomUsed,
+  		   	int nMcmcIter,
 		   	double fBurnInRound,
 		   	double fRhoTuning,
 	        double fQval_add,
 	        double fQval_dom,
-	        bool   bDebug)
+	        int   nDebug)
 {
 	CMDOPTIONS cmd;
 	memset(&cmd, 0, sizeof(CMDOPTIONS));
 
 	strcpy( cmd.szSnpFile,  pszSnpFile);
 	strcpy( cmd.szPheFile,  pszPheFile);
-	strcpy( cmd.szModel,    pszModel);
-	cmd.bDebug = bDebug;
+	strcpy( cmd.szYname,    pszYname);
+	strcpy( cmd.szXname,    pszXname);
 
-    start_log( cmd.bDebug );
+	cmd.nDebug = nDebug;
+	cmd.bRefit = bRefit;
+	cmd.bAddUsed = bAddUsed;
+	cmd.bDomUsed = bDomUsed;
 
-	BLS_cfg *pCfg = new BLS_cfg();
-	pCfg->m_nMaxIter  	  = nMaxIter,
+    start_log( cmd.nDebug );
+
+	CFmNewTemp refNew;
+
+	BLS_cfg *pCfg = new (refNew) BLS_cfg();
+	pCfg->m_nMcmcIter  	  = nMcmcIter,
     pCfg->m_fRhoTuning    = fRhoTuning;
     pCfg->m_fBurnInRound  = fBurnInRound;
 	pCfg->m_fQval_add	  = fQval_add;
@@ -313,7 +334,112 @@ SEXP blasso_simple( const char* pszPheFile,
 
     SEXP sRet;
     sRet = _blasso_simple(&cmd, pCfg);
-    delete pCfg;
+    destroy( pCfg );
+
+    return(sRet);
+}
+
+SEXP _blasso_snpmat(  CFmMatrix* pFmPhe, CFmMatrix* pFmMat, CMDOPTIONS* pCmd, BLS_cfg *pCfg )
+{
+    _log_prompt(_HI_, "SNPMAT will be performed, Phenotype Matrix(%d,%d), SNP matrix(%d,%d) .",
+    			pFmPhe->GetNumRows(), pFmPhe->GetNumCols(), pFmMat->GetNumRows(), pFmMat->GetNumCols() );
+
+    SEXP sRet = R_NilValue;
+	CFmPcf pcf( pCmd->szPcfFile );
+    pcf.UpdatePcfFile( PCF_START );
+
+    int status = 0;
+    try
+    {
+        BLS sm;
+        status = sm.LoadSnpmat( pFmPhe, pFmMat, pCmd );
+        if (status!=0)
+            goto _Abort4;
+
+		status = sm.Varsel(pCfg);
+		if (status!=0)
+			goto _Abort4;
+
+        if(pCmd->bRefit)
+        {
+            status = sm.Refit( pCfg );
+            if ( status!=0 && status!=ERR_NO_ITEMS )
+                goto _Abort4;
+        }
+
+        sRet = sm.GetRObj();
+
+    }
+    catch( char const* str )
+    {
+        _log_error( _HI_, "SNPMAT has an exception(%s).", str);
+        status = ERR_EXCEPTION;
+        goto _Abort4;
+    }
+
+    pcf.UpdatePcfFile( PCF_END );
+    _log_prompt(_HI_, "SNPMAT is done successfully.");
+    return(sRet);
+
+_Abort4:
+    pcf.UpdatePcfFile( PCF_EXCEPT, 0, 0, 0, 0, status );
+    _log_error(_HI_, "SNPMAT is exit abnormally with code(%d),", status);
+    return(R_NilValue);
+}
+
+SEXP blasso_snpmat( SEXP pmatPhe,
+  		   	SEXP pmatSNP,
+  		   	const char*  pszYname,
+  		   	const char*  pszXname,
+  		   	bool bRefit,
+  		   	bool bAddUsed,
+  		   	bool bDomUsed,
+  		   	int nMcmcIter,
+		   	double fBurnInRound,
+		   	double fRhoTuning,
+	        double fQval_add,
+	        double fQval_dom,
+	        int   nDebug)
+{
+	CFmNewTemp refNew;
+
+	CFmMatrix* pFmPhe = new (refNew) CFmMatrix(0,0);
+	GetMatrix( pmatPhe, pFmPhe);
+	CFmMatrix* pFmSnp = new (refNew) CFmMatrix(0,0);
+	GetMatrix( pmatSNP, pFmSnp);
+
+	CMDOPTIONS cmd;
+	memset(&cmd, 0, sizeof(CMDOPTIONS));
+
+	strcpy( cmd.szYname,    pszYname);
+	strcpy( cmd.szXname,    pszXname);
+
+	cmd.nDebug = nDebug;
+	cmd.bRefit = bRefit;
+	cmd.bAddUsed = bAddUsed;
+	cmd.bDomUsed = bDomUsed;
+
+    start_log( cmd.nDebug );
+
+	BLS_cfg *pCfg = new (refNew) BLS_cfg();
+	pCfg->m_nMcmcIter  	  = nMcmcIter,
+    pCfg->m_fRhoTuning    = fRhoTuning;
+    pCfg->m_fBurnInRound  = fBurnInRound;
+	pCfg->m_fQval_add	  = fQval_add;
+	pCfg->m_fQval_dom	  = fQval_dom;
+
+    if ( cmd.nRunmode==_RUN_REFIT && strlen(cmd.szVsretFile)==0)
+    {
+        fprintf(stderr, "\nThe result file of variable selection procedure is required.( options: -vsret ).\n\n");
+        return( R_NilValue );
+    }
+
+    SEXP sRet;
+    sRet = _blasso_snpmat( pFmPhe, pFmSnp, &cmd, pCfg);
+    destroy( pCfg );
+
+	destroy( pFmPhe );
+	destroy( pFmSnp );
 
     return(sRet);
 }

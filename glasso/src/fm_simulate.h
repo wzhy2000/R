@@ -117,4 +117,6 @@ private:
     char m_sGeno_file[MAX_PATH];
 };
 
+void destroy( CFmSimulate* p);
+
 #endif // _FM_SIMULATE_H_

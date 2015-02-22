@@ -1,0 +1,59 @@
+library(glasso)
+
+phe.out <- "bls.simple.phe"  
+snp.out <- "bls.simple.snp"
+
+sigsnp <- c(11, 22, 33, 444, 55);
+
+bls.simulate( phe.out, snp.out, simu_grp=1, simu_n= 600, simu_p=2000, 
+		simu_snp_rho = 0.1, 
+		simu_rho     = 0.4, 
+		simu_sigma2  = 9, 
+		simu_mu      = 24, 
+		simu_cov_coeff = c( 0, 2 ), 
+		simu_a_pos   = c( sigsnp[1], sigsnp[2], sigsnp[3]), 
+		simu_a_effect= c( 2.2, -2.5, 2.0 ),  
+		simu_d_pos   = c( sigsnp[3], sigsnp[4], sigsnp[5]), 
+		simu_d_effect= c( 2.8, 2.0, -2.5 ),
+		simu_cov_range=c( 0, 1),
+		simu_t_range = c(-1, 1), 
+		debug=F );
+
+ret1<-ret2<-ret3<-ret4<-ret5<-ret6<-c();
+
+ret1 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c(), refit=F );	
+
+save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
+summary(ret1)
+plot(ret1);
+
+ret2 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c("X_2"), refit=F );	
+
+save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
+summary(ret2)
+plot(ret2, "bls-test-simple-ret2");
+
+ret3 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c("X_1","X_2"), refit=F , options=list(nParallel.cpu=7) );	
+
+save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
+summary(ret3)
+plot(ret3, "bls-test-simple-ret3");
+
+ret4 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c("X_1","X_2"), refit=T, add.used=T, dom.used=F, options=list(nParallel.cpu=7) );
+
+save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
+summary(ret4)
+plot(ret4, "bls-test-simple-ret4");
+
+ret5 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c("X_1","X_2"), refit=T, add.used=T, dom.used=F, fgwas.filter=T, options=list(nParallel.cpu=7) );
+
+save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
+summary(ret5)
+plot(ret5, "bls-test-simple-ret5");
+
+ret6 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c(), refit=F, add.used=T, dom.used=F, fgwas.filter=F, options=list(nParallel.cpu=7) );
+
+save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
+summary(ret6)
+plot(ret6, "bls-test-simple-ret6");
+

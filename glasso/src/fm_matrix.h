@@ -135,6 +135,8 @@ public:
     double          GetColumnMin(int col)  ;
     double          GetColumnMax(int col)  ;
 
+    int             FindColumn(const char* szColName);
+
     CFmVector&      GetRow(int nRow);
     CFmVector&      GetCol(int nCol);
     bool            RemoveRows(CFmVector& nRows);
@@ -184,9 +186,10 @@ public:
     static void     GlobalDump();
 public:
     static          int	_DM;
+    static          int g_nObjCount;
+    static void     StatCache(int* pnTotal, int* pnUsed);
 
 protected:
-    static          int g_nObjCount;
     static          CFmMatrix** g_pReused;
     static          CFmMatrix* FindReuseMatrix( int nRow, int nCols );
 
@@ -211,6 +214,7 @@ private:
     double*         AllocateDouble(int nRows, int nCols) ;
     void            FreeMemory();
     void            EnlargeCols( int nMaxCols );
+    void            FreeDouble( double* pData );
 
     // reference counting functions
     void            AddRef() ;	// increments the m_pData reference count
@@ -224,5 +228,6 @@ private:
 
 SEXP GetSEXP(CFmMatrix* pMat);
 int GetMatrix(SEXP pExp, CFmMatrix* pMat);
+void destroy( CFmMatrix* p);
 
 #endif // !defined(_FM_MATRIX_H_)

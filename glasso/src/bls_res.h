@@ -91,4 +91,6 @@ private:
 
 };
 
+void destroy( BLS_res* p );
+
 #endif
