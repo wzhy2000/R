@@ -3,59 +3,56 @@ bls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 500, simu_p=1000,
 		simu_rho     = 0.4, 
 		simu_sigma2  = 3, 
 		simu_mu      = 26, 
-		simu_cov_coeff = c( 0, 2 ), 
-		simu_a_pos   = c( 100, 200, 300), 
-		simu_a_effect= c( 2.2, -2.5, 2.0 ),  
-		simu_d_pos   = c( 300, 500, 700), 
-		simu_d_effect= c( 2.8, 2.0, -2.5 ),
-		simu_cov_range=c( 0, 1),
+		simu_cov_range = c( 0, 1),
+		simu_cov_effect= c( 0, 2 ), 
+		simu_add_pos   = c( 100, 200, 300), 
+		simu_add_effect= c( 2.2, -2.5, 2.0 ),  
+		simu_dom_pos   = c( 300, 500, 700), 
+		simu_dom_effect= c( 2.8, 2.0, -2.5 ),
 		simu_t_range = c(-1, 1), 
 		debug=F )
 {
-	if( is.na(simu_grp) || length(simu_grp) > 1)
+	if( !missing(simu_grp) && length(simu_grp) > 1)
 		stop("! The parameter of simu_grp is not a single valid value.");
 
-	if( is.na(simu_n) || length(simu_n) > 1)
+	if( !missing(simu_n) && length(simu_n) > 1)
 		stop("! The parameter of simu_n is not a single valid value.");
 
-	if( is.na(simu_p) || length(simu_p) > 1)
-		stop("! The parameter of simu_n is not a single valid value.");
+	if( !missing(simu_p) && length(simu_p) > 1)
+		stop("! The parameter of simu_p is not a single valid value.");
 	
-	if( is.na(simu_snp_rho) || length(simu_snp_rho) > 1)
+	if( !missing(simu_snp_rho) && length(simu_snp_rho) > 1)
 		stop("! The parameter of simu_snp_rho is not a single valid value.");
 
-	if( is.na(simu_rho) || length(simu_rho) > 1)
+	if( !missing(simu_rho) && length(simu_rho) > 1)
 		stop("! The parameter of simu_rho is not a single valid value.");
 	
-	if( is.na(simu_sigma2) || length(simu_sigma2) > 1)
+	if( !missing(simu_sigma2) && length(simu_sigma2) > 1)
 		stop("! The parameter of simu_sigma2 is not a single valid value.");
 
-	if( is.na(simu_mu) || length(simu_mu) > 1)
+	if( !missing(simu_mu) && length(simu_mu) > 1)
 		stop("! The parameter of simu_mu is not a single valid value.");
 
-	if ( length(simu_a_pos) != length(simu_a_effect ) )
-		stop("! The length of simu_a_pos is same as simu_a_effect.");
+	if ( length(simu_add_pos) != length(simu_add_effect ) )
+		stop("! The length of simu_add_pos is same as simu_add_effect.");
 
-	if ( length(simu_d_pos) != length(simu_d_effect ) )
-		stop("! The length of simu_d_pos is same as simu_d_effect.");
+	if ( length(simu_dom_pos) != length(simu_dom_effect ) )
+		stop("! The length of simu_dom_pos is same as simu_dom_effect.");
 
-	if ( length(which(simu_a_pos<=0 | simu_a_pos>simu_p))>0  )
-		stop("! The parameter of simu_a_pos should be in correct SNP range.");
+	if ( length(simu_add_pos)>0 && length(which(simu_add_pos<=0 | simu_add_pos>simu_p))>0  )
+		stop("! The parameter of simu_add_pos should be in correct SNP range.");
 
-	if ( length(which(simu_a_pos<=0 | simu_a_pos>simu_p))>0  )
-		stop("! The parameter of simu_a_pos should be in correct SNP range.");
+	if ( length(simu_dom_pos)>0 && length(which(simu_dom_pos<=0 | simu_dom_pos>simu_p))>0  )
+		stop("! The parameter of simu_dom_pos should be in correct SNP range.");
 
-	if ( length(simu_a_pos)>0 && length(which(simu_d_pos<=0 | simu_d_pos>simu_p))>0  )
-		stop("! The parameter of simu_a_pos should be in correct SNP range.");
+	if ( length(simu_add_effect)>0 && length(which(is.na(simu_add_effect)))>0  )
+		stop("! The parameter of simu_add_pos has NA values.");
 
-	if ( length(simu_a_effect)>0 && length(which(is.na(simu_a_effect)))>0  )
-		stop("! The parameter of simu_d_pos has NA values.");
+	if ( length(simu_dom_effect)>0 && length(which(is.na(simu_dom_effect)))>0  )
+		stop("! The parameter of simu_dom_pos has NA values.");
 
-	if ( length(simu_d_effect)>0 && length(which(is.na(simu_d_effect)))>0  )
-		stop("! The parameter of simu_d_pos has NA values.");
-
-	if ( length(simu_cov_coeff)>0 && length(which(is.na(simu_cov_coeff)))>0  )
-		stop("! The parameter of simu_cov_coeff has NA values.");
+	if ( length(simu_cov_effect)>0 && length(which(is.na(simu_cov_effect)))>0  )
+		stop("! The parameter of simu_cov_effect has NA values.");
 
 	if ( length(simu_cov_range)>0 && length(which(is.na(simu_cov_range)))>0  )
 		stop("! The parameter of simu_cov_range has NA values.");
@@ -75,34 +72,34 @@ bls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 500, simu_p=1000,
 	if (simu_t_range[1]>simu_t_range[2])
 		simu_t_range<-c(simu_t_range[2], simu_t_range[1]);
 	
-	sigp<-unique(c(simu_a_pos, simu_d_pos))
+	sigp<-unique(c(simu_add_pos, simu_dom_pos))
 	simu_sigp <- length(sigp);
-	simu_a_len <- length(simu_a_pos);
-	simu_d_len <- length(simu_d_pos);
-	simu_covar_count <- length(simu_cov_coeff);
+	simu_add_len <- length(simu_add_pos);
+	simu_dom_len <- length(simu_dom_pos);
+	simu_cov_count <- length(simu_cov_effect);
 
 	err <- 0;
 	out <- .C("bls_simulate", 
-		   as.character(phe.out),		# char* szPhe_out
-  		   as.character(snp.out), 		# char* szSnp_out
-  		   as.integer(simu_grp), 		# int nSimu_grp
-  		   as.integer(simu_n), 			# int nSimu_n
-  		   as.integer(simu_p), 			# int nSimu_p
-  		   as.double(simu_snp_rho), 		# double fSimu_snp_rho
-  		   as.double(simu_rho), 		# double fSimu_rho
-  		   as.double(simu_sigma2), 		# double fSimu_sigma2
-		   as.double(simu_mu),			# double fSimu_mu
-		   as.integer(simu_covar_count),
-		   as.double(as.vector(simu_cov_coeff)),# double* pfSimu_cov_coeff
-		   as.integer(simu_sigp),		# int nSimu_sig_p
-		   as.integer(simu_a_len),
-		   as.integer(as.vector(simu_a_pos)),	# int* nSimu_a_pos
-		   as.double(as.vector(simu_a_effect)), # double* pfSimu_a_effect
-		   as.integer(simu_d_len),
-		   as.integer(as.vector(simu_d_pos)),	# int* nSimu_d_pos
-		   as.double(as.matrix(simu_d_effect)), # double* pfSimu_d_effect
-		   as.double(as.vector(simu_cov_range)),# double* pfSimu_cov_range
-		   as.double(as.vector(simu_t_range)),	# double* pfSimu_t_range
+		   as.character(phe.out),		         # char* szPhe_out
+  		   as.character(snp.out), 		         # char* szSnp_out
+  		   as.integer(simu_grp), 		         # int nSimu_grp
+  		   as.integer(simu_n), 			         # int nSimu_n
+  		   as.integer(simu_p), 			         # int nSimu_p
+  		   as.double(simu_snp_rho), 	         # double fSimu_snp_rho
+  		   as.double(simu_rho), 		         # double fSimu_rho
+  		   as.double(simu_sigma2), 		         # double fSimu_sigma2
+		   as.double(simu_mu),			         # double fSimu_mu
+		   as.integer(simu_cov_count),
+		   as.double(as.vector(simu_cov_effect)),# double* pfSimu_cov_coeff
+		   as.integer(simu_sigp),		         # int nSimu_sig_p
+		   as.integer(simu_add_len),
+		   as.integer(as.vector(simu_add_pos)),	 # int* nSimu_a_pos
+		   as.double(as.vector(simu_add_effect)),# double* pfSimu_a_effect
+		   as.integer(simu_dom_len),
+		   as.integer(as.vector(simu_dom_pos)),	 # int* nSimu_d_pos
+		   as.double(as.vector(simu_dom_effect)),# double* pfSimu_d_effect
+		   as.double(as.vector(simu_cov_range)), # double* pfSimu_cov_range
+		   as.double(as.vector(simu_t_range)),	 # double* pfSimu_t_range
 		   as.integer(debug),
 		   as.integer(err) );
 		   

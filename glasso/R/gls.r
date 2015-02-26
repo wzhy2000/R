@@ -13,90 +13,125 @@
 #simu_d_effect[2] = 4, 1.045, 1.320, 1.905,  1.535
 #simu_d_effect[3] = 5, 1.265, -1.225, 2.710, -1.96
 
-gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n, simu_p, simu_snp_rho, simu_rho, simu_sigma2= 16, 
-		 simu_mu= c(13.395, -3.08, 1.875, -3.195), 
-		 simu_covar_effect = array(c(0,0,0,0), dim=c(1,4)), simu_covar_range = c(-1, 1),
-		 simu_add_effect=NA,  simu_dom_effect=NA, 
-		 simu_z_range = c(20,80), simu_z_count = c(5,12), debug=F)
+gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu_p=1000, 
+         simu_snp_rho   = 0.1, 
+         simu_rho       = 0.4, 
+         simu_sigma2    = 16,
+		 simu_mu        = c( 13.395, -3.08, 1.875, -3.195 ),
+		 simu_cov_range = c( -1, 1 ),
+		 simu_cov_effect= array(c(0,0,0,0), dim=c(1,4)), 
+		 simu_add_pos   = c( 1,2,3 ), 
+		 simu_add_effect= array(c( 1.04, 0.885, -2.055, 0.545, 
+                                   1.17, -0.20, 0.74, -4.715,
+                                   1.40, -2.25, 1.00,  0.00), dim=c(3,4)),
+		 simu_dom_pos   = c( 3,4,5 ), 
+		 simu_dom_effect= array(c( 1.49, -2.135, 4.82, 1.425, 
+                                   1.045, 1.320, 1.905,  1.535,
+                                   1.265, -1.225, 2.710, -1.96), dim=c(3,4)),
+		 simu_z_range   = c( 20, 80 ), 
+		 simu_z_count   = c(  5, 12 ), 
+		 debug          = F )
 {
-	if( missing(simu_grp) || length(simu_grp) > 1)
+	if( !missing(simu_grp) && length(simu_grp) > 1)
 		stop("The parameter of simu_grp is not a single valid value.");
 
-	if( missing(simu_n) || length(simu_n) > 1)
+	if( !missing(simu_n) && length(simu_n) > 1)
 		stop("The parameter of simu_n is not a single valid value.");
 
-	if( missing(simu_p) || length(simu_p) > 1)
-		stop("The parameter of simu_n is not a single valid value.");
+	if( !missing(simu_p) && length(simu_p) > 1)
+		stop("The parameter of simu_p is not a single valid value.");
 	
-	if( missing(simu_snp_rho) || length(simu_snp_rho) > 1)
+	if( !missing(simu_snp_rho) && length(simu_snp_rho) > 1)
 		stop("The parameter of simu_snp_rho is not a single valid value.");
 
-	if( missing(simu_rho) || length(simu_rho) > 1)
+	if( !missing(simu_rho) && length(simu_rho) > 1)
 		stop("The parameter of simu_rho is not a single valid value.");
 	
-	if( is.na(simu_sigma2) || length(simu_sigma2) > 1)
+	if( !is.na(simu_sigma2) && length(simu_sigma2) > 1)
 		stop("The parameter of simu_sigma2 is not a single valid value.");
 
 	if( length(which(is.na(simu_mu)))>0 || length(simu_mu) != 4 )
 		stop("The parameter of simu_mu is not a vector with 4 numeric valid values.");
 
-	if( length(which(is.na(simu_covar_range)))>0 || length(simu_covar_range) != 2 )
-		stop("The parameter of simu_cov_range is not a range.");
+	if( length(which(is.na(simu_cov_range)))>0 || length(simu_cov_range) != 2 )
+		stop("The parameter of simu_cov_range is not a enclosed range.");
 
 	if( length(which(is.na(simu_z_range)))>0 || length(simu_z_range) != 2 )
-		stop("The parameter of simu_z_range is not a range.");
+		stop("The parameter of simu_z_range is not a enclosed range.");
 
-	if( length(which(is.na(simu_covar_range)))>0 || length(simu_covar_range) != 2 )
-		stop("The parameter of simu_covar_range is not a range.");
+	if( length(which(is.na(simu_z_count)))>0 || length(simu_z_count) != 2 )
+		stop("The parameter of simu_z_count is not a enclosed range.");
 
-	if(!is.matrix(simu_covar_effect))
-		stop("The parameter of simu_covar_effect is not a matrix.");
-	if(NCOL(simu_covar_effect)!=4)
-		stop("The parameter of simu_covar_effect is not a matrix with 4 columns.");
-	if(length(which(is.na(simu_covar_effect)))>0 )
-		stop("The parameter of simu_covar_effect has NA values.");
+	if(!is.matrix( simu_cov_effect ) )
+		stop("The parameter of simu_cov_effect is not a matrix.");
+	if(NCOL(simu_cov_effect)!=4)
+		stop("The parameter of simu_cov_effect is not a matrix with 4 columns.");
+	if(length(which(is.na(simu_cov_effect)))>0 )
+		stop("The parameter of simu_cov_effect has NA values.");
 	
-	if(!is.matrix(simu_add_effect))
-		stop("The parameter of simu_add_effect is not a matrix.");
-	if(NCOL(simu_add_effect)!=5)
-		stop("The parameter of simu_add_effect is not a matrix with 5 columns.");
-	if(length(which(is.na(simu_add_effect)))>0 )
-		stop("The parameter of simu_add_effect has NA values.");
+	if(length(simu_add_pos)>0 )
+	{
+		if(!is.matrix(simu_add_effect))
+			stop("The parameter of simu_add_effect is not a matrix.");
+		if(NCOL(simu_add_effect)!=4)
+			stop("The parameter of simu_add_effect is not a matrix with 4 columns.");
+		if(length(which(is.na(simu_add_effect)))>0 )
+			stop("The parameter of simu_add_effect has NA values.");
+		if ( length(simu_add_pos) != NROW(simu_add_effect ) )
+			stop("! The length of simu_add_pos is same as simu_add_effect.");
+	}
+	
+	if(length(simu_dom_pos)>0 )
+	{
+		if(!is.matrix(simu_dom_effect))
+			stop("The parameter of simu_dom_effect is not a matrix.");
+		if(NCOL(simu_dom_effect)!=4)
+			stop("The parameter of simu_dom_effect is not a matrix with 4 columns.");
+		if(length(which(is.na(simu_dom_effect)))>0 )
+			stop("The parameter of simu_dom_effect has NA values.");
+		if ( length(simu_dom_pos) != NROW(simu_dom_effect ) )
+			stop("! The length of simu_dom_pos is same as simu_dom_effect.");
+	}
 
-	if(!is.matrix(simu_dom_effect))
-		stop("The parameter of simu_dom_effect is not a matrix.");
-	if(NCOL(simu_dom_effect)!=5)
-		stop("The parameter of simu_dom_effect is not a matrix with 5 columns.");
-	if(length(which(is.na(simu_dom_effect)))>0 )
-		stop("The parameter of simu_dom_effect has NA values.");
+	if ( length(simu_add_pos)>0 && length(which(simu_add_pos<=0 | simu_add_pos>simu_p))>0  )
+		stop("! The parameter of simu_add_pos should be in correct SNP range.");
+
+	if ( length(simu_dom_pos)>0 && length(which(simu_dom_pos<=0 | simu_dom_pos>simu_p))>0  )
+		stop("! The parameter of simu_dom_pos should be in correct SNP range.");
 
 	simu_sig_add <- NROW(simu_add_effect);
 	simu_sig_dom <- NROW(simu_dom_effect);
 	
-	sigp<-unique(c(simu_add_effect[,1], simu_dom_effect[,1]))
+	sigp  <-unique(c(simu_add_pos, simu_dom_pos));
 	simu_sigp <- length(sigp);
-	err <- 0;
+	err   <- 0;
+	
+	simu_add_mat <- NULL;
+	if ( length(simu_add_pos)>0 ) simu_add_mat <- as.matrix( cbind( simu_add_pos, simu_add_effect) );
+
+	simu_dom_mat <- NULL;
+	if ( length(simu_dom_pos)>0 ) simu_dom_mat <- as.matrix( cbind( simu_dom_pos, simu_dom_effect) );
 	
 	out <- .C("gls_simulate", 
-		   as.character(file.phe.out),			# char* szPhe_out
-  		   as.character(file.snp.out), 			# char* szSnp_out
-  		   as.integer(simu_grp), 			# int nSimu_grp
-  		   as.integer(simu_n), 				# int nSimu_n
-  		   as.integer(simu_p), 				# int nSimu_p
-  		   as.double(simu_snp_rho), 			# double fSimu_snp_rho
-  		   as.double(simu_rho), 			# double fSimu_rho
-  		   as.double(simu_sigma2), 			# double fSimu_sigma2
-		   as.double(as.vector(simu_mu)),		# double* pfSimu_mu
-		   as.integer(NROW(simu_covar_effect)), 	# int nSimu_covar_len
-		   as.double(as.vector(simu_covar_range)),	# double* pfSimu_covar_range
-		   as.double(as.matrix(simu_covar_effect)), 	# double* pfSimu_covar_effect
-		   as.integer(simu_sigp),			# int nSimu_sig_p
-		   as.integer(simu_sig_add),			# int nSimu_add_len
-		   as.double(as.matrix(simu_add_effect)), 	# double* pfSimu_add_effect
-		   as.integer(simu_sig_dom),			# int nSimu_dom_len
-		   as.double(as.matrix(simu_dom_effect)), 	# double* pfSimu_dom_effect
-		   as.double(as.vector(simu_z_range)),		# double* simu_z_range
-		   as.integer(as.vector(simu_z_count)), 	# int* pnSimu_z_count
+		   as.character(file.phe.out),			  # char* szPhe_out
+  		   as.character(file.snp.out), 			  # char* szSnp_out
+  		   as.integer(simu_grp), 			      # int nSimu_grp
+  		   as.integer(simu_n), 				      # int nSimu_n
+  		   as.integer(simu_p), 				      # int nSimu_p
+  		   as.double(simu_snp_rho), 			  # double fSimu_snp_rho
+  		   as.double(simu_rho), 			      # double fSimu_rho
+  		   as.double(simu_sigma2), 			      # double fSimu_sigma2
+		   as.double(as.vector(simu_mu)),		  # double* pfSimu_mu
+		   as.integer(NROW(simu_cov_effect)), 	  # int nSimu_covar_len
+		   as.double(as.vector(simu_cov_range)),  # double* pfSimu_covar_range
+		   as.double(as.matrix(simu_cov_effect)), # double* pfSimu_covar_effect
+		   as.integer(simu_sigp),		 	      # int nSimu_sig_p
+		   as.integer(simu_sig_add),		  	  # int nSimu_add_len
+		   as.double( simu_add_mat ),             # double* pfSimu_add_effect
+		   as.integer(simu_sig_dom),			  # int nSimu_dom_len
+		   as.double( simu_dom_mat ),             # double* pfSimu_dom_effect
+		   as.double(as.vector(simu_z_range)),	  # double* simu_z_range
+		   as.integer(as.vector(simu_z_count)),   # int* pnSimu_z_count
 		   as.integer(debug),
 		   as.integer(err) );
 		   
