@@ -1,8 +1,5 @@
 gls.fgwas <- function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names=NULL, op.cpu=0)
 {
-	if ( !require(nlme) )
-		return(list( error=T, err.info="The package of nlme is not installed.") )
-
 	sample.ids <- intersect( rownames(phe.mat), colnames(snp.mat)[-c(1:2)] );
 	if(length(sample.ids)==0)
 		return(list(error=T, err.info="No same population data in the phenotypic data and genotypic data."))
@@ -61,8 +58,6 @@ gls.fgwas <- function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names=NULL, o
 	
 	cpu.fun<-function( sect )
 	{
-		library(nlme);
-		
 		if( (sect-1)*n.percpu+1 > NROW(snp.mat) )
 			return(NULL);
 
@@ -73,10 +68,11 @@ gls.fgwas <- function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names=NULL, o
 		r.gls <- array( NA, dim = c( (range.to-range.fr+1), 5 ) );
 		r.gls[,1]<-c(range.fr:range.to);
 	
-		reg.f0 <<- as.formula(reg.str0);
-		reg.f1 <<- as.formula(reg.str1);
+		reg.f0 <- as.formula(reg.str0);
+		reg.f1 <- as.formula(reg.str1);
 
-		r0 <- try( gls( reg.f0, phe.gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML" ) );	
+		#r0 <- try( gls( reg.f0, phe.gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML" ) );	
+		r0 <- try( do.call("gls", args = list(reg.f0, phe.gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML") ) );
 		for(i in c(range.fr:range.to) )
 		{
 			snp <- unlist( snp.mat[i, c(3:NCOL(snp.mat)) ] ); 
@@ -84,14 +80,15 @@ gls.fgwas <- function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names=NULL, o
 			gls.mat <- cbind( phe.gls.mat, SNP=snp.gls );
 
 			r1 <- try( gls( reg.f1, gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML" ) );    
-			if(class(r1)=="try-error")
+		    r1 <- try( do.call("gls", args = list(reg.f1, gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML") ) );
+			if(any(class(r1)=="try-error"))
 			{
 				r.gls[i-range.to+1,] <- c( i, snp.mat[i,1], snp.mat[i,2], NA, NA );
 				next;	
 			}
 
 			r <- try( anova( r0,r1 ) );                   
-			if(class(r)=="try-error")
+			if(any(class(r)=="try-error"))
 			{
 				r.gls[i-range.to+1,] <- c( i, snp.mat[i,1], snp.mat[i,2], NA, NA );
 				next;	
@@ -105,16 +102,16 @@ gls.fgwas <- function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names=NULL, o
 	
 
 	r.gls <- c();
-	if( op.cpu>1 && require(snowfall) )
+	if( op.cpu>1 && require("snowfall") )
 	{
 		cat("Starting parallel computing, snowfall/snow......\n"); 
-		sfInit(parallel = TRUE, cpus = op.cpu, type = "SOCK")
+		snowfall::sfInit(parallel = TRUE, cpus = op.cpu, type = "SOCK")
 
 		n.percpu <- ceiling( NROW(snp.mat) / op.cpu );
-		sfExport("n.percpu", "phe.gls.mat", "snp.mat", "covar.names", "reg.str0", "reg.str1" );
+		snowfall::sfExport("n.percpu", "phe.gls.mat", "snp.mat", "covar.names", "reg.str0", "reg.str1" );
 		
-		gls.cluster <- sfClusterApplyLB( 1:op.cpu, cpu.fun);
-		sfStop();
+		gls.cluster <- snowfall::sfClusterApplyLB( 1:op.cpu, cpu.fun);
+		snowfall::sfStop();
 
 		cat("Stopping parallel computing......\n");
 		for(i in 1:length(gls.cluster))
@@ -138,9 +135,6 @@ gls.fgwas <- function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names=NULL, o
 
 bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 {
-	if ( !require(nlme) )
-		return(list( error=T, err.info="! The package of nlme is not installed.") )
-	
 	sample.ids <- intersect( rownames(phe.mat), colnames(snp.mat)[-c(1:2)] );
 	if(length(sample.ids)==0)
 		return(list(error=T, err.info="! No same population data in the phenotypic data and genotypic data."))
@@ -167,14 +161,13 @@ bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 	cat("* H0 =", as.character(reg.str0), "\n" );
 	cat("* H1 =", as.character(reg.str1), "\n" );
 	
-	r0 <- try( gls( as.formula(reg.str0), phe.mat, method="ML" ) );	
+	#r0 <- try( gls( as.formula(reg.str0), phe.mat, method="ML" ) );	
+	r0 <- try( do.call("gls", args = list(as.formula(reg.str0), phe.mat, method="ML" ) ) );
 	if(class(r0)=="try-error")
 		return(list( error=T, err.info="! Failed to call gls() method.") )
 		
 	cpu.fun<-function( sect )
 	{
-		library(nlme);
-		
 		if( (sect-1)*n.percpu+1 > NROW(snp.mat) )
 			return(NULL);
 
@@ -185,25 +178,29 @@ bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 		r.bls <- array( NA, dim = c( (range.to-range.fr+1), 5 ) );
 		r.bls[,1]<-c(range.fr:range.to);
 	
-		reg.f0 <<- as.formula(reg.str0);
-		reg.f1 <<- as.formula(reg.str1);
+		reg.f0 <- as.formula(reg.str0);
+		reg.f1 <- as.formula(reg.str1);
 		
-		r0 <- try( gls( reg.f0, phe.mat, method="ML" ) );	
+		#r0 <- try( gls( reg.f0, phe.mat, method="ML" ) );	
+		r0 <- try( do.call("gls", args = list( reg.f0, phe.mat, method="ML" ) ) );
+
 		for(i in c(range.fr:range.to) )
 		{
 			snp <- unlist( snp.mat[i, c(3:NCOL(snp.mat)) ] ); 
 			snp.bls <- snp[ phe.mat$ID ];
 			bls.mat <- cbind( phe.mat, SNP=snp.bls );
 			
-			r1 <- try( gls( reg.f1, bls.mat, method="ML" ) );    
-			if(class(r1)[1]=="try-error")
+			#r1 <- try( gls( reg.f1, bls.mat, method="ML" ) );    
+			r1 <- try( do.call("gls", args = list( reg.f1, bls.mat, method="ML" ) ) );
+
+			if(any(class(r1)=="try-error"))
 			{
 				r.bls[i-range.to+1,] <- c( i, snp.mat[i,1], snp.mat[i,2], NA, NA );
 				next;	
 			}
 
 			r <- try( anova( r0,r1 ) );                   
-			if(class(r)[1]=="try-error")
+			if(any(class(r)=="try-error"))
 			{
 				r.bls[i-range.to+1,] <- c( i, snp.mat[i,1], snp.mat[i,2], NA, NA );
 				next;	
@@ -216,16 +213,16 @@ bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 	}
 	
 	r.bls <- c();
-	if( op.cpu>1 && require(snowfall) )
+	if( op.cpu>1 && require("snowfall") )
 	{
 		cat("\n  Starting parallel computing, snowfall/snow......\n"); 
-		sfInit(parallel = TRUE, cpus = op.cpu, type = "SOCK")
+		snowfall::sfInit(parallel = TRUE, cpus = op.cpu, type = "SOCK")
 
 		n.percpu <- ceiling( NROW(snp.mat) / op.cpu );
-		sfExport("n.percpu", "phe.mat", "snp.mat", "covar.names", "reg.str0", "reg.str1" );
+		snowfall::sfExport("n.percpu", "phe.mat", "snp.mat", "covar.names", "reg.str0", "reg.str1" );
 		
-		bls.cluster <- sfClusterApplyLB( 1:op.cpu, cpu.fun);
-		sfStop();
+		bls.cluster <- snowfall::sfClusterApplyLB( 1:op.cpu, cpu.fun);
+		snowfall::sfStop();
 
 		cat("  Stopping parallel computing......\n\n");
 		for(i in 1:length(bls.cluster))

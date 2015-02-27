@@ -321,8 +321,8 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	cat( "Checking the optional items......\n");
 	show_options( options);
 
-	if(!require(snpStats))
-		stop("Package snpStats is required to load PLINK dataset!");
+	#if(!require(snpStats))
+	#	stop("Package snpStats is required to load PLINK dataset!");
 
 	pd <- load_plink_binary( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe );
 	if( is.null(pd) )
@@ -434,14 +434,14 @@ gls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.prefix, 
 		stop("! The parameter of add.used should be a logical value(TRUE or FALSE).");
 	if ( !(is.logical(dom.used) && length(dom.used)==1 ) )
 		stop("! The parameter of dom.used should be a logical value(TRUE or FALSE).");
-	if ( !(is.logical(fgwas.filter) && length(fgwas.filter)==1 ) )
-		stop("! The parameter of fgwas.filter should be a logical value(TRUE or FALSE).");
+	#if ( !(is.logical(fgwas.filter) && length(fgwas.filter)==1 ) )
+	#	stop("! The parameter of fgwas.filter should be a logical value(TRUE or FALSE).");
 
 	cat("* Phenotypic Data File = ",  file.phe, "\n");
 	cat("* PLINK TPED File = ",  file.plink.tped, "\n");
 	cat("* PLINK TFAM File = ",  file.plink.tfam, "\n");
 
-	show_gls_parameters( Y.prefix, Z.prefix, covar.names, refit, add.used, dom.used, fgwas.filter ) ;
+	show_gls_parameters( Y.prefix, Z.prefix, covar.names, refit, add.used, dom.used, fgwas.filter=F ) ;
 
 	if (missing(options)) 
 		options <- get_default_options()
@@ -471,8 +471,8 @@ gls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.prefix, 
   		   	options$nMcmcIter,
 		   	options$fBurnInRound,
 		   	options$fRhoTuning,
-	           	options$fQval.add,
-	           	options$fQval.dom,
+	        options$fQval.add,
+	        options$fQval.dom,
 			ifelse( options$debug,3 , 1) );
 
 	options$params <- list( file.phe       = file.phe, 
@@ -571,7 +571,7 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
 				NROW(r.filter$snp.mat),
 				subset_op,
 				r.filter$snp.mat,
-				tb.phe,
+				phe.mat,
 				Y.prefix, 
 				Z.prefix,
 				covar.names,
@@ -626,47 +626,47 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
 	return(r);
 }
 
-summary_output2<-function(re1, re_add, re_dom)
-{
-	cat("(1) Covariate Estimate:\n");
-		
-	for(i in 1:NROW(re1))
-		cat(sprintf("%s \t %s \t %d%d%d%d \t%.3f\t(%.3f,%.3f,%.3f,%.3f)\n", 
-			rownames(re1)[i], ifelse(re1[i,1], "Yes", "---"), 
-			re1[i,1], re1[i,2], re1[i,3], re1[i,4], 
-			
-			re1[i,5], 
-			
-			re1[i,6], re1[i,7], re1[i,8], re1[i,9] ));  
-
-	cat("(2) Significant SNPs Estimate:\n");
-
-	cat("    SNP Name\tGrp/Pos\tAdd\tLR2(Median1,2,3,4)\t\tDom\tLR2(Median1,2,3,4)\n");
-	for(i in 1:NROW(re_add))
-	{
-		cat(sprintf("%12s\t%d/%d\t", rownames(re_add)[i], re_add[i,1], re_add[i,2] ));
-  	        cat(sprintf("%s(%d%d%d%d)\t%.3f(%.3f,%.3f,%.3f,%.3f)", ifelse(sum(re_add[i,3:6])>0, "Yes/", "---/"),
-		    re_add[i,3], re_add[i,4], re_add[i,5], re_add[i,6], 
-		    re_add[i,7], re_add[i,8], re_add[i,9], re_add[i,10], re_add[i,11])) 
-
-  	        cat(sprintf("%s(%d%d%d%d)\t%.3f(%.3f,%.3f,%.3f,%.3f)", ifelse(sum(re_dom[i,3:6])>0, "Yes/", "---/"),
-		    re_dom[i,3], re_dom[i,4], re_dom[i,5], re_dom[i,6], 
-		    re_dom[i,7], re_dom[i,8], re_dom[i,9], re_dom[i,10], re_dom[i,11])) 
-		
-		cat("\n");  
-	}	
-
-	if(!is.null(r.gls$refit_add))
-	{
-		cat("Refit Result\n");
-		summary_output2(r.gls$refit_cov, r.gls$refit_add, r.gls$refit_dom)
-	}
-	else if(!is.null(r.gls$varsel_add))
-	{
-		cat("Variable Selection Result\n");
-		summary_output2(r.gls$varsel_cov, r.gls$varsel_add, r.gls$varsel_dom); 
-	}
-}
+#summary_output2<-function(re1, re_add, re_dom)
+#{
+#	cat("(1) Covariate Estimate:\n");
+#		
+#	for(i in 1:NROW(re1))
+#		cat(sprintf("%s \t %s \t %d%d%d%d \t%.3f\t(%.3f,%.3f,%.3f,%.3f)\n", 
+#			rownames(re1)[i], ifelse(re1[i,1], "Yes", "---"), 
+#			re1[i,1], re1[i,2], re1[i,3], re1[i,4], 
+#			
+#			re1[i,5], 
+#			
+#			re1[i,6], re1[i,7], re1[i,8], re1[i,9] ));  
+#
+#	cat("(2) Significant SNPs Estimate:\n");
+#
+#	cat("    SNP Name\tGrp/Pos\tAdd\tLR2(Median1,2,3,4)\t\tDom\tLR2(Median1,2,3,4)\n");
+#	for(i in 1:NROW(re_add))
+#	{
+#		cat(sprintf("%12s\t%d/%d\t", rownames(re_add)[i], re_add[i,1], re_add[i,2] ));
+#  	        cat(sprintf("%s(%d%d%d%d)\t%.3f(%.3f,%.3f,%.3f,%.3f)", ifelse(sum(re_add[i,3:6])>0, "Yes/", "---/"),
+#		    re_add[i,3], re_add[i,4], re_add[i,5], re_add[i,6], 
+#		    re_add[i,7], re_add[i,8], re_add[i,9], re_add[i,10], re_add[i,11])) 
+#
+#  	        cat(sprintf("%s(%d%d%d%d)\t%.3f(%.3f,%.3f,%.3f,%.3f)", ifelse(sum(re_dom[i,3:6])>0, "Yes/", "---/"),
+#		    re_dom[i,3], re_dom[i,4], re_dom[i,5], re_dom[i,6], 
+#		    re_dom[i,7], re_dom[i,8], re_dom[i,9], re_dom[i,10], re_dom[i,11])) 
+#		
+#		cat("\n");  
+#	}	
+#
+#	if(!is.null(r.gls$refit_add))
+#	{
+#		cat("Refit Result\n");
+#		summary_output2(r.gls$refit_cov, r.gls$refit_add, r.gls$refit_dom)
+#	}
+#	else if(!is.null(r.gls$varsel_add))
+#	{
+#		cat("Variable Selection Result\n");
+#		summary_output2(r.gls$varsel_cov, r.gls$varsel_add, r.gls$varsel_dom); 
+#	}
+#}
 
 
 merge_add_dom<-function( re_add, re_dom )
@@ -717,8 +717,9 @@ merge_add_dom<-function( re_add, re_dom )
 	return(sig.mat);
 }
 
-summary.GLS.ret<-function(r.gls)
+summary.GLS.ret<-function(object, ...)
 {
+ 	r.gls <- object;
 	r.sum.ret <- list();
 
 	if(!is.null( r.gls$refit_cov ) && NROW( r.gls$refit_cov )>0 )
@@ -772,8 +773,10 @@ summary.GLS.ret<-function(r.gls)
 	r.sum.ret
 }
 
-print.sum.GLS.ret<-function(r.sum.ret)
+print.sum.GLS.ret<-function(x, ...)
 {
+ 	r.sum.ret <- x;
+
 	if(!is.null(r.sum.ret$fgwas_sig))
 	{
 		cat("--- Significant SNPs Estimate by fGWAS method:", NROW(r.sum.ret$fgwas_sig), "SNPs\n");
@@ -898,8 +901,10 @@ get_sig_gls_snp <- function( r.gls )
 }
 
 
-plot.GLS.ret<-function( r.gls, fig.prefix=NULL )
+plot.GLS.ret<-function( x, y=NULL, ... , fig.prefix=NULL )
 {
+	r.gls <- x;
+
 	if(!is.null(r.gls$fgwas.filter))
 	{
 		filter.man <- r.gls$fgwas.filter[, c(1,2,5), drop=F]

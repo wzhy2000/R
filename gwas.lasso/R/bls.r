@@ -281,8 +281,8 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	cat( "Checking the optional items......\n");
 	show_options( options);
 	
-	if(!require(snpStats))
-		stop("! Package snpStats is required to load PLINK dataset.");
+	#if(!require(snpStats))
+	#	stop("! Package snpStats is required to load PLINK dataset.");
 
 	pd <- load_plink_binary( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe );
 	if( is.null(pd) )
@@ -396,7 +396,7 @@ bls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.name, co
 	cat("* PLINK TPED File = ",  file.plink.tped, "\n");
 	cat("* PLINK TFAM File = ",  file.plink.tfam, "\n");
 
-	show_bls_parameters( Y.name, covar.names, refit, add.used, dom.used, fgwas.filter ) ;
+	show_bls_parameters( Y.name, covar.names, refit, add.used, dom.used, fgwas.filter=FALSE ) ;
 
 	if (missing(options)) 
 		options <- get_default_options()
@@ -437,7 +437,7 @@ bls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.name, co
 				refit        = refit, 
 				add.used     = add.used, 
 				dom.used     = dom.used, 
-				fgwas.filter = fgwas.filter);
+				fgwas.filter = FALSE);
 
 	r <- wrap_BLS_ret(r.bls , r.filter, options);
 	
@@ -521,7 +521,7 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 				NROW(r.filter$snp.mat),
 				subset_op,
 				r.filter$snp.mat,
-				tb.phe,
+				phe.mat,
 				Y.name, 
 				NULL,
 				covar.names,
@@ -574,8 +574,9 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 	return(r);		   
 }
 
-summary.BLS.ret<-function(r.bls)
+summary.BLS.ret<-function(object, ...)
 {
+	r.bls <- object;
 	r.sum.ret <- list();
 
 	if(!is.null( r.bls$refit_cov ) && NROW( r.bls$refit_cov )>0 )
@@ -656,8 +657,9 @@ summary.BLS.ret<-function(r.bls)
 	r.sum.ret
 }
 
-print.sum.BLS.ret<-function(r.sum.ret)
+print.sum.BLS.ret<-function(x, ...)
 {
+	r.sum.ret <- x;
 	if(!is.null(r.sum.ret$fgwas_sig))
 	{
 		cat("--- Significant SNPs Estimate by fGWAS method:", NROW(r.sum.ret$fgwas_sig), "SNPs\n");
@@ -714,8 +716,10 @@ print.sum.BLS.ret<-function(r.sum.ret)
 #
 # Used by: BLS
 #--------------------------------------------------------------
-plot.BLS.ret<-function( r.bls, fig.prefix=NULL )
+plot.BLS.ret<-function( x, y=NULL, ..., fig.prefix=NULL )
 {
+	r.bls <- x;
+	
 	if(!is.null(r.bls$fgwas.filter))
 	{
 		filter.man <- r.bls$fgwas.filter[, c(1,2,5), drop=F]

@@ -289,7 +289,7 @@ snpmat_parallel_list<-function( phe.mat,
 {
 	cpu.fun<-function( sect )
 	{
-		library(glasso);
+		library("gwas.lasso");
 		
 		r.xls.i <- snpmat_call(
 				as.matrix( snpmat.list[[ sect ]]),
@@ -313,12 +313,12 @@ snpmat_parallel_list<-function( phe.mat,
 
 	r.cluster <- list();
 	
-	if( op.ncpu>1 && require(snowfall) )
+	if( op.ncpu>1 && require("snowfall") )
 	{
 		cat("Starting parallel computing, snowfall/snow......\n"); 
-		sfInit(parallel = TRUE, cpus = op.ncpu, type = "SOCK")
+		snowfall::sfInit(parallel = TRUE, cpus = op.ncpu, type = "SOCK")
 		
-		sfExport("phe.mat", "Y.name", "Z.name", "covar.names", 
+		snowfall::sfExport("phe.mat", "Y.name", "Z.name", "covar.names", 
 				"snpmat.list" ,
 				"refit",
 				"add.used",
@@ -331,9 +331,9 @@ snpmat_parallel_list<-function( phe.mat,
 				"op.debug",
 				"lasso.method");
 
-		r.cluster <- sfClusterApplyLB( 1:length(snpmat.list), cpu.fun);
+		r.cluster <- snowfall::sfClusterApplyLB( 1:length(snpmat.list), cpu.fun);
 
-		sfStop();
+		snowfall::sfStop();
 
 		cat("Stopping parallel computing......\n");
 	}		
