@@ -1,4 +1,5 @@
-library(glasso)
+library(gwas.lasso)
+
 
 phe.out <- "gls.phe.mat.csv"  
 snp.out <- "gls.snp.mat.csv"
