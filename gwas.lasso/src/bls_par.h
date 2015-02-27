@@ -29,7 +29,7 @@ public:
     //how many chromosome(group) data
     int simu_grps;
     int simu_n;
-    
+
     // the number of total predictors
     int simu_p;
     double simu_snp_rho;

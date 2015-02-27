@@ -77,7 +77,7 @@ private:
     CFmVector* m_pRefit_SnpChr;
     CFmVector* m_pRefit_SnpPos;
     CFmMatrix* m_pRefit_Ra;
-    CFmMatrix* m_pRefit_Rd; 
+    CFmMatrix* m_pRefit_Rd;
     CFmVector* m_pRefit_Rh2;
     CFmMatrix* m_pRefit_Coefs;
     CFmMatrix* m_pRefit_QBest;

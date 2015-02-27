@@ -26,7 +26,7 @@ public:
     CFmVectorStr* RGetColNames();
 
     int Load(const char* szFile, bool bRowName, bool bColName);
-	
+
     CFmMatrix* GetMatrix();
 
 private:

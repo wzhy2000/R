@@ -39,10 +39,13 @@ static int nDebug      = FM_LOG_NONE;
 int start_log(int nCmdDebug)
 {
     nDebug = nCmdDebug;
+
+#ifdef DEBUG
     if( nDebug )
        	pFLog = stdout;
 	else
    		pFLog = stderr;
+#endif
 
     return(0);
 }
@@ -62,8 +65,10 @@ void log_set_pid( int pid )
 
 FILE* get_log_stream()
 {
+#ifdef DEBUG
     if( !pFLog )
         pFLog = stderr;
+#endif
     return pFLog;
 }
 
@@ -147,8 +152,10 @@ void _log_error( const char* szSrc, int nSrcLine, const char*  fmt, ... )
     va_list arg_ptr ;
     log_print_prefix_f("[!]", "");
     va_start( arg_ptr, fmt ) ;
+#ifdef DEBUG
     vfprintf( stderr, fmt,arg_ptr) ;
     fprintf( stderr, "\n");
+#endif
     va_end(arg_ptr);
 }
 
@@ -157,8 +164,10 @@ void _log_fatal( const char* szSrc, int nSrcLine, const char*  fmt, ... )
     va_list arg_ptr ;
     log_print_prefix_f("[!]", "");
     va_start( arg_ptr, fmt ) ;
+#ifdef DEBUG
     vfprintf( stderr, fmt,arg_ptr) ;
     fprintf( stderr, "\n");
+#endif
     va_end(arg_ptr);
 
     stop_log();

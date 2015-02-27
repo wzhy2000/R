@@ -90,7 +90,7 @@ public:
     CFmVectorStr* m_pSnpNames;
     CFmMatrix*  m_pSimuSnps;   //Matrix[P,N] for simulation data
 
-    CFmMatrix* m_pCovar;      //Matrix[N,covar_len];	
+    CFmMatrix* m_pCovar;      //Matrix[N,covar_len];
     CFmMatrix* m_pPhenoY;     //Matrix[N,Q];
     CFmMatrix* m_pCovarZ;     //Matrix[N,Q];
     CFmMatrix* m_pCovarX;     //VECTOR[N];

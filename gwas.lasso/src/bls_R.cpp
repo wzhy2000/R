@@ -215,16 +215,16 @@ SEXP blasso_plink_tped(  const char* pszPheFile,
          strlen(cmd.szTfamFile)==0 ||
          strlen(cmd.szPheFile)==0 )
     {
-        fprintf(stderr, "\nThe TPED, TFAM and phenotype file are required for a PLINK command.( options: -tped -tfam -phe ).\n\n");
-        fprintf(stderr, "\nTPED=%s\n", cmd.szTpedFile);
-        fprintf(stderr, "\nTFAM=%s\n", cmd.szTfamFile);
-        fprintf(stderr, "\nPHE=%s\n",  cmd.szPheFile);
+        //#fprintf(stderr, "\nThe TPED, TFAM and phenotype file are required for a PLINK command.( options: -tped -tfam -phe ).\n\n");
+        //#fprintf(stderr, "\nTPED=%s\n", cmd.szTpedFile);
+        //#fprintf(stderr, "\nTFAM=%s\n", cmd.szTfamFile);
+        //#fprintf(stderr, "\nPHE=%s\n",  cmd.szPheFile);
         return( R_NilValue );
     }
 
     if ( cmd.nRunmode==_RUN_REFIT && strlen(cmd.szVsretFile)==0)
     {
-        fprintf(stderr, "\nThe result file of variable selection procedure is required.( options: -vsret ).\n\n");
+        //#fprintf(stderr, "\nThe result file of variable selection procedure is required.( options: -vsret ).\n\n");
         return( R_NilValue );
     }
 
@@ -322,13 +322,13 @@ SEXP blasso_simple( const char* pszPheFile,
 
     if ( strlen(cmd.szSnpFile)==0 || strlen(cmd.szPheFile)==0 )
     {
-        fprintf(stderr, "\nThe SNP and phenotype file are required for a SIMPLE command.( options: -snp -phe ).\n\n");
+        //#fprintf(stderr, "\nThe SNP and phenotype file are required for a SIMPLE command.( options: -snp -phe ).\n\n");
         return( R_NilValue );
     }
 
     if ( cmd.nRunmode==_RUN_REFIT && strlen(cmd.szVsretFile)==0)
     {
-        fprintf(stderr, "\nThe result file of variable selection procedure is required.( options: -vsret ).\n\n");
+        //#fprintf(stderr, "\nThe result file of variable selection procedure is required.( options: -vsret ).\n\n");
         return( R_NilValue );
     }
 
@@ -430,7 +430,7 @@ SEXP blasso_snpmat( SEXP pmatPhe,
 
     if ( cmd.nRunmode==_RUN_REFIT && strlen(cmd.szVsretFile)==0)
     {
-        fprintf(stderr, "\nThe result file of variable selection procedure is required.( options: -vsret ).\n\n");
+        //#fprintf(stderr, "\nThe result file of variable selection procedure is required.( options: -vsret ).\n\n");
         return( R_NilValue );
     }
 

@@ -20,7 +20,7 @@ public:
     virtual ~CFmFileMatrix();
 
     char* GetFileName();
-	
+
     int Rbind(CFmVector& vct);
     int GetRow(int nRow, CFmVector& vct);
     int GetCol(int nCol, CFmVector& vct);

@@ -63,7 +63,7 @@ public:
     CFmDat_Pheno(char* szFile_pheno, bool bzNorm, char* szYname, char* szZname, char* szXname );
     CFmDat_Pheno(CFmMatrix* pFmPhe, bool bzNorm, char* szYname, char* szZname, char* szXname );
     virtual ~CFmDat_Pheno();
-	
+
     void Init();
     int LoadNonlongdt(  CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSubjs  );
     int LoadLongdt(  CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSubjs );
@@ -81,7 +81,7 @@ public:
     char* m_pszXname;
     char* m_pszYname;
     char* m_pszZname;
-	
+
     CFmVectorStr* m_pXnames;
 
 protected:

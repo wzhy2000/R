@@ -317,8 +317,7 @@ SEXP glasso_simple( const char* pszPhefile,
     if ( strlen(cmd.szSnpFile)==0 ||
          strlen(cmd.szPheFile)==0 )
     {
-        fprintf(stderr, "\nThe SNP and phenotype file are required for a SIMPLE command.( options: -snp -phe ).\n\n");
-        //return( ERR_OPTION_VALUE );
+        //#fprintf(stderr, "\nThe SNP and phenotype file are required for a SIMPLE command.( options: -snp -phe ).\n\n");
         return( R_NilValue );
     }
 
@@ -377,8 +376,7 @@ SEXP glasso_plink_tped( const char* pszPhefile,
     if ( strlen(cmd.szSnpFile)==0 ||
          strlen(cmd.szPheFile)==0 )
     {
-        fprintf(stderr, "\nThe SNP and phenotype file are required for a SIMPLE command.( options: -snp -phe ).\n\n");
-        //return( ERR_OPTION_VALUE );
+        //#fprintf(stderr, "\nThe SNP and phenotype file are required for a SIMPLE command.( options: -snp -phe ).\n\n");
         return(R_NilValue);
     }
 
