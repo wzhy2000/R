@@ -1,4 +1,7 @@
-useDynLib(glasso, .registration = TRUE)
+useDynLib(gwas.lasso, .registration = TRUE)
+
+import(nlme)
+import(snpStats)
 
 # functions
 export(bls.simulate)

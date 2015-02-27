@@ -1,4 +1,4 @@
-library(glasso)
+library(gwas.lasso)
 
 phe.out <- "bls.simple.phe"  
 snp.out <- "bls.simple.snp"

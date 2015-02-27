@@ -1,3 +1,2 @@
 
-PKG_LIBS =$(shell ${R_HOME}/bin/R CMD config BLAS_LIBS) 
-
+PKG_LIBS =$(shell ${R_HOME}/bin/R CMD config BLAS_LIBS) -lRlapack
