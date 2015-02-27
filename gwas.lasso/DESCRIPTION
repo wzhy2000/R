@@ -1,8 +1,8 @@
 Package: gwas.lasso
 Type: Package
 Title: Bayesian Group Lassp for GWAS
-Version: 0.18
-Date: 2014-10-12
+Version: 0.20
+Date: 2015-02-27
 Author: Zhong Wang and Jiahan Li
 Maintainer: Zhong Wang <wzhy2000@hotmail.com>
 Description: Bayesian Group Lassp for GWAS
@@ -10,7 +10,7 @@ License: GPL (>= 2)
 Depends: R (>= 2.10.0)
 Imports: nlme, snpStats
 Suggests: snowfall
-Packaged: 2014-10-12 02:23:25 UTC; sglee
+Packaged: 2015-02-27 02:23:25 UTC; sglee
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2014-02-18 07:21:49
+Date/Publication: 2015-02-27 07:21:49
