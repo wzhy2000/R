@@ -233,7 +233,7 @@ int BLS::Varsel(BLS_cfg* pCfg)
     else
     {
 		CFmSys::GetTempFile(m_pCmd->szTmpFmat, "", MAX_PATH);
-        sprintf(m_szFileMat, "%s%s",m_pCmd->szTmpFmat, "bls.fmat");
+        sprintf(m_szFileMat, "%s%s",m_pCmd->szTmpFmat, ".bls.fmat");
 		r_pFileMat = new (refNew) CFmFileMatrix( m_szFileMat, FALSE, TRUE);
     }
 

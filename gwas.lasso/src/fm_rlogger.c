@@ -45,6 +45,9 @@ int start_log(int nCmdDebug)
        	pFLog = stdout;
 	else
    		pFLog = stderr;
+#else
+	//pFLog = fopen("gwas.lasso.so.log", "w+");
+	pFLog = NULL;
 #endif
 
     return(0);
@@ -88,22 +91,28 @@ int get_log_errorcount( int clear)
 
 void log_print_prefix(const char *text)
 {
-    if( pgm_name )
-        fprintf(pFLog, "%s%s: %s", pgm_name, szPid, text );
-    else
-        fprintf(pFLog, "?%s:", text );
+	if(!pFLog) return;
+
+	if( pgm_name )
+		fprintf(pFLog, "%s%s: %s", pgm_name, szPid, text );
+	else
+		fprintf(pFLog, "?%s:", text );
 }
 
 static void log_print_prefix_f(const char *text, const char *fname)
 {
-    if( pgm_name )
-        fprintf(pFLog, "%s%s:%s: %s", pgm_name, szPid, fname, text );
-    else
-        fprintf(pFLog, "%s:%s ", text, fname );
+	if(!pFLog) return;
+
+	if( pgm_name )
+		fprintf(pFLog, "%s%s:%s: %s", pgm_name, szPid, fname, text );
+	else
+		fprintf(pFLog, "%s:%s ", text, fname );
 }
 
 void _log_debug( const char* szSrc, int nSrcLine, const char* fmt, ... )
 {
+	if(!pFLog) return;
+
     va_list arg_ptr ;
     if ( nDebug >= FM_LOG_DEBUG )
     {
@@ -118,6 +127,8 @@ void _log_debug( const char* szSrc, int nSrcLine, const char* fmt, ... )
 
 void _log_info( const char* szSrc, int nSrcLine, const char* fmt, ... )
 {
+	if(!pFLog) return;
+
     if ( nDebug >= FM_LOG_DEBUG )
     {
         va_list arg_ptr ;
@@ -134,6 +145,8 @@ void _log_info( const char* szSrc, int nSrcLine, const char* fmt, ... )
 
 void _log_prompt( const char* szSrc, int nSrcLine, const char* fmt, ... )
 {
+	if(!pFLog) return;
+
     if ( nDebug >= FM_LOG_WARN )
     {
         va_list arg_ptr ;
@@ -149,6 +162,8 @@ void _log_prompt( const char* szSrc, int nSrcLine, const char* fmt, ... )
 
 void _log_error( const char* szSrc, int nSrcLine, const char*  fmt, ... )
 {
+	if(!pFLog) return;
+
     va_list arg_ptr ;
     log_print_prefix_f("[!]", "");
     va_start( arg_ptr, fmt ) ;
@@ -161,6 +176,8 @@ void _log_error( const char* szSrc, int nSrcLine, const char*  fmt, ... )
 
 void _log_fatal( const char* szSrc, int nSrcLine, const char*  fmt, ... )
 {
+	if(!pFLog) return;
+
     va_list arg_ptr ;
     log_print_prefix_f("[!]", "");
     va_start( arg_ptr, fmt ) ;
@@ -176,7 +193,9 @@ void _log_fatal( const char* szSrc, int nSrcLine, const char*  fmt, ... )
 
 void _log_hexdump( const char *text, const char *buf, size_t len )
 {
-    int i;
+ 	if(!pFLog) return;
+
+ 	int i;
 
     log_print_prefix(text);
     for(i=0; i < len; i++ )

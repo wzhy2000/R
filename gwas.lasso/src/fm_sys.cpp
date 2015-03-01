@@ -16,6 +16,7 @@
 
 #include "fm_linux.h"
 #include "fm_rlogger.h"
+#include "fm_rsource.h"
 #include "fm_err.h"
 #include "fm_sys.h"
 
@@ -69,12 +70,17 @@ int CFmSys::GetTempId(char* szGrpId)
 
 int CFmSys::GetTempFile(char* szFile, const char*szExt, int nLen)
 {
-    char szPath[MAX_PATH]={0};
-    sprintf( szPath, "ftemp-%d.%s",GetTempId(), szExt);
-    if ( (unsigned int )nLen <= strlen(szPath) )
+	SEXP sexpFile = run_script("tempfile()");
+	const char* pszTmpfile = CHAR(STRING_ELT(sexpFile,0));
+
+    if ( (unsigned int )nLen <= strlen(pszTmpfile) )
         return(-1);
 
-    strcpy(szFile, szPath);
+	if(strlen(szExt)>0)
+    	sprintf( szFile, "%s.%s",pszTmpfile, szExt);
+    else
+    	strcpy( szFile, pszTmpfile);
+
     return(0);
 }
 

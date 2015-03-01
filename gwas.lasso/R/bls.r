@@ -161,8 +161,8 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
   		   	options$nMcmcIter,
 		   	options$fBurnInRound,
 		   	options$fRhoTuning,
-	           	options$fQval.add,
-	           	options$fQval.dom,
+	        options$fQval.add,
+	        options$fQval.dom,
 			ifelse( options$debug, 3, 1) );
 	}
 	else
@@ -500,8 +500,8 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
   		   	options$nMcmcIter,
 		   	options$fBurnInRound,
 		   	options$fRhoTuning,
-	           	options$fQval.add,
-	           	options$fQval.dom,
+	        options$fQval.add,
+	        options$fQval.dom,
 			ifelse( options$debug, 3, 1) );
 	}
 	else

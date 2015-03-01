@@ -4,11 +4,18 @@ library(gwas.lasso)
 #file.plink.bim <- "/home/zw224/f/bmi/FHS-bmi-v1.bim"  
 #file.plink.fam <- "/home/zw224/f/bmi/FHS-bmi-v1.fam"  
 
-file.plink.bed <- "/home/zw224/f/bmi/FHS-bmi-v1-chr2.bed"  
-file.plink.bim <- "/home/zw224/f/bmi/FHS-bmi-v1-chr2.bim"  
-file.plink.fam <- "/home/zw224/f/bmi/FHS-bmi-v1-chr2.fam"  
+#Yale BulldongN
+#file.plink.bed <- "/home/zw224/f/bmi/FHS-bmi-v1-chr2.bed"  
+#file.plink.bim <- "/home/zw224/f/bmi/FHS-bmi-v1-chr2.bim"  
+#file.plink.fam <- "/home/zw224/f/bmi/FHS-bmi-v1-chr2.fam"  
 
-file.phe.long  <- "/home/zw224/f/bmi/bmi-phenos-sex-longtime.csv"  
+#TACC Stampede
+file.plink.bed <- "/work/03350/tg826494/test/bmidata/FHS-bmi-v1-chr2.bed"  
+file.plink.bim <- "/work/03350/tg826494/test/bmidata/FHS-bmi-v1-chr2.bim"  
+file.plink.fam <- "/work/03350/tg826494/test/bmidata/FHS-bmi-v1-chr2.fam"  
+
+#file.phe.long  <- "/home/zw224/f/bmi/bmi-phenos-sex-longtime.csv"  
+file.phe.long  <- "/work/03350/tg826494/test/bmidata/bmi-phenos-sex-longtime.csv"  
 
 ret1<-ret2<-ret3<-ret4<-ret5<-ret6<-ret7<-ret8<-c();
 

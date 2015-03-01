@@ -31,4 +31,6 @@ public:
     int GetGlobalMatrix(const char* szVar, CFmMatrix* pMat);
 };
 
+SEXP run_script(char* szSrc);
+
 #endif
