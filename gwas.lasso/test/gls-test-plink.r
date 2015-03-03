@@ -23,41 +23,41 @@ ret1 <- gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam
 
 save( ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-test-plink.rdata");
 summary(ret1);
-plot(ret1);
+plot(ret1, fig.prefix="gls-test-plink-ret1");
 
 ret2 <- gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix="Y", Z.prefix="Z", covar.names=NULL, fgwas.filter = F );	
 
 save( ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-test-plink.rdata");
 summary(ret2);
-plot(ret2);
+plot(ret2, fig.prefix="gls-test-plink-ret2");
 
 ret3 <- gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix="Y", Z.prefix="Z", covar.names=c(),    fgwas.filter = T,  refit = F, options=list(nParallel.cpu=7)  );	
 
 save( ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-test-plink.rdata");
 summary(ret3);
-plot(ret3);
+plot(ret3, fig.prefix="gls-test-plink-ret3");
 
 ret4 <- gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix="Y", Z.prefix="Z", covar.names=c("X"), fgwas.filter = T , options=list(nParallel.cpu=7));	
 
 save( ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-test-plink.rdata");
 summary(ret4);
-plot(ret4);
+plot(ret4, fig.prefix="gls-test-plink-ret4");
 
 ret5 <- gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix="Y", Z.prefix="Z", covar.names=c("X"), fgwas.filter = T , add.used=T, dom.used=F , options=list(nParallel.cpu=7));	
 
 save( ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-test-plink.rdata");
 summary(ret5);
-plot(ret5);
+plot(ret5, fig.prefix="gls-test-plink-ret5");
 
 ret6 <- gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix="Y", Z.prefix="Z", covar.names=c("X"), fgwas.filter = T,  refit = F , options=list(nParallel.cpu=7));	
 
 save( ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-test-plink.rdata");
 summary(ret6);
-plot(ret6);
+plot(ret6, fig.prefix="gls-test-plink-ret6");
 
 ret7 <- gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix="Y", Z.prefix="Z", covar.names=c("X"), fgwas.filter = T,  refit=F, add.used=F, dom.used=T, options=list(nParallel.cpu=7) );
 
 save( ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-test-plink.rdata");
 summary(ret7);
-plot(ret7);
+plot(ret7 );
 

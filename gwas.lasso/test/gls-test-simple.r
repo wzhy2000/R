@@ -1,13 +1,15 @@
 library(gwas.lasso)
 
-phe.out <- "gls.simple.phe"  
-snp.out <- "gls.simple.snp"
+phe.out <- "gls.test.simple.phe"  
+snp.out <- "gls.test.simple.snp"
 
 a_effect <- array(0, dim=c(3,4));
 d_effect <- array(0, dim=c(3,4));
 cov_effect <- array(0, dim=c(2,4));
 
-sigsnp <- c(1:5);
+sigsnp <- sample(1:3000)[1:5];
+show(sigsnp);
+
 a_effect[1,]<-c( 1.04, 0.885, -2.055, 0.545);
 a_effect[2,]<-c( 1.17, -0.20, 0.74, -4.715);
 a_effect[3,]<-c( 1.40, -2.25, 1.00,  0.00);
@@ -35,41 +37,41 @@ ret1 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-simple.rdata");
 summary(ret1);
-plot(ret1);
+plot(ret1, fig.prefix="gls-test-simple-ret1");
 
 ret2 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = F );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-simple.rdata");
 summary(ret2);
-plot(ret2);
+plot(ret2, fig.prefix="gls-test-simple-ret2");
 
 ret3 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1"), fgwas.filter = T , options=list(nParallel.cpu=7) );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-simple.rdata");
 summary(ret3);
-plot(ret3);
+plot(ret3, fig.prefix="gls-test-simple-ret3");
 
 ret4 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1"), fgwas.filter = T,  refit = F , options=list(nParallel.cpu=7) );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-simple.rdata");
 summary(ret4);
-plot(ret4);
+plot(ret4, fig.prefix="gls-test-simple-ret4");
 
 ret5 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c(), fgwas.filter = T,  refit = F, options=list(nParallel.cpu=7)  );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-simple.rdata");
 summary(ret5);
-plot(ret5);
+plot(ret5, fig.prefix="gls-test-simple-ret5");
 
 ret6 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c(), fgwas.filter = T,  refit = F, options=list(nParallel.cpu=7) );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-simple.rdata");
 summary(ret6);
-plot(ret6);
+plot(ret6, fig.prefix="gls-test-simple-ret6");
 
 ret7 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter=F,  refit=F, add.used=T, dom.used=F, options=list(nParallel.cpu=7)  );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, ret7, file="gls-test-simple.rdata");
 summary(ret7);
-plot(ret7);
+plot(ret7, fig.prefix="gls-test-simple-ret7");
 

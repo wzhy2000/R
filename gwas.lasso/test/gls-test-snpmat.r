@@ -1,14 +1,16 @@
 library(gwas.lasso)
 
 
-phe.out <- "gls.phe.mat.csv"  
-snp.out <- "gls.snp.mat.csv"
+phe.out <- "gls.test.snpmat.phe"  
+snp.out <- "gls.test.snpmat.snp"
 
 a_effect <- array(0, dim=c(3,4));
 d_effect <- array(0, dim=c(3,4));
 cov_effect <- array(0, dim=c(2,4));
 
-sigsnp <- c(1:5);
+sigsnp <- sample(1:4000)[1:5];
+show(sigsnp);
+
 a_effect[1,]<-c( 1.04, 0.885, -2.055, 0.545);
 a_effect[2,]<-c( 1.17, -0.20, 0.74, -4.715);
 a_effect[3,]<-c( 1.40, -2.25, 1.00,  0.00);
@@ -40,35 +42,35 @@ ret1 <- gls.snpmat(tb.phe, tb.snp, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-snpmat.rdata");
 summary(ret1);
-plot(ret1);
+plot(ret1, fig.prefix="gls-test-snpmat-ret1");
 
 ret2 <- gls.snpmat(tb.phe, tb.snp, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = F );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-snpmat.rdata");
 summary(ret2);
-plot(ret2);
+plot(ret2, fig.prefix="gls-test-snpmat-ret2");
 
 ret3 <- gls.snpmat(tb.phe, tb.snp, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1"), fgwas.filter = T , options=list(nParallel.cpu=7));	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-snpmat.rdata");
 summary(ret3);
-plot(ret3);
+plot(ret3, fig.prefix="gls-test-snpmat-ret3");
 
 ret4 <- gls.snpmat(tb.phe, tb.snp, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1"), fgwas.filter = T,  refit = F, options=list(nParallel.cpu=7) );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-snpmat.rdata");
 summary(ret4);
-plot(ret4);
+plot(ret4, fig.prefix="gls-test-snpmat-ret4");
 
 ret5 <- gls.snpmat(tb.phe, tb.snp, Y.prefix="Y", Z.prefix="Z", covar.names=c(), fgwas.filter = T,  refit = F , options=list(nParallel.cpu=7));	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-snpmat.rdata");
 summary(ret5);
-plot(ret5);
+plot(ret5, fig.prefix="gls-test-snpmat-ret5");
 
 ret6 <- gls.snpmat(tb.phe, tb.snp, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter=T,  refit=F, add.used=T, dom.used=F, options=list(nParallel.cpu=7) );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-snpmat.rdata");
 summary(ret6);
-plot(ret6);
+plot(ret6, fig.prefix="gls-test-snpmat-ret6");
 

@@ -1,7 +1,7 @@
 library(gwas.lasso)
 
-phe.out <- "bls.simple.phe"  
-snp.out <- "bls.simple.snp"
+phe.out <- "bls.test.simple.phe"  
+snp.out <- "bls.test.simple.snp"
 
 sigsnp <- c(11, 22, 33, 444, 55);
 
@@ -25,35 +25,35 @@ ret1 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c(), refit=F );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
 summary(ret1)
-plot(ret1);
+plot(ret1, fig.prefix="bls-test-simple-ret1");
 
 ret2 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c("X_2"), refit=F );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
 summary(ret2)
-plot(ret2, "bls-test-simple-ret2");
+plot(ret2, fig.prefix="bls-test-simple-ret2");
 
 ret3 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c("X_1","X_2"), refit=F , options=list(nParallel.cpu=7) );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
 summary(ret3)
-plot(ret3, "bls-test-simple-ret3");
+plot(ret3, fig.prefix="bls-test-simple-ret3");
 
 ret4 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c("X_1","X_2"), refit=T, add.used=T, dom.used=F, options=list(nParallel.cpu=7) );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
 summary(ret4)
-plot(ret4, "bls-test-simple-ret4");
+plot(ret4, fig.prefix="bls-test-simple-ret4");
 
 ret5 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c("X_1","X_2"), refit=T, add.used=T, dom.used=F, fgwas.filter=T, options=list(nParallel.cpu=7) );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
 summary(ret5)
-plot(ret5, "bls-test-simple-ret5");
+plot(ret5, fig.prefix="bls-test-simple-ret5");
 
 ret6 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c(), refit=F, add.used=T, dom.used=F, fgwas.filter=F, options=list(nParallel.cpu=7) );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
 summary(ret6)
-plot(ret6, "bls-test-simple-ret6");
+plot(ret6, fig.prefix="bls-test-simple-ret6");
 

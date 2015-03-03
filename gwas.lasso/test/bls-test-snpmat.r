@@ -1,7 +1,7 @@
 library(gwas.lasso)
 
-phe.out <- "bls.snpmat.phe"  
-snp.out <- "bls.snpmat.snp"
+phe.out <- "bls.test.snpmat.phe"  
+snp.out <- "bls.test.snpmat.snp"
 
 sigsnp <- c(11, 22, 33, 444, 55);
 
@@ -29,35 +29,35 @@ ret1 <- bls.snpmat(tb.phe, tb.snp, Y.name="Y", covar.names=c("X_1","X_2"), fgwas
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="bls-test-snpmat.rdata");
 summary(ret1)
-plot(ret1);
+plot(ret1, fig.prefix="bls-test-snpmat-ret1");
 
 ret2 <- bls.snpmat(tb.phe, tb.snp, Y.name="Y", covar.names=c("X_1","X_2"), fgwas.filter = F );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="bls-test-snpmat.rdata");
 summary(ret2)
-plot(ret2, "bls-test-snpmat-ret2");
+plot(ret2, fig.prefix="bls-test-snpmat-ret2");
 
 ret3 <- bls.snpmat(tb.phe, tb.snp, Y.name="Y", covar.names=c("X_1"), fgwas.filter = T, options=list(nParallel.cpu=7) );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="bls-test-snpmat.rdata");
 summary(ret3)
-plot(ret3, "bls-test-snpmat-ret3");
+plot(ret3, fig.prefix="bls-test-snpmat-ret3");
 
 ret4 <- bls.snpmat(tb.phe, tb.snp, Y.name="Y", covar.names=c("X_1"), fgwas.filter = T,  refit = F, options=list(nParallel.cpu=7) );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="bls-test-snpmat.rdata");
 summary(ret4)
-plot(ret4, "bls-test-snpmat-ret4");
+plot(ret4, fig.prefix="bls-test-snpmat-ret4");
 
 ret5 <- bls.snpmat(tb.phe, tb.snp, Y.name="Y", covar.names=c(), fgwas.filter = T,  refit = F, options=list(nParallel.cpu=7) );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="bls-test-snpmat.rdata");
 summary(ret5)
-plot(ret5, "bls-test-snpmat-ret5");
+plot(ret5, fig.prefix="bls-test-snpmat-ret5");
 
 ret6 <- bls.snpmat(tb.phe, tb.snp, Y.name="Y", covar.names=c("X_1","X_2"), fgwas.filter=T,  refit=T, add.used=T, dom.used=F, options=list(nParallel.cpu=7) );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="bls-test-snpmat.rdata");
 summary(ret6)
-plot(ret6, "bls-test-snpmat-ret6");
+plot(ret6, fig.prefix="bls-test-snpmat-ret6");
 
