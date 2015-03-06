@@ -33,13 +33,16 @@ draw_man_adh2<-function( adh2, fig.prefix=NULL, fig.name=NULL )
 			par(mfg=c(2, 1));
 			draw_snplist( adh2[, 4, drop=F ], "Estimated dominant effect", sigpos_list=NULL);
 		}
-		
+	
 		if( n.subfig >= 3)
 		{
 			par(mfg=c(3, 1));
 			draw_snplist( adh2[, 5, drop=F ], "Heritability", sigpos_list=NULL);
 		}	
 	}
+
+	# sort adh2 by grpup number and position.
+	adh2 <- adh2[order(adh2[,1], adh2[,2]),,drop=F]
 	
 	r <- try( draw_call() );
 	if(class(r) == "try-error")
@@ -48,7 +51,7 @@ draw_man_adh2<-function( adh2, fig.prefix=NULL, fig.name=NULL )
 	if (!is.null( fig.prefix ))
 	{
 		dev.off();
-		cat("The figure is exported into", pdf.file, "\n");
+		cat("* The figure is exported into", pdf.file, "\n");
 	}		
 }
 
@@ -60,6 +63,12 @@ draw_fgwas_manhattan<-function( res, map.title="", sig.thres, dot.cex, y.max=NA)
 	#par( mar=c( 4, 4, 1.5, 1.5)+0.1);
 
 	pvalues <- -log10(res[,3]);
+	if( length( which(is.infinite(pvalues)) )>0 )
+	{
+		pv.temp <- pvalues[ -which(is.infinite(pvalues)) ];
+		pvalues[ which(is.infinite(pvalues)) ] <- max(pv.temp)*1.5;
+	}
+	
 	nrow    <- dim(res)[1];
 	log10.max <- round(max(pvalues, na.rm=T))+1;
 
@@ -111,51 +120,10 @@ draw_man_fgwas<-function( r.fgwas, fig.prefix=NULL, fig.name=NULL )
 		pdf( pdf.file, width=6, height=3);
 	}
 
+	# sort r.fgwas by grpup number and position.
+	r.fgwas <- r.fgwas[ order(r.fgwas[,1], r.fgwas[,2]),,drop=F]
+
 	r <- try( draw_fgwas_manhattan( r.fgwas, map.title="fGWAS Analysis", 0.05, 0.7 ) );
-	if(class(r) == "try-error")
-		cat("Failed to draw figure.\n")
-	
-	if (!is.null( pdf.file ))
-	{
-		dev.off();
-		cat("* The figure is exported into", pdf.file, "\n");
-	}		
-}
-
-draw_man_adh2<-function( adh2, fig.prefix=NULL, fig.name=NULL )
-{
-	pdf.file <- NULL;
-	if (!is.null( fig.prefix ))
-	{
-		pdf.file <- paste( fig.prefix, fig.name, "pdf", sep=".");
-		pdf( pdf.file, width=6, height=6);
-	}
-
-	draw_snplist<-function( values, yLabel, sigpos_list=NULL)
-	{
-		xlim <- c(0, length(values));
-		ylim <- range(values);
-		nB <- length(values);
-		snps <- c(0:nB);
-		plot(1:10,1:10, xlim=xlim, ylim=ylim, type="n", xlab="SNP", ylab=yLabel);
-		rect(snps[-(nB+1)], 0, snps[-1L], values,  col = "blue", border = "black");
-	}
-
-	draw_call<-function()
-	{
-		par(mar=c(4.5, 4, 0.5, 2) + 0.1);
-		plot.new();
-		par(mfrow=c(3,1));
-
-		par(mfg=c(1, 1));
-		draw_snplist( adh2[, 3, drop=F ], "Estimated additive effect", sigpos_list=NULL);
-		par(mfg=c(2, 1));
-		draw_snplist( adh2[, 4, drop=F ], "Estimated dominant effect", sigpos_list=NULL);
-		par(mfg=c(3, 1));
-		draw_snplist( adh2[, 5, drop=F ], "Heritability", sigpos_list=NULL);
-	}
-	
-	r <- try( draw_call() );
 	if(class(r) == "try-error")
 		cat("Failed to draw figure.\n")
 	

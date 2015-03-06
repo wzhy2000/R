@@ -1,14 +1,14 @@
 load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, file.phe.long )
 {
-	snp.mat <- try( read.plink( file.plink.bed,  file.plink.bim, file.plink.fam) );
-	if(class(snp.mat)=="try-error")
+	plink <- try( read.plink( file.plink.bed,  file.plink.bim, file.plink.fam) );
+	if(class(plink)=="try-error")
 		return(NULL);
 	
 	phe.log <- try( read.csv(file.phe.long, header=T) );
 	if(class(phe.log )=="try-error")
 		return(NULL);
 	
-	gen.ids <- rownames(snp.mat$fam) ;
+	gen.ids <- rownames(plink$fam) ;
 
 	# !!! First Column must be individual ID.
 	phe.ids <- c(phe.log[,1]);
@@ -34,8 +34,8 @@ load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, fil
 	if(length(gen.rem.idx)>0)
 	{
 		cat("!", length(gen.rem.idx), "individuals are removed from genotype data due to no phenotypic data.\n")
-		snp.mat$genotypes<- snp.mat$genotypes[-gen.rem.idx,]
-		snp.mat$fam      <- snp.mat$fam[-gen.rem.idx ,]
+		plink$genotypes<- plink$genotypes[-gen.rem.idx,]
+		plink$fam      <- plink$fam[-gen.rem.idx ,]
 	}
 	
 	phe.rem.idx <- c();
@@ -49,8 +49,8 @@ load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, fil
 	{
 		cat("!", length(phe.rem.idx), "individuals are removed from pheotype and genotype data due to invalid measurement.\n")
 		phe.log <- phe.log[ -phe.rem.idx, ,drop=F]
-		snp.mat$genotypes<- snp.mat$genotypes[-phe.rem.idx,]
-		snp.mat$fam      <- snp.mat$fam[-phe.rem.idx ,]
+		plink$genotypes<- plink$genotypes[-phe.rem.idx,]
+		plink$fam      <- plink$fam[-phe.rem.idx ,]
 	}
 	
 	return(list(snp.mat=snp.mat, phe.mat=phe.log));
@@ -69,15 +69,15 @@ get_sub_snp<-function(snp.mat, snp.set.idx)
 
 		if (length(s.miss)>0)
 		{
-			n.s0 <- length( which( s.mat.i == 0 ) );
-			n.s1 <- length( which( s.mat.i == 1 ) );
-			n.s2 <- length( which( s.mat.i == 2 ) );
-			n.s  <- length(s.mat.i)
+			n.AA <- length( which( s.mat.i == 0 ) );
+			n.Aa <- length( which( s.mat.i == 1 ) );
+			n.aa <- length( which( s.mat.i == 2 ) );
+			n.s  <- n.AA + n.Aa + n.aa;
 			
-			r.miss<- runif( length(s.miss) );
-			r.snp <- rep(2, length(s.miss));
-			r.snp[r.miss <= n.s0/n.s ]<-0;
-			r.snp[r.miss <= (n.s0 + n.s1)/n.s ]<-1;
+			r.miss <- runif( length(s.miss) );
+			r.snp  <- rep(2, length(s.miss));
+			r.snp [ r.miss <= n.AA/n.s ]<-0;
+			r.snp [ r.miss <= (n.AA + n.Aa)/n.s ]<-1;
 			s.mat.i[s.miss] <- r.snp;
 		}
 		
@@ -94,4 +94,39 @@ get_sub_snp<-function(snp.mat, snp.set.idx)
 	rownames(snp.imp) <-rownames( map );
 
 	return(list(maf=snp.maf, snp=snp.imp, info=map[,c(2,1,4)]) );
+}
+
+impute_simple_snp <- function( snpmat )
+{
+	f_imputed <- function( snp )
+	{
+		s.miss <- which( is.na( snp[3:length(snp)] ) );
+		if ( length(s.miss)>0 )
+		{
+			n.AA <- length(which( snp[3:length(snp)] == 0 ) );
+			n.Aa <- length(which( snp[3:length(snp)] == 1 ) );
+			n.aa <- length(which( snp[3:length(snp)] == 2 ) );
+			n.s  <- n.AA + n.Aa + n.aa;
+				
+			r.miss <- runif( length(s.miss) );
+			r.snp  <- rep(2, length( s.miss ));
+			r.snp [ r.miss <= n.AA/n.s ]<-0;
+			r.snp [ r.miss <= (n.AA + n.Aa)/n.s ]<-1;
+			snp [ s.miss + 2 ] <- r.snp;
+		}
+		
+		if (mean(  snp[3:length(snp)] )/2>0.5)  
+			snp[ 3:length(snp) ] <- 2 -  snp[ 3:length(snp) ];
+
+		return(snp)
+	}
+
+	total_miss <- length(which(is.na(snpmat)));
+	
+	# !!! Applying matrix[m,n] will be [n.m]!!!
+	snpmat <- t ( apply(snpmat, 1, f_imputed) ) ;
+	
+	cat("* Missing SNPs are imputed(", total_miss, "SNPs).\n");
+		
+	return(snpmat); 
 }

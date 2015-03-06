@@ -78,7 +78,7 @@ gls.fgwas <- function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names=NULL, o
 			snp <- unlist( snp.mat[i, c(3:NCOL(snp.mat)) ] ); 
 			snp.gls <- snp[ phe.gls.mat$ID ];
 			gls.mat <- cbind( phe.gls.mat, SNP=snp.gls );
-
+			
 			r1 <- try( gls( reg.f1, gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML" ) );    
 		    r1 <- try( do.call("gls", args = list(reg.f1, gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML") ) );
 			if(any(class(r1)=="try-error"))
@@ -189,7 +189,7 @@ bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 			snp <- unlist( snp.mat[i, c(3:NCOL(snp.mat)) ] ); 
 			snp.bls <- snp[ phe.mat$ID ];
 			bls.mat <- cbind( phe.mat, SNP=snp.bls );
-			
+
 			#r1 <- try( gls( reg.f1, bls.mat, method="ML" ) );    
 			r1 <- try( do.call("gls", args = list( reg.f1, bls.mat, method="ML" ) ) );
 
@@ -331,7 +331,10 @@ plink_fgwas_filter<-function( pd, Y.name, Z.name, covar.names, op.cpu=1, fgwas.c
 		
 	get_sub_snpmat<- function(pd.obj, idx.snp)
 	{
-		snp.sub <- get_sub_snp( pd$snp.mat, idx.snp );
+		snp.sub <- get_sub_snp( pd.obj$snp.mat, idx.snp );
+		# Because 0 is Missing data in SnpStats, but 0 is AA genotype in SNPMAT, In order to use same coding for two data source, 
+		snp.sub <- snp.sub - 1;
+		
 		# Append Chr and pos. information to SNP.MAT
 		snp.mat <- cbind( snp.sub$info[,c(2,3)], snp.sub$snp )
 		return(snp.mat);

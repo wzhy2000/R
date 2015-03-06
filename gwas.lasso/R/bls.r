@@ -1,5 +1,6 @@
 bls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 500, simu_p=1000, 
 		simu_snp_rho = 0.1, 
+		simu_snp_missing = 0.002, 
 		simu_rho     = 0.4, 
 		simu_sigma2  = 3, 
 		simu_mu      = 26, 
@@ -23,6 +24,9 @@ bls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 500, simu_p=1000,
 	
 	if( !missing(simu_snp_rho) && length(simu_snp_rho) > 1)
 		stop("! The parameter of simu_snp_rho is not a single valid value.");
+
+	if( !missing(simu_snp_missing) && length(simu_snp_missing) > 1)
+		stop("! The parameter of simu_snp_missing is not a single valid value.");
 
 	if( !missing(simu_rho) && length(simu_rho) > 1)
 		stop("! The parameter of simu_rho is not a single valid value.");
@@ -86,6 +90,7 @@ bls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 500, simu_p=1000,
   		   as.integer(simu_n), 			         # int nSimu_n
   		   as.integer(simu_p), 			         # int nSimu_p
   		   as.double(simu_snp_rho), 	         # double fSimu_snp_rho
+  		   as.double(simu_snp_missing), 	     # double fSimu_snp_missing
   		   as.double(simu_rho), 		         # double fSimu_rho
   		   as.double(simu_sigma2), 		         # double fSimu_sigma2
 		   as.double(simu_mu),			         # double fSimu_mu
@@ -139,7 +144,7 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 		options0 <- get_default_options();
         	options0[names(options)] <- options;
         	options <- options0;
-    	}
+    }
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
@@ -147,7 +152,7 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 	r.bls <- list();
 	r.filter <- list();
 	
-	if( options$nPiecewise.ratio==0 && fgwas.filter )
+	if( options$nPiecewise.ratio==0 && !fgwas.filter )
 	{
 		cat( "Genetic Effect Analysis by BLASSO method......\n");
 		r.bls <- .Call("bls_simple", 
@@ -167,8 +172,7 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 	}
 	else
 	{
-		tb.phe <- read.csv(file.phe, header=T);
-		tb.snp <- read.csv(file.snp, header=T);
+		simple <- read_simple_bls_data( file.phe, file.snp);
 
 		subset_op <- function(snpmat, sub.idx)
 		{
@@ -177,7 +181,7 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 		
 		if(fgwas.filter)
 		{
-			r.filter <- snpmat_fgwas_filter( tb.phe, tb.snp, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS");
+			r.filter <- snpmat_fgwas_filter( simple$phe.mat, simple$snp.mat, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS");
 			if( r.filter$error )
 				stop(r.filter$err.info);
 		
@@ -185,7 +189,7 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 				NROW( r.filter$snp.mat ),
 				subset_op,
 				r.filter$snp.mat,
-				tb.phe,
+				simple$phe.mat,
 				Y.name, 
 				NULL,
 				covar.names,
@@ -205,10 +209,10 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 		else
 		{
 			r.bls <- snpmat_parallel(
-				NROW( tb.snp ),
+				NROW( simple$snp.mat ),
 				subset_op,
-				tb.snp,
-				tb.phe,
+				simple$snp.mat,
+				simple$phe.mat,
 				Y.name, 
 				NULL,
 				covar.names,
@@ -477,7 +481,7 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 		options0 <- get_default_options();
         	options0[names(options)] <- options;
         	options <- options0;
-    	}
+    }
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
@@ -485,7 +489,7 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 	r.bls <- list();
 	r.filter <- list();
 
-	if( options$nPiecewise.ratio==0 && fgwas.filter )
+	if( options$nPiecewise.ratio==0 && !fgwas.filter )
 	{
 		cat( "Genetic Effect Analysis by BLASSO method......\n");
 
@@ -720,6 +724,8 @@ plot.BLS.ret<-function( x, y=NULL, ..., fig.prefix=NULL )
 {
 	r.bls <- x;
 	
+	if( missing(fig.prefix)) fig.prefix <- "bls.plot";
+	
 	if(!is.null(r.bls$fgwas.filter))
 	{
 		filter.man <- r.bls$fgwas.filter[, c(1,2,5), drop=F]
@@ -734,7 +740,7 @@ plot.BLS.ret<-function( x, y=NULL, ..., fig.prefix=NULL )
 		draw_man_adh2( varsel.man, fig.prefix, "varsel" );
 	}
 	else
-		cat("! vNo varible selection results.\n");		
+		cat("! No varible selection results.\n");		
 
 	if(!is.null(r.bls$refit))
 	{
@@ -827,4 +833,18 @@ get_sig_bls_snp <- function( r.bls )
 	if (length(idx.sig)==0) return(NULL);
 	
 	return( idx.sig );
+}
+
+read_simple_bls_data <- function( file.phe, file.snp, bImputed=T )
+{
+	tb.phe <- read.csv(file.phe, header=T);
+	tb.snp <- read.csv(file.snp, header=T);
+
+	cat("Checking data files......\n");
+	cat("* Individuals:", NCOL(tb.snp)-2, "\n");
+	cat("* SNPs:", NROW(tb.snp), "\n");
+	
+	if(bImputed) tb.snp <- impute_simple_snp(tb.snp);
+
+	return(list(phe.mat=tb.phe, snp.mat=tb.snp));
 }

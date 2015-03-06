@@ -15,6 +15,7 @@
 
 gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu_p=1000, 
          simu_snp_rho   = 0.1, 
+         simu_snp_missing= 0.002, 
          simu_rho       = 0.4, 
          simu_sigma2    = 16,
 		 simu_mu        = c( 13.395, -3.08, 1.875, -3.195 ),
@@ -43,6 +44,9 @@ gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu
 	
 	if( !missing(simu_snp_rho) && length(simu_snp_rho) > 1)
 		stop("The parameter of simu_snp_rho is not a single valid value.");
+
+	if( !missing(simu_snp_missing) && length(simu_snp_missing) > 1)
+		stop("The parameter of simu_snp_missing is not a single valid value.");
 
 	if( !missing(simu_rho) && length(simu_rho) > 1)
 		stop("The parameter of simu_rho is not a single valid value.");
@@ -119,6 +123,7 @@ gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu
   		   as.integer(simu_n), 				      # int nSimu_n
   		   as.integer(simu_p), 				      # int nSimu_p
   		   as.double(simu_snp_rho), 			  # double fSimu_snp_rho
+  		   as.double(simu_snp_missing), 		  # double fSimu_snp_missing
   		   as.double(simu_rho), 			      # double fSimu_rho
   		   as.double(simu_sigma2), 			      # double fSimu_sigma2
 		   as.double(as.vector(simu_mu)),		  # double* pfSimu_mu
@@ -171,9 +176,9 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 	else	
 	{
 		options0 <- get_default_options();
-        	options0[names(options)] <- options;
-        	options <- options0;
-    	}
+        options0[names(options)] <- options;
+        options <- options0;
+    }
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
@@ -181,7 +186,7 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 	r.gls <- list();
 	r.filter <- list();
 
-	if( options$nPiecewise.ratio==0 && fgwas.filter )
+	if( options$nPiecewise.ratio==0 && !fgwas.filter )
 	{
 		cat( "Genetic Effect Analysis by GLASSO method......\n");
 
@@ -203,8 +208,7 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 	}			
 	else
 	{
-		tb.phe <- read.csv(file.phe, header=T);
-		tb.snp <- read.csv(file.snp, header=T);
+		simple <- read_simple_gls_data( file.phe, file.snp );	
 
 		subset_op <- function(snpmat, sub.idx)
 		{
@@ -213,7 +217,7 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 		
 		if(fgwas.filter)
 		{
-			r.filter <- snpmat_fgwas_filter( tb.phe, tb.snp, Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
+			r.filter <- snpmat_fgwas_filter( simple$phe.mat, simple$snp.mat, Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
 			if( r.filter$error )
 				stop(r.filter$err.info);
 		
@@ -221,7 +225,7 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 				NROW( r.filter$snp.mat ),
 				subset_op,
 				r.filter$snp.mat,
-				tb.phe,
+				simple$phe.mat,
 				Y.prefix, 
 				Z.prefix,
 				covar.names,
@@ -241,10 +245,10 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 		else
 		{
 			r.gls <- snpmat_parallel(
-				NROW( tb.snp ),
+				NROW( simple$snp.mat ),
 				subset_op,
-				tb.snp,
-				tb.phe,
+				simple$snp.mat,
+				simple$phe.mat,
 				Y.prefix, 
 				Z.prefix,
 				covar.names,
@@ -263,7 +267,8 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 		}
 	}
 	
-	options$params <- list( file.phe       = file.phe, 
+	options$params <- list( 
+				file.phe       = file.phe, 
 				file.snp       = file.snp, 
 				Y.prefix       = Y.prefix, 
 				Z.prefix       = Z.prefix, 
@@ -316,7 +321,7 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 		options0 <- get_default_options();
         	options0[names(options)] <- options;
         	options <- options0;
-    	}
+    }
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
@@ -358,8 +363,8 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
   		   	options$nMcmcIter,
 		   	options$fBurnInRound,
 		   	options$fRhoTuning,
-	           	options$fQval.add,
-	           	options$fQval.dom,
+	        options$fQval.add,
+	        options$fQval.dom,
 			options$debug,
 			options$nParallel.cpu,
 			"GLS");
@@ -389,8 +394,8 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
   		   	options$nMcmcIter,
 		   	options$fBurnInRound,
 		   	options$fRhoTuning,
-	           	options$fQval.add,
-	           	options$fQval.dom,
+	        options$fQval.add,
+	        options$fQval.dom,
 			options$debug,
 			options$nParallel.cpu,
 			"GLS");
@@ -525,7 +530,7 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
 		options0 <- get_default_options();
         	options0[names(options)] <- options;
         	options <- options0;
-    	}
+    }
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
@@ -534,7 +539,7 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
 	r.gls <- list();
 	r.filter <- list();
 
-	if( options$nPiecewise.ratio==0 && fgwas.filter )
+	if( options$nPiecewise.ratio==0 && !fgwas.filter )
 	{
 		cat( "Genetic Effect Analysis by GLASSO method......\n");
 
@@ -550,8 +555,8 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
   		   	options$nMcmcIter,
 		   	options$fBurnInRound,
 		   	options$fRhoTuning,
-	           	options$fQval.add,
-	           	options$fQval.dom,
+	        options$fQval.add,
+	        options$fQval.dom,
 			ifelse( options$debug, 3, 1) );
 	}
 	else
@@ -754,7 +759,7 @@ summary.GLS.ret<-function(object, ...)
 	r.add <- !is.null( r.gls$varsel_add ) && NROW( r.gls$varsel_add )>0;
 	r.dom <- !is.null( r.gls$varsel_dom ) && NROW( r.gls$varsel_dom )>0;
 	if( r.add || r.dom )
-		r.sum.ret$refit <- merge_add_dom( r.gls$varsel_add, r.gls$varsel_dom);
+		r.sum.ret$varsel <- merge_add_dom( r.gls$varsel_add, r.gls$varsel_dom);
 
 	if(!is.null(r.gls$fgwas.filter))
 	{
@@ -891,10 +896,15 @@ get_sig_gls_snp <- function( r.gls )
 {
 	if( is.null(r.gls$varsel_add) && is.null(r.gls$varsel_dom) ) return( NULL );
 
-	idx.sig.add <- which( rowSums(r.gls$varsel_add[,c(3:6)]) > 0 );
-	idx.sig.dom <- which( rowSums(r.gls$varsel_dom[,c(3:6)]) > 0 );
+	idx.sig.add <- c();
+	if( !is.null(r.gls$varsel_add) )
+		idx.sig.add <- which( rowSums(r.gls$varsel_add[,c(3:6)]) > 0 );
+
+	idx.sig.dom <- c();
+	if( !is.null(r.gls$varsel_dom) )
+		idx.sig.dom <- which( rowSums(r.gls$varsel_dom[,c(3:6)]) > 0 );
+
 	idx.sig <- unique(c(idx.sig.dom, idx.sig.add));
-	
 	if (length( idx.sig )==0) return(NULL);
 	
 	return(idx.sig);
@@ -904,6 +914,8 @@ get_sig_gls_snp <- function( r.gls )
 plot.GLS.ret<-function( x, y=NULL, ... , fig.prefix=NULL )
 {
 	r.gls <- x;
+
+	if( missing(fig.prefix)) fig.prefix <- "gls.plot";
 
 	if(!is.null(r.gls$fgwas.filter))
 	{
@@ -915,15 +927,12 @@ plot.GLS.ret<-function( x, y=NULL, ... , fig.prefix=NULL )
 		
 	if( !is.null(r.gls$varsel_add) || !is.null(r.gls$varsel_dom))
 	{
-		varsel <- ifelse( !is.null(r.gls$varsel_add), 
-				r.gls$varsel_add[, c(1,2), drop=F], 
-				r.gls$varsel_dom[, c(1,2), drop=F] );
+		if ( !is.null(r.gls$varsel_add) )  varsel <- r.gls$varsel_add[, c(1,2), drop=F]
+		if ( !is.null(r.gls$varsel_dom) )  varsel <- r.gls$varsel_dom[, c(1,2), drop=F]
 
-		varsel<- cbind( varsel, ifelse (!is.null( r.gls$varsel_add), r.gls$varsel_add[,7], 0) );
-		varsel<- cbind( varsel, ifelse (!is.null( r.gls$varsel_dom), r.gls$varsel_dom[,7], 0) );
-		# H2
-		varsel<- cbind( varsel, 0 );
-		
+		if ( !is.null(r.gls$varsel_add) ) varsel<- cbind( varsel, r.gls$varsel_add[,7] );
+		if ( !is.null(r.gls$varsel_dom) ) varsel<- cbind( varsel, r.gls$varsel_dom[,7] );
+
 		draw_man_adh2( varsel, fig.prefix, "varsel" );
 	}
 	else
@@ -939,3 +948,16 @@ plot.GLS.ret<-function( x, y=NULL, ... , fig.prefix=NULL )
 		cat("! No refit results.\n");		
 }
 
+read_simple_gls_data <- function( file.phe, file.snp, bImputed=T )
+{
+	tb.phe <- read.csv(file.phe, header=T);
+	tb.snp <- read.csv(file.snp, header=T);
+	
+	cat("Checking data files......\n");
+	cat("* Individuals:", NCOL(tb.snp)-2, "\n");
+	cat("* SNPs:", NROW(tb.snp), "\n");
+	
+	if(bImputed) tb.snp <- impute_simple_snp(tb.snp);
+	
+	return(list(phe.mat=tb.phe, snp.mat=tb.snp));
+}
