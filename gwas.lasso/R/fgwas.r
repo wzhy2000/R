@@ -332,9 +332,7 @@ plink_fgwas_filter<-function( pd, Y.name, Z.name, covar.names, op.cpu=1, fgwas.c
 	get_sub_snpmat<- function(pd.obj, idx.snp)
 	{
 		snp.sub <- get_sub_snp( pd.obj$snp.mat, idx.snp );
-		# Because 0 is Missing data in SnpStats, but 0 is AA genotype in SNPMAT, In order to use same coding for two data source, 
-		snp.sub <- snp.sub - 1;
-		
+
 		# Append Chr and pos. information to SNP.MAT
 		snp.mat <- cbind( snp.sub$info[,c(2,3)], snp.sub$snp )
 		return(snp.mat);

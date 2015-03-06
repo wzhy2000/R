@@ -53,7 +53,7 @@ load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, fil
 		plink$fam      <- plink$fam[-phe.rem.idx ,]
 	}
 	
-	return(list(snp.mat=snp.mat, phe.mat=phe.log));
+	return(list(snp.mat=plink, phe.mat=phe.log));
 }
 
 get_sub_snp<-function(snp.mat, snp.set.idx)
