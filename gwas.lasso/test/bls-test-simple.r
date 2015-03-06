@@ -3,7 +3,8 @@ library(gwas.lasso)
 phe.out <- "bls.test.simple.phe"  
 snp.out <- "bls.test.simple.snp"
 
-sigsnp <- c(11, 22, 33, 444, 55);
+sigsnp <- sample(1:2000)[1:5];
+show(sigsnp);
 
 bls.simulate( phe.out, snp.out, simu_grp=1, simu_n= 600, simu_p=2000, 
 		simu_snp_rho = 0.1, 

@@ -23,13 +23,13 @@ cov_effect[2,]<-c( -1.045, 2.320, 0.905,  0.535);
 
 gls.simulate( phe.out, snp.out, simu_n= 300, simu_grp=1, simu_p=3000, simu_snp_rho=0.4, simu_rho=0.1, simu_sigma2= 4, 
 		 simu_mu= c(13.395, -3.08, 1.875, -3.195),  
-		 simu_cov_effect=cov_effect, 
-		 simu_cov_range=c(-1,1),
-		 simu_add_pos <- c( sigsnp[1], sigsnp[2], sigsnp[3] ),
-		 simu_add_effect=a_effect,  
-		 simu_dom_pos <- c( sigsnp[3], sigsnp[4], sigsnp[5] ),
-		 simu_dom_effect=d_effect, 
-		 simu_z_range = c(30,60), simu_z_count = c(5,12), debug=F);
+		 simu_cov_effect = cov_effect, 
+		 simu_cov_range  = c(-1,1),
+		 simu_add_pos    = c( sigsnp[1], sigsnp[2], sigsnp[3] ),
+		 simu_add_effect = a_effect,  
+		 simu_dom_pos    = c( sigsnp[3], sigsnp[4], sigsnp[5] ),
+		 simu_dom_effect = d_effect, 
+		 simu_z_range    = c(30,60), simu_z_count = c(5,12), debug=F);
 
 ret1<-ret2<-ret3<-ret4<-ret5<-ret6<-ret7<-c();
 	
