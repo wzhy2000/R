@@ -309,6 +309,7 @@ int BLS_dat::Simulate( BLS_par* par, CMDOPTIONS* pCmd )
     simu_par.simu_n         = par->simu_n;
     simu_par.simu_p         = par->simu_p;
     simu_par.simu_snp_rho   = par->simu_snp_rho;
+    simu_par.simu_snp_miss  = par->simu_snp_missing;
     simu_par.simu_rho       = par->simu_rho;
     simu_par.simu_mu        = par->simu_mu;
     simu_par.simu_sigma2    = par->simu_sigma2;

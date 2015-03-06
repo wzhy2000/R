@@ -192,6 +192,7 @@ int glasso_simulate( const char* szPhe_out,
 					 int nSimu_n,
 					 int nSimu_p,
 					 double fSimu_snp_rho,
+					 double fSimu_snp_missing,
 					 double fSimu_rho,
 					 double fSimu_sigma2,
 					 double* pfSimu_mu,
@@ -223,6 +224,7 @@ int glasso_simulate( const char* szPhe_out,
     pPar->simu_n       = nSimu_n;
 	pPar->simu_p       = nSimu_p;
     pPar->simu_snp_rho = fSimu_snp_rho;
+    pPar->simu_snp_missing = fSimu_snp_missing;
 	pPar->simu_rho     = fSimu_rho;
 	pPar->simu_sigma2  = fSimu_sigma2;
 

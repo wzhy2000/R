@@ -142,7 +142,7 @@ int CFmSimulate::Simu_geno( double* gen_r )
 {
     int simu_p, simu_n, sig_p, simu_a_len, simu_d_len;
     int* simu_a_pos, *simu_d_pos;
-    double simu_snprho;
+    double simu_snprho, simu_snpmiss;
 
     if (m_par)
     {
@@ -154,6 +154,7 @@ int CFmSimulate::Simu_geno( double* gen_r )
         simu_a_pos = m_par->simu_a_ppos;
         simu_d_pos = m_par->simu_d_ppos;
         simu_snprho= m_par->simu_snp_rho;
+        simu_snpmiss= m_par->simu_snp_miss;
 
         _log_info( _HI_, "%d, %d, %d, %d, %d", simu_p, simu_n, sig_p, simu_a_len, simu_d_len);
     }
@@ -167,6 +168,7 @@ int CFmSimulate::Simu_geno( double* gen_r )
         simu_a_pos = m_par_longdt->simu_a_pos;
         simu_d_pos = m_par_longdt->simu_d_pos;
         simu_snprho= m_par_longdt->simu_snp_rho;
+        simu_snpmiss= m_par_longdt->simu_snp_miss;
     }
 
     //R:-----------------------------------
@@ -319,6 +321,19 @@ int CFmSimulate::Simu_geno( double* gen_r )
     PROTECT( ret = R_tryEval(e1, R_GlobalEnv, &errorOccurred) );
     int* ret_r = INTEGER(ret);
 
+	//Add Missing SNP
+	if(simu_snpmiss!=0)
+    for (int i=0; i<simu_p; i++)
+    {
+        GetRNGstate();
+		int n_miss = round( runif( 0, simu_n * simu_snpmiss) );
+		for (int k=0; k<n_miss ; k++)
+		{
+			int j = round( runif(1, simu_n) ) - 1;
+        	ret_r[ MI(simu_p, simu_n, i, j) ] = -9;
+		}
+        PutRNGstate();
+	}
 
     //R:-----------------------------------
     //gen_r <- ret;
@@ -841,7 +856,12 @@ int CFmSimulate::SaveSnpFile( char* szSnpoutFile )
             fprintf(fp, ",%d,%d", k, i+1 );
 
             for(int j=0; j < m_pSimuSnps->GetNumCols(); j++)
-               fprintf(fp, ", %d", (int)(m_pSimuSnps->Get(i,j)+1) );
+            {
+            	if ( m_pSimuSnps->Get(i,j) ==-9 )
+            		fprintf(fp, ",NA");
+				else
+               		fprintf(fp, ",%d", (int)(m_pSimuSnps->Get(i,j)+1) );
+			}
             fprintf(fp, "\n");
         }
 

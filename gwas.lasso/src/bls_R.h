@@ -59,6 +59,7 @@ int blasso_simulate( const char* szPhe_out,
 			 int nSimu_n,
 			 int nSimu_p,
 			 double fsimu_snp_rho,
+			 double fsimu_snp_missing,
 			 double fSimu_rho,
 			 double fSimu_sigma2,
 			 double fSimu_mu,
@@ -86,9 +87,9 @@ SEXP blasso_plink_tped(  const char* pszPhefile,
   		   	int nMcmcIter,
 		   	double fBurnInRound,
 		   	double fRhoTuning,
-	        	double fQval_add,
-	        	double fQval_dom,
-	        	int    nDebug);
+		   	double fQval_add,
+		   	double fQval_dom,
+		   	int    nDebug);
 
 SEXP blasso_simple( const char* pszPhefile,
   		   	const char*  pzSnpfile,
@@ -100,9 +101,9 @@ SEXP blasso_simple( const char* pszPhefile,
   		   	int nMcmcIter,
 		   	double fBurnInRound,
 		   	double fRhoTuning,
-	        	double fQval_add,
-	        	double fQval_dom,
-		        int    nDebug);
+		   	double fQval_add,
+		   	double fQval_dom,
+		   	int    nDebug);
 
 SEXP blasso_snpmat( SEXP pmatPhe,
   		   	SEXP pmatSNP,
@@ -114,9 +115,9 @@ SEXP blasso_snpmat( SEXP pmatPhe,
   		   	int nMcmcIter,
 		   	double fBurnInRound,
 		   	double fRhoTuning,
-	        	double fQval_add,
-	        	double fQval_dom,
-		        int    nDebug);
+		   	double fQval_add,
+		   	double fQval_dom,
+		   	int    nDebug);
 
 
 #ifdef __cplusplus

@@ -33,6 +33,7 @@ public:
     // the number of total predictors
     int simu_p;
     double simu_snp_rho;
+    double simu_snp_missing;
 
     // pairwise correlation coefficient
     double simu_rho;

@@ -18,6 +18,7 @@ typedef struct _simu_param0
     // the number of total predictors
     int simu_p;
     double simu_snp_rho;
+    double simu_snp_miss;
 
     // pairwise correlation coefficient
     double simu_rho;
@@ -51,6 +52,7 @@ typedef struct _simu_param1
     // the number of total predictors
     int simu_p;
     double simu_snp_rho;
+    double simu_snp_miss;
 
     // pairwise correlation coefficient
     double simu_rho;
