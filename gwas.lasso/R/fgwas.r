@@ -25,7 +25,7 @@ gls.fgwas <- function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names=NULL, o
 	if ( len.y != len.z)
 		return(list(error=T, err.info="The Z columns are not matched with Y columns."))
 
-	if(length(which(is.na(x.p)))>0)
+	if( length(x.p)>0 && length(which(is.na(x.p)))>0)
 		return(list(error=T, err.info="The covariate names are not matched with phenotypical data."))
 	
 	phe.mat <- cbind(phe.mat, ID = c(1:NROW(phe.mat)) );

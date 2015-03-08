@@ -25,7 +25,7 @@ save( ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-test-plink.rdata
 summary(ret1);
 plot(ret1, fig.prefix="gls-test-plink-ret1");
 
-ret2 <- gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix="Y", Z.prefix="Z", covar.names=NULL, fgwas.filter = F );	
+ret2 <- gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix="Y", Z.prefix="Z", covar.names=NULL, fgwas.filter = F  , options=list(nParallel.cpu=7) );	
 
 save( ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-test-plink.rdata");
 summary(ret2);
