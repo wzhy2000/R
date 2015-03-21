@@ -681,10 +681,10 @@ merge_add_dom<-function( re_add, re_dom )
 		
 	idx.add <- c();
 	if(!is.null(re_add))
-		idx.add <- which( rowSums( re_add[,c(3:6)] ) > 0  )
+		idx.add <- which( rowSums( re_add[,c(3:6),drop=F] ) > 0  )
 	idx.dom <- c();
 	if(!is.null(re_dom))
-		idx.dom <- which( rowSums( re_dom[,c(3:6)] ) > 0  )
+		idx.dom <- which( rowSums( re_dom[,c(3:6),drop=F] ) > 0  )
 
 	idx.sig <- unique(c( idx.add, idx.dom ));	
 	
@@ -898,11 +898,11 @@ get_sig_gls_snp <- function( r.gls )
 
 	idx.sig.add <- c();
 	if( !is.null(r.gls$varsel_add) )
-		idx.sig.add <- which( rowSums(r.gls$varsel_add[,c(3:6)]) > 0 );
+		idx.sig.add <- which( rowSums(r.gls$varsel_add[,c(3:6),drop=F]) > 0 );
 
 	idx.sig.dom <- c();
 	if( !is.null(r.gls$varsel_dom) )
-		idx.sig.dom <- which( rowSums(r.gls$varsel_dom[,c(3:6)]) > 0 );
+		idx.sig.dom <- which( rowSums(r.gls$varsel_dom[,c(3:6),drop=F]) > 0 );
 
 	idx.sig <- unique(c(idx.sig.dom, idx.sig.add));
 	if (length( idx.sig )==0) return(NULL);

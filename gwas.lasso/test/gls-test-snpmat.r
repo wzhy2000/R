@@ -73,4 +73,3 @@ ret6 <- gls.snpmat(tb.phe, tb.snp, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-snpmat.rdata");
 summary(ret6);
 plot(ret6, fig.prefix="gls-test-snpmat-ret6");
-

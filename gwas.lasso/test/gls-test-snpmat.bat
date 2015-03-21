@@ -4,9 +4,9 @@
 # Generic SLURM script 
 #----------------------------------------------------
 
-#SBATCH -J scan-motif # Job name
-#SBATCH -o gls.%j.out # stdout; %j expands to jobid
-#SBATCH -e gls.%j.err # stderr; skip to combine stdout and stderr
+#SBATCH -J gls.test.snpmat # Job name
+#SBATCH -o gls.test.snpmat.%j.out # stdout; %j expands to jobid
+#SBATCH -e gls.test.snpmat.%j.err # stderr; skip to combine stdout and stderr
 #SBATCH -p normal # queue
 #SBATCH -N 1 -n 8 # one node and one task
 #SBATCH -t 48:00:00 # max time
