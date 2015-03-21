@@ -7,7 +7,8 @@
   A function used for identifying significant SNPs that control phenotypic variation and estimating additive and dominant genetic effects of SNPs.
 } 
 
-\usage{ gls.plink (file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL ) }
+\usage{ gls.plink (file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix, Z.prefix,
+covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL ) }
 
 \arguments{
 \item{file.phe}{Input phenotypic data file representing longitudinal phenotypic data and covariate data.}
@@ -38,9 +39,13 @@ The the *.bim file is an extended MAP file where each line of file describes a s
 }
 
 \examples{
-library(glasso)
-gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, 
-Y.prefix="Y", Z.prefix="Z", covar.names=c("X"), fgwas.filter = T );
+if(0)
+{
+
+	library(gwas.lasso)
+	gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, 
+	Y.prefix="Y", Z.prefix="Z", covar.names=c("X"), fgwas.filter = TRUE );
+}
 }
 
 \keyword{functions}

@@ -7,7 +7,8 @@
   A function used for identifying significant SNPs that control phenotypic variation and estimating additive and dominant genetic effects of SNPs.
 } 
 
-\usage{ bls.snpmat (phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL)  }
+\usage{ bls.snpmat (phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, 
+add.used=T, dom.used=T, fgwas.filter=F, options=NULL)  }
 
 \arguments{
 \item{phe.mat}{Matrix, phenotypic data with single point in time and covariate data.}
@@ -33,11 +34,15 @@ Each line of the Genotype file describes a single SNP and must contain exactly 2
 }
 
 \examples{
-library(glasso)
-bls.simulate(phe.ou="bls.snpmat.phe"t, snp.out="bls.snpmat.snp");
-tb.phe<-read.csv("bls.snpmat.phe");
-tb.snp<-read.csv("bls.snpmat.snp");
-ret <- bls.snpmat (tb.phe, tb.snp, Y.name="Y", covar.names=c("X_1","X_2"), fgwas.filter = F );
+library(gwas.lasso)
+phe.out <- "bls.test.simple.phe"  
+snp.out <- "bls.test.simple.snp"
+bls.simulate(phe.out, snp.out)
+tb.phe<-read.csv(phe.out);
+tb.snp<-read.csv(snp.out);
+if(0)
+ret <- bls.snpmat (tb.phe, tb.snp, Y.name="Y", covar.names=c("X_1","X_2"), 
+		   fgwas.filter = FALSE );
 }
 
 \keyword{functions}

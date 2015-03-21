@@ -7,12 +7,14 @@
   A function used for identifying significant SNPs that control phenotypic variation and estimating additive and dominant genetic effects of SNPs.
 } 
 
-\usage{ gls.snpmat (phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=TRUE,   add.used=T,     dom.used=T, fgwas.filter=F, options=NULL)  }
+\usage{ gls.snpmat (phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=TRUE, 
+add.used=T, dom.used=T, fgwas.filter=F, options=NULL)  }
 
 \arguments{
 \item{phe.mat}{Matrix, phenotypic data and covariate data.}
 \item{snp.mat}{A matrix representing chromosome, position and genotype of SNPs.}
-\item{Y.name}{String, the column name for the response variables}
+\item{Y.prefix}{String, the prefix of the column names for response variables}
+\item{Z.prefix}{String, the prefix of the measurement names}
 \item{covar.names}{String or vector with strings representing the names of covariates }
 \item{refit}{ Logical, if TRUE, refit should be processed. Default: T.}
 \item{add.used}{Logical, if TRUE, the program will estimate additive effects of SNPs. Default: T.}
@@ -34,11 +36,14 @@ Each line of the Genotype file describes a single SNP and must contain exactly 2
 
 \examples{
 
-library(glasso)
-gls.simulate ("gls.phe.mat.csv", "gls.snp.mat.csv");
-tb.phe<-read.csv("gls.phe.mat.csv");
-tb.snp<-read.csv("gls.snp.mat.csv");
-ret <- gls.snpmat(tb.phe,tb.snp,Y.prefix="Y",Z.prefix="Z",covar.names=c("X_1","X_2"),fgwas.filter=F );
+library(gwas.lasso)
+phe.out <- "gls.test.simple.phe";
+snp.out <- "gls.test.simple.snp";
+gls.simulate(phe.out, snp.out)
+tb.phe<-read.csv(phe.out);
+tb.snp<-read.csv(snp.out);
+if(0) ret <- gls.snpmat(tb.phe, tb.snp, 
+	Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = FALSE );
 }
 
 \keyword{functions}

@@ -7,25 +7,41 @@
 New approach is investigated through simulation study. This is a function used for generating simulation data in the fGWAS setting, and the simulation data contribute to the program test.
 } 
 
-\usage{ bls.simulate(phe.out, snp.out, simu_grp=1, simu_n=500, simu_p=1000, simu_snp_rho= 0.1, simu_rho=0.4, simu_sigma2=3, simu_mu=26,  simu_cov_coeff=c(0, 2), simu_a_pos =c(100,  200, 300), simu_a_effect=c(2.2, -2.5, 2), simu_d_pos=c(300, 500,  700), simu_d_effect=c(2.8, 2, -2.5), simu_cov_range=c(0, 1), simu_t_range=c(-1, 1), debug = F)}
+\usage{
+bls.simulate( phe.out, snp.out, simu_grp=1, simu_n= 500, simu_p=1000, 
+		simu_snp_rho = 0.1, 
+		simu_snp_missing = 0.002, 
+		simu_rho     = 0.4, 
+		simu_sigma2  = 3, 
+		simu_mu      = 26, 
+		simu_cov_range = c( 0, 1),
+		simu_cov_effect= c( 0, 2 ), 
+		simu_add_pos   = c( 100, 200, 300), 
+		simu_add_effect= c( 2.2, -2.5, 2.0 ),  
+		simu_dom_pos   = c( 300, 500, 700), 
+		simu_dom_effect= c( 2.8, 2.0, -2.5 ),
+		simu_t_range = c(-1, 1), 
+		debug=F )
+}
 
 \arguments{
-\item{phe.out}{ String, the name of the output phenotypic data file. }
-\item{snp.out}{ String, the name of the output genotypic data file. }
-\item{simu_grp}{ Numeric, the number of groups that snps divided into in the parallel computation. Default: 1; }
+\item{phe.out}{ String, the name of output phenotypic data file. }
+\item{snp.out}{ String, the name of output genotypic data file. }
+\item{simu_grp}{ Numeric, number of groups that snps divided into in the parallel computation. Default: 1; }
 \item{simu_n}{ Integer, sample size. Default: 500. }
-\item{simu_p}{ Integer, the number of SNPs. Default: 1000. }
+\item{simu_p}{ Integer, number of SNPs. Default: 1000. }
 \item{simu_snp_rho}{ Float, correlation coefficient between two adjacent SNPs. Default: 0.1.  }
+\item{simu_snp_missing}{Float, ratio of missing SNPs}
 \item{simu_rho}{ Float, correlation coefficient between two adjacent time points. Default: 0.4.}
-\item{simu_sigma2}{ Float, the residual error assumed to follow a N(0,¦Ò2(til)) distribution. Default: 3. }
-\item{simu_mu}{ Float, the overall mean of phenotypic data. Default: 26. }
-\item{simu_cov_range}{ Vector, the range of covariates. Default: (0, 1) }
+\item{simu_sigma2}{ Float, residual error. Default: 3. }
+\item{simu_mu}{ Float, overall mean of phenotypic data. Default: 26. }
+\item{simu_cov_range}{ Vector, range of covariates. Default: (0, 1) }
 \item{simu_cov_effect}{ A vector representing coefficient between two covariates. Default: (0, 2).}
 \item{simu_add_pos}{ Vector, positions of the significant SNPs with additive effects. Default: (100, 200, 300)}
 \item{simu_add_effect}{ Vector, additive effects of significant SNPs. Default: (2.2, -2.5, 2). }
 \item{simu_dom_pos}{ Vector, positions of the significant SNPs with dominant effects. Default: (300, 500,  700) }
 \item{simu_dom_effect}{ Vector, dominant effects of significant SNPs. Default: (2.8, 2, -2.5). }
-\item{simu_t_range}{ Vector, the range of time points. Default: (-1, 1) }
+\item{simu_t_range}{ Vector, range of time points. Default: (-1, 1) }
 \item{debug}{ Logical, if set to TRUE, prints error messages. Default: F }
 }
 
@@ -44,8 +60,9 @@ Given phenotypic data and genotype information, genetic effects of each SNPs cou
 \author{Zhong Wang, \email{zzw2@psu.edu} }
 
 \examples{
-library(glasso)
-bls.simulate(phe.out="bls.simple.phe", snp.out="bls.simple.snp");
+library(gwas.lasso)
+bls.simulate(phe.out="bls.simple.phe", snp.out="bls.simple.snp")
 }
 
 \keyword{functions}
+
