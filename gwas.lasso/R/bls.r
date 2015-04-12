@@ -1,4 +1,4 @@
-bls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 500, simu_p=1000, 
+bls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n= 500, simu_p=1000, 
 		simu_snp_rho = 0.1, 
 		simu_snp_missing = 0.002, 
 		simu_rho     = 0.4, 
@@ -11,7 +11,8 @@ bls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 500, simu_p=1000,
 		simu_dom_pos   = c( 300, 500, 700), 
 		simu_dom_effect= c( 2.8, 2.0, -2.5 ),
 		simu_t_range = c(-1, 1), 
-		debug=F )
+		plink.format = FALSE,
+		debug=FALSE )
 {
 	if( !missing(simu_grp) && length(simu_grp) > 1)
 		stop("! The parameter of simu_grp is not a single valid value.");
@@ -84,8 +85,8 @@ bls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 500, simu_p=1000,
 
 	err <- 0;
 	out <- .C("bls_simulate", 
-		   as.character(phe.out),		         # char* szPhe_out
-  		   as.character(snp.out), 		         # char* szSnp_out
+		   as.character(file.phe.out),		     # char* szPhe_out
+  		   as.character(file.snp.out), 		     # char* szSnp_out
   		   as.integer(simu_grp), 		         # int nSimu_grp
   		   as.integer(simu_n), 			         # int nSimu_n
   		   as.integer(simu_p), 			         # int nSimu_p
@@ -107,7 +108,15 @@ bls.simulate<-function( phe.out, snp.out, simu_grp=1, simu_n= 500, simu_p=1000,
 		   as.double(as.vector(simu_t_range)),	 # double* pfSimu_t_range
 		   as.integer(debug),
 		   as.integer(err) );
-		   
+	
+	if( plink.format )
+	{
+		tb.snp <- read.csv(file.snp.out, header=T);
+		convert_simpe_to_plink( tb.snp, file.snp.out );
+		
+		unlink(file.snp.out);
+	}
+
 	return(err);		   
 }
 
@@ -144,7 +153,7 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 		options0 <- get_default_options();
         	options0[names(options)] <- options;
         	options <- options0;
-    }
+    	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
@@ -848,3 +857,7 @@ read_simple_bls_data <- function( file.phe, file.snp, bImputed=T )
 
 	return(list(phe.mat=tb.phe, snp.mat=tb.snp));
 }
+
+
+
+

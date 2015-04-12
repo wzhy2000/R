@@ -14,24 +14,25 @@
 #simu_d_effect[3] = 5, 1.265, -1.225, 2.710, -1.96
 
 gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu_p=1000, 
-         simu_snp_rho   = 0.1, 
-         simu_snp_missing= 0.002, 
-         simu_rho       = 0.4, 
-         simu_sigma2    = 16,
-		 simu_mu        = c( 13.395, -3.08, 1.875, -3.195 ),
-		 simu_cov_range = c( -1, 1 ),
-		 simu_cov_effect= array(c(0,0,0,0), dim=c(1,4)), 
-		 simu_add_pos   = c( 1,2,3 ), 
-		 simu_add_effect= array(c( 1.04, 0.885, -2.055, 0.545, 
+         	simu_snp_rho   = 0.1, 
+         	simu_snp_missing= 0.002, 
+          	simu_rho       = 0.4, 
+        	simu_sigma2    = 16,
+		 	simu_mu        = c( 13.395, -3.08, 1.875, -3.195 ),
+		 	simu_cov_range = c( -1, 1 ),
+		 	simu_cov_effect= array(c(0,0,0,0), dim=c(1,4)), 
+		 	simu_add_pos   = c( 1,2,3 ), 
+		 	simu_add_effect= array(c( 1.04, 0.885, -2.055, 0.545, 
                                    1.17, -0.20, 0.74, -4.715,
                                    1.40, -2.25, 1.00,  0.00), dim=c(3,4)),
-		 simu_dom_pos   = c( 3,4,5 ), 
-		 simu_dom_effect= array(c( 1.49, -2.135, 4.82, 1.425, 
+		 	simu_dom_pos   = c( 3,4,5 ), 
+		 	simu_dom_effect= array(c( 1.49, -2.135, 4.82, 1.425, 
                                    1.045, 1.320, 1.905,  1.535,
                                    1.265, -1.225, 2.710, -1.96), dim=c(3,4)),
-		 simu_z_range   = c( 20, 80 ), 
-		 simu_z_count   = c(  5, 12 ), 
-		 debug          = F )
+		 	simu_z_range   = c( 20, 80 ), 
+		 	simu_z_count   = c(  5, 12 ), 
+		 	plink.format	=FALSE,
+		 	debug          = FALSE )
 {
 	if( !missing(simu_grp) && length(simu_grp) > 1)
 		stop("The parameter of simu_grp is not a single valid value.");
@@ -139,7 +140,15 @@ gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu
 		   as.integer(as.vector(simu_z_count)),   # int* pnSimu_z_count
 		   as.integer(debug),
 		   as.integer(err) );
-		   
+	
+	if( plink.format )
+	{
+		tb.snp <- read.csv(file.snp.out, header=T);
+		convert_simpe_to_plink( tb.snp, file.snp.out );
+		
+		unlink(file.snp.out);
+	}
+
 	return(err);		   
 }
 

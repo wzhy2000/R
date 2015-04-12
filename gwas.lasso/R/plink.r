@@ -11,9 +11,9 @@ load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, fil
 	gen.ids <- rownames(plink$fam) ;
 
 	# !!! First Column must be individual ID.
-	phe.ids <- c(phe.log[,1]);
+	phe.ids <- phe.log[,1];
 	phe.log <- phe.log[, -1, drop=F];
-	rownames( phe.log ) <- phe.ids
+	rownames( phe.log ) <- phe.ids;
 	
 	phe.idx <- c();
 	gen.rem.idx <- c();
@@ -129,4 +129,32 @@ impute_simple_snp <- function( snpmat )
 	cat("* Missing SNPs are imputed(", total_miss, "SNPs).\n");
 		
 	return(snpmat); 
+}
+
+
+convert_simpe_to_plink <- function( snp.mat, snp.file.base )
+{	
+	chromosome <- snp.mat[,1];
+	position <- snp.mat[,2];
+
+	# PLINK raw data: 1/2/3==> AA,AB,BB, 0==>NA
+	snp.mat <- snp.mat[,-c(1,2),drop=F] + 1;
+
+	sub.name <- colnames(snp.mat);
+	snp.name <- rownames(snp.mat);
+	
+	###snps
+	dim.snps <- dim(snp.mat);
+
+	snps <- as.raw( as.matrix(snp.mat ) );
+	snps <- array(snps, dim=dim.snps);
+	colnames(snps) <- sub.name;
+	rownames(snps) <- snp.name;
+	class(snps) <- "SnpMatrix";
+	
+	r <- write.plink( file.base=snp.file.base, snp.major = F, snps=t(snps), id=sub.name, chromosome=chromosome, position= position, na.code=0);
+
+	cat("Genotype files have been converted into PLINK binary format(bed/bim/fam)\n");
+
+	return;
 }

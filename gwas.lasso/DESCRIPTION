@@ -1,11 +1,11 @@
 Package: gwas.lasso
 Type: Package
-Title: Bayesian Group Lassp for GWAS
+Title: Bayesian Group Lasso for GWAS
 Version: 0.21
 Date: 2015-02-27
-Author: Zhong Wang and Jiahan Li
+Author: Zhong Wang, Nating Wang and Jiahan Li
 Maintainer: Zhong Wang <wzhy2000@hotmail.com>
-Description: Bayesian Group Lassp for GWAS
+Description: Bayesian Group Lasso for GWAS
 License: GPL (>= 2)
 Depends: R (>= 2.10.0)
 Imports: nlme, snpStats
