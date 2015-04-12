@@ -31,7 +31,7 @@ gls.simple(file.phe,
 \item{fgwas.filter}{Logical, If TRUE, the SNPs will be filtered by fGWAS midel before the LASSO methods are applied. Default: FALSE.}
 \item{options}{A list containing control parameters, including \code{nParallel.cpu}, \code{nMcmcIter}, \code{nPiecewise.ratio}, \code{fBurnInRound}, \code{fRhoTuning}, \code{fQval.add},\cr
 \code{fQval.dom}, \code{fgwas.cutoff}, and \code{debug}.\cr
-see details.
+see details.}
 }
 
 \value{

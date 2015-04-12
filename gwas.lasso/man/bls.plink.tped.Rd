@@ -42,7 +42,7 @@ The TFAM file is just the first six columns of a standard PED file. In otherword
  Li, J., Das, K., Fu, G., Li, R., & Wu, R. (2011). The Bayesian lasso for genome-wide association studies. Bioinformatics, 27(4), 516-523.
 }
 
-\keyword{functions}
+\keyword{internal}
 
 
 

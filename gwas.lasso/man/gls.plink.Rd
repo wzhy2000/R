@@ -17,8 +17,8 @@ gls.plink(file.phe,
       add.used=T,
       dom.used=T,
       fgwas.filter=F, 
-      options=NULL) }
-
+      options=NULL) 
+}
 \arguments{
 \item{file.phe}{Input CSV file containing longitudinal measuments and covariate data.}
 \item{file.plink.bed}{Input PLINK data file, a binary file containing genotype information.}
@@ -35,8 +35,7 @@ gls.plink(file.phe,
 \code{fQval.dom}, \code{fgwas.cutoff}, and \code{debug}.\cr
 see details.
 }
-
-
+}
 \value{
 An object of class \code{GLS.ret} including the following elements. 
 \item{varsel_add}{Matrix, additive effects estimated by the procedure of variable selection for each SNP. 

@@ -27,7 +27,8 @@ gls.simulate(file.phe.out,
       simu_dom_effect= array(c( 1.49, -2.135, 4.82, 1.425, 1.045, 
       1.320, 1.905, 1.535, 1.265, -1.225, 2.710, -1.96),dim=c(3,4)),
       simu_z_range = c(20,80), simu_z_count = c( 5, 12 ), 
-      debug = F )}
+      plink.format = FALSE,
+      debug = FALSE )}
 
 \arguments{
 \item{file.phe.out}{ String, the name of the output phenotypic data file. }
@@ -52,6 +53,7 @@ Default: array(c( 1.04, 0.885, -2.055, 0.545, 1.17, -0.20, 0.74, -4.715, 1.40, -
 Default: array(c( 1.49, -2.135, 4.82, 1.425, 1.045, 1.320, 1.905, 1.535,1.265, -1.225, 2.710, -1.96), dim=c(3,4)). }
 \item{simu_z_range}{ Vector, range of measurements. Default: (20, 80).}
 \item{simu_z_count}{ Integer, measurement times. Default: (5, 12 ).}
+\item{plink.format}{ Logical, if TRUE, save the SNP data as PLINK format. Default: FALSE. }
 \item{debug}{ Logical, if set to TRUE, prints error messages. Default: FALSE. }
 }
 
@@ -85,9 +87,10 @@ AR(1) model is employed to approximate the residual covariance matrix, and assum
 }
 
 \examples{
-phe.out <- "gls.test.simple.phe";
-snp.out <- "gls.test.simple.snp";
-gls.simulate(phe.out, snp.out)
+
+gls.simulate( "gls.test.simple.phe", "gls.test.simple.snp", plink.format=TRUE );
+
+
 }
 
 \keyword{functions}
