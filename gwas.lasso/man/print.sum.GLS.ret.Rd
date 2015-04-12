@@ -2,10 +2,10 @@
 \alias{print.sum.GLS.ret}
 
 
-\title{Printing the detection result}
+\title{Printing the detection result obtained by the GLS model}
 
 \description{ 
- Print the result information.
+Print a result object obtained by the GLS method.
 } 
 
 \usage{ 
@@ -13,7 +13,7 @@
 }
 
 \arguments{
-\item{x}{An object return by \code{\link{gls.simple}} or \code{\link{gls.plink}} or \code{\link{gls.snpmat}}}
+\item{x}{An object obtained by \code{\link{gls.simple}} or \code{\link{gls.plink}} or \code{\link{gls.snpmat}}}
 \item{...}{Other parameters}
 }
 
@@ -22,9 +22,14 @@
 The print command will print out the result object in the standard format. 
 }
 
-\author{Zhong Wang, \email{zzw2@psu.edu} }
+\author{Zhong Wang and Nating Wang }
+
+\references{
+ Li. J., Wang, Z., Li, R., Wu, R.(2015). Bayesian Group Lasso for nonparametric varying-coefficient models with application to functional genome-wide association studies. The Annals of Applied Statistics. 9(1).
+}
 
 \seealso{See \code{\link{gls.simple}} or \code{\link{gls.plink}}or \code{\link{gls.snpmat}} to generate an object }
 
 
 \keyword{print}
+\keyword{GLS model}

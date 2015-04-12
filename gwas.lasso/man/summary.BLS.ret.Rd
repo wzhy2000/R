@@ -1,10 +1,10 @@
 \name{summary.BLS.ret}
 \alias{summary.BLS.ret}
 
-\title{Summary of detection result}
+\title{Summary of detection result obtained by the BLS model }
 
 \description{ 
- Summarize a result object exported from Bls method.
+ Summarize a result object obtained by the BLS method.
 } 
 
 \usage{ 
@@ -12,7 +12,7 @@
 }
 
 \arguments{
-\item{object}{an object return by \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}}}
+\item{object}{an object obtained by \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}}}
 \item{...}{Other parameters}
 }
 
@@ -20,7 +20,11 @@
 The summary command gives some tables of the result object r.bls which contains multiple values, and the command will export all of this values to the to the console.
 }
 
-\author{Zhong Wang, \email{zzw2@psu.edu} }
+\author{Zhong Wang and Nating Wang }
+
+\references{
+ Li, J., Das, K., Fu, G., Li, R., & Wu, R. (2011). The Bayesian lasso for genome-wide association studies. Bioinformatics, 27(4), 516-523.
+}
 
 \seealso{See \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}} to generate an object }
 
@@ -34,3 +38,4 @@ The summary command gives some tables of the result object r.bls which contains 
 }
 
 \keyword{summary}
+\keyword{BLS model}

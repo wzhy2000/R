@@ -1,54 +1,58 @@
 \name{gls.simulate}
 \alias{gls.simulate}
 
-\title{ Simulation data of the Gls model}
+\title{ Simulation data of the GLS model}
 
 \description{ 
-New approach is investigated through simulation study. This is a function used for generating simulation data in the fGWAS setting, and the simulation data contribute to the program test.
+Generating simulation data object by the GLS model. 
 } 
 
 \usage{ 
-gls.simulate( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu_p=1000, 
-         simu_snp_rho   = 0.1, 
-         simu_snp_missing= 0.002, 
-         simu_rho       = 0.4, 
-         simu_sigma2    = 16,
-	 simu_mu        = c( 13.395, -3.08, 1.875, -3.195 ),
-	 simu_cov_range = c( -1, 1 ),
-         simu_cov_effect= array(c(0,0,0,0), dim=c(1,4)), 
-         simu_add_pos   = c( 1,2,3 ), 
-         simu_add_effect= array(c( 1.04, 0.885, -2.055, 0.545, 
-                                   1.17, -0.20, 0.74, -4.715,
-                                   1.40, -2.25, 1.00,  0.00), dim=c(3,4)),
-	 simu_dom_pos   = c( 3,4,5 ), 
-	 simu_dom_effect= array(c( 1.49, -2.135, 4.82, 1.425, 
-                                   1.045, 1.320, 1.905,  1.535,
-                                   1.265, -1.225, 2.710, -1.96), dim=c(3,4)),
-	 simu_z_range   = c( 20, 80 ), 
-	 simu_z_count   = c(  5, 12 ), 
-	 debug          = F )}
+gls.simulate(file.phe.out, 
+      file.snp.out, 
+      simu_grp=1, 
+      simu_n=500,
+      simu_p=1000, 
+      simu_snp_rho = 0.1, 
+      simu_snp_missing= 0.002, 
+      simu_rho = 0.4, 
+      simu_sigma2 = 16,
+      simu_mu = c(13.395, -3.08, 1.875, -3.195), 
+      simu_cov_range = c( -1, 1 ),
+      simu_cov_effect= array(c(0,0,0,0), dim=c(1,4)), 
+      simu_add_pos   = c( 1,2,3 ), 
+      simu_add_effect= array(c( 1.04, 0.885, -2.055, 0.545, 1.17, 
+      -0.20, 0.74, -4.715,1.40, -2.25, 1.00,  0.00), dim=c(3,4)),
+      simu_dom_pos = c( 3,4,5 ), 
+      simu_dom_effect= array(c( 1.49, -2.135, 4.82, 1.425, 1.045, 
+      1.320, 1.905, 1.535, 1.265, -1.225, 2.710, -1.96),dim=c(3,4)),
+      simu_z_range = c(20,80), simu_z_count = c( 5, 12 ), 
+      debug = F )}
 
 \arguments{
 \item{file.phe.out}{ String, the name of the output phenotypic data file. }
 \item{file.snp.out}{ String, the name of the output genotypic data file. }
-\item{simu_grp}{ Numeric, number of groups that snps divided into in the parallel computation. Default: 1; }
-\item{simu_n}{ Integer, sample size. Default: 500. }
-\item{simu_p}{ Integer, number of SNPs. Default: 1000. }
-\item{simu_snp_rho}{ Float, correlation coefficient between two adjacent SNPs. Default: 0.1.  }
-\item{simu_snp_missing}{Float, ratio of missing SNPs}
+\item{simu_grp}{ Numeric, the number of groups that snps divided into in the parallel computation. Default: 1.}
+\item{simu_n}{ Integer, sample size. Default: 500.}
+\item{simu_p}{ Integer, number of SNPs. Default: 1000.}
+\item{simu_snp_rho}{ Float, correlation coefficient between two adjacent SNPs. Default: 0.1.}
+\item{simu_snp_missing}{Float, ratio of missing SNPs.}
 \item{simu_rho}{ Float, correlation coefficient between two adjacent time points. Default: 0.4.}
-\item{simu_sigma2}{ Float, residual error. Default: 16. }
-\item{simu_mu}{ Vector, overall mean of phenotypic data. Default: (13.395,-3.08, 1.875, -3.195)}
-\item{simu_cov_range}{ Vector, range of covariates. Default: (-1, 1) }
-\item{simu_cov_effect}{ A vector representing coefficient between two covariates. Default: array(c(0,0,0,0), dim=c(1,4).}
-\item{simu_add_pos}{ Vector, positions of the significant SNPs with additive effects. Default: c( 1,2,3 )}
-\item{simu_add_effect}{ Matrix, additive effects of significant SNPs where the first column represents
-positions of these SNPs. Default: array(c( 1.04, 0.885, -2.055, 0.545, 1.17, -0.20, 0.74, -4.715, 1.40, -2.25, 1.00,  0.00), dim=c(3,4)). }
-\item{simu_dom_pos}{ Vector, positions of the significant SNPs with dominant effects. Default: ( 3,4,5 ) }
-\item{simu_dom_effect}{ Matrix, dominant effects of significant SNPs where the first column represents positions of these SNPs. Default: array(c( 1.49, -2.135, 4.82, 1.425, 1.045, 1.320, 1.905, 1.535,1.265, -1.225, 2.710, -1.96), dim=c(3,4)). }
-\item{simu_z_range}{ Vector, range of measurement. Default: ( 20, 80 )}
-\item{simu_z_count}{ Integer, measurements number. Default: (5, 12 )}
-\item{debug}{ Logical, if set to TRUE, prints error messages. Default: F }
+\item{simu_sigma2}{ Float, residual error. Default: 16.}
+\item{simu_mu}{ Vector, overall mean of phenotypic data. Default:(13.395,-3.08, 1.875, -3.195).}
+\item{simu_cov_range}{ Vector, range of covariates. Default: (-1,1). }
+\item{simu_cov_effect}{Vector, indicating coefficient between two covariates. \cr
+Default: array(c(0,0,0,0), dim=c(1,4).}
+\item{simu_add_pos}{ Vector, positions of the significant SNPs with additive effects. Default:(1,2,3 ).}
+\item{simu_add_effect}{ Matrix, additive effects of significant SNPs. Note the first column indicates
+positions of these SNPs.\cr 
+Default: array(c( 1.04, 0.885, -2.055, 0.545, 1.17, -0.20, 0.74, -4.715, 1.40, -2.25, 1.00,  0.00), dim=c(3,4)). }
+\item{simu_dom_pos}{ Vector, positions of the significant SNPs with dominant effects. Default: (3,4,5). }
+\item{simu_dom_effect}{ Matrix, dominant effects of significant SNPs. Note the first column indicates positions of these SNPs.\cr
+Default: array(c( 1.49, -2.135, 4.82, 1.425, 1.045, 1.320, 1.905, 1.535,1.265, -1.225, 2.710, -1.96), dim=c(3,4)). }
+\item{simu_z_range}{ Vector, range of measurements. Default: (20, 80).}
+\item{simu_z_count}{ Integer, measurement times. Default: (5, 12 ).}
+\item{debug}{ Logical, if set to TRUE, prints error messages. Default: FALSE. }
 }
 
 \value{
@@ -56,20 +60,36 @@ Returns two simulation data files: the phenotypic data file and genotypic data f
 }
 
 \details{
-gls.simulate calls a function fun with identical arguments and generates simulation data where phenotypic data is longitudinal. The traditional Bayesian lasso is its special case in which response variable is univariate. In the genotypic data 2, 1, 0 and -1 indicate genotypes QQ, Qq, qq and missing data respectively. \cr
-It is assumed that the dynamic pattern of the trait is controlled by some SNPs, and the positions of these SNPs will be generated by the parameters simu_a_pos and simu_d_pos. The time-varying effects of overall mean and causal SNPs will be generated by Legendre polynomials, with the given Legendre coefficients, which are shown in the parameters simu_mu, simu_a_effect and simu_d_effect. \cr
-Given phenotypic measurements and genotype information, the genetic effects of each SNPs could be estimated. However in GWAS a number of covariates either discrete or continuous may be measured for each subject. In simulation functions, the time-varying effects of covariates are generated by Legendre polynomials, with given Legendre coefficients shown in the simu_covar_effect.\cr
-In particular, since measurements within each subject are possibly correlated with one another, AR(1) model is employed to approximate the residual covariance matrix, and assume AR(1) with simu_rho and simu_sigma2. \cr
+The simulation in this package uses the pre-defined parameters to create a data object containing 
+longitudinal phenotypic data and genotypic data. \cr
 
+The genotypic data file is coded 2, 1, 0, -1 to indicate genotypes QQ, Qq, qq and missing data respectively.\cr
+It is assumed that the trait is controlled by some SNPs, and the positions of these SNPs will be generated 
+by the parameters \strong{simu_a_pos} and \strong{simu_d_pos}. \cr
+
+The genetic effects of overall mean and causal SNPs will be generated by the parameters \strong{simu_mu}, 
+\strong{simu_a_effect} and \strong{simu_d_effect}.\cr
+
+Given phenotypic data and genotype information, genetic effects of each SNPs could be estimated. 
+However in GWAS a number of covariates either discrete or continuous may be measured for each subject. 
+In the simulation function, covariate effects are generated by parameter \strong{simu_covar_effect}.\cr
+
+In particular, since measurements within each subject are possibly correlated with one another, 
+AR(1) model is employed to approximate the residual covariance matrix, and assume AR(1) with simu_rho and simu_sigma2. \cr
 }
 
-\author{Zhong Wang, \email{zzw2@psu.edu} }
+\author{Zhong Wang and Nating Wang }
+
+\references{
+ Li. J., Wang, Z., Li, R., Wu, R.(2015). Bayesian Group Lasso for nonparametric varying-coefficient models with application to functional genome-wide association studies. The Annals of Applied Statistics. 9(1).
+}
 
 \examples{
-library(gwas.lasso)
 phe.out <- "gls.test.simple.phe";
 snp.out <- "gls.test.simple.snp";
 gls.simulate(phe.out, snp.out)
 }
 
 \keyword{functions}
+\keyword{GLS model}
+\keyword{simulate}
