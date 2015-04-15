@@ -73,10 +73,17 @@ The control parameters include the following items.\cr
 \author{Zhong Wang and Nating Wang }
 
 \examples{
-phe.out <- "bls.test.simple.phe"  
-snp.out <- "bls.test.simple.snp"
-bls.simulate(phe.out, snp.out)
-ret <- bls.simple(phe.out,snp.out,Y.name="Y",covar.names=c(),refit=FALSE)
+
+bls.phe.out <- "bls.test.simple.phe"; 
+bls.snp.out <- "bls.test.simple.snp";
+bls.simulate(bls.phe.out, bls.snp.out,simu_n= 500, simu_p=50);
+
+r.bls <- bls.simple(bls.phe.out,bls.snp.out,Y.name="Y",covar.names=c(),refit=FALSE);
+
+summary(r.bls);
+
+plot(r.bls);
+
 }
  
 \references{

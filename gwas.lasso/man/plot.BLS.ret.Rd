@@ -42,10 +42,12 @@ In the BLS model, the figures of genetic effects will output heritability sub-gr
 \seealso{See \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}} to generate an object. }
 
 \examples{
+
 ##r.bls is a result object obtained from bls.simpe, bls.plink, bls.snpmat
 ##e.g. r.bls <- bls.simple(...);
 #
 # plot(r.bls, fig.prefix="r.bls.pdf");
+
 }
 
 \keyword{plot}

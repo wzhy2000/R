@@ -74,13 +74,21 @@ The control parameters include the following items.\cr
 }
 
 \examples{
-phe.out <- "bls.test.simple.phe"  
-snp.out <- "bls.test.simple.snp"
-bls.simulate(phe.out, snp.out)
-tb.phe<-read.csv(phe.out);
-tb.snp<-read.csv(snp.out);
-ret <- bls.snpmat(tb.phe, tb.snp, Y.name="Y", covar.names=c("X_1","X_2"), 
-		   fgwas.filter = FALSE );
+
+bls.phe.out <- "bls.test.simple.phe";
+bls.snp.out <- "bls.test.simple.snp";
+bls.simulate( bls.phe.out, bls.snp.out,simu_n= 500, simu_p=100);
+
+tb.phe<-read.csv(bls.phe.out, header=T);
+tb.snp<-read.csv(bls.snp.out);
+
+r.bls <- bls.snpmat(tb.phe, tb.snp, Y.name="Y", covar.names=c("X_1","X_2"), 
+                   fgwas.filter = FALSE );
+
+summary(r.bls):
+
+plot(r.bls);
+
 }
 
 \keyword{functions}
