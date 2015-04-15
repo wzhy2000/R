@@ -812,37 +812,29 @@ int CFmSimulate::Simu_pheno( double* snp, CFmMatrix* pMat_cov, CFmVector* pVct_Y
 
 int CFmSimulate::SaveSnpFile( char* szSnpoutFile )
 {
-    char szNewName[MAX_PATH]={0};
-
     int nGrps = 1;
     if (m_par)
         nGrps = m_par->simu_grps;
     else
         nGrps = m_par_longdt->simu_grps;
 
+    FILE* fp = fopen(szSnpoutFile, "wt");
+    if (!fp)
+    {
+        _log_error(_HI_, "SaveGenoFile: Failed to create genotype file(%s)", szSnpoutFile);
+        return( ERR_CREATE_FILE );
+    }
+
+    fprintf(fp, "CHR,POS");
+    for(int i=0; i<m_pSimuSnps->GetNumCols(); i++)
+    {
+        fprintf(fp, ",Sub%d", i+1);
+    }
+    fprintf(fp, "\n");
+
     for(int k=0; k<nGrps; k++)
     {
-        if (k==0)
-            sprintf(szNewName, "%s", szSnpoutFile);
-        else
-            CFmSys::GetSiblingFile(szNewName, szSnpoutFile, k);
-
-        FILE* fp = fopen(szNewName, "wt");
-        if (!fp)
-        {
-            _log_error(_HI_, "SaveGenoFile: Failed to create genotype file(%s)", szNewName);
-            return( ERR_CREATE_FILE );
-        }
-
-        _log_debug(_HI_, "SaveGenoFile: Start to output genotype data into the file%s.(Group:%d)", szNewName, k+1);
-
-        fprintf(fp, "CHR,POS");
-
-        for(int i=0; i<m_pSimuSnps->GetNumCols(); i++)
-        {
-            fprintf(fp, ",Sub%d", i+1);
-        }
-        fprintf(fp, "\n");
+        _log_debug(_HI_, "SaveGenoFile: Start to output genotype data into the file%s.(Group:%d)", szSnpoutFile, k+1);
 
         int nSnpWidth = m_pSimuSnps->GetNumRows()/nGrps;
         int nStartSNP = k*nSnpWidth;
@@ -853,7 +845,8 @@ int CFmSimulate::SaveSnpFile( char* szSnpoutFile )
         for(int i=nStartSNP; i < nStopSNP; i++)
         {
             fprintf(fp, m_pSimuSnps->GetRowName(i) );
-            fprintf(fp, ",%d,%d", k, i+1 );
+            // Chrmosome is from 1 to ...
+            fprintf(fp, ",%d,%d", k+1, i+1 );
 
             for(int j=0; j < m_pSimuSnps->GetNumCols(); j++)
             {
@@ -865,11 +858,10 @@ int CFmSimulate::SaveSnpFile( char* szSnpoutFile )
             fprintf(fp, "\n");
         }
 
-        fprintf(fp, "\n");
-        fclose(fp);
-
-        _log_debug(_HI_, "SaveGenoFile: The genotype data is saved into the file(%s)", szNewName);
+        _log_debug(_HI_, "SaveGenoFile: The genotype data is saved into the file(%s)", szSnpoutFile);
     }
+
+    fclose(fp);
 
     return(0);
 }
@@ -886,14 +878,14 @@ int CFmSimulate::SavePhenoFile( char* szPheoutFile )
 
     _log_debug(_HI_, "SavePhenoFile: Start to write phenotype data into the file(%s)", szPheoutFile);
 
-    fprintf(fp, "");
+    fprintf(fp, "ID");
 
     if ( m_pCovarX->GetNumCols()==1)
-	    fprintf(fp, "X");
+	    fprintf(fp, ",X");
 
     if ( m_pCovarX->GetNumCols()>1)
     {
-		fprintf(fp, "X_1");
+		fprintf(fp, ",X_1");
         for(int i=1; i<m_pCovarX->GetNumCols(); i++)
         {
             fprintf(fp, ",X_%d", i+1);

@@ -383,7 +383,7 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	{
 		subset_op <- function(snpmat, sub.idx)
 		{
-			snp.sub <- get_sub_snp(snpmat, sub.idx );
+			snp.sub <- get_plink_subsnp(snpmat, sub.idx );
 			snp.mat <- cbind( snp.sub$info[,c(2,3)], snp.sub$snp )
 			return( snp.mat );
 		}
@@ -960,6 +960,9 @@ plot.GLS.ret<-function( x, y=NULL, ... , fig.prefix=NULL )
 read_simple_gls_data <- function( file.phe, file.snp, bImputed=T )
 {
 	tb.phe <- read.csv(file.phe, header=T);
+	rownames(tb.phe) <- tb.phe[,1];
+	tb.phe <- tb.phe[,-1, drop=F];
+	
 	tb.snp <- read.csv(file.snp, header=T);
 	
 	cat("Checking data files......\n");

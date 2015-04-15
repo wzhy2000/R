@@ -4,11 +4,11 @@ load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, fil
 	if(class(plink)=="try-error")
 		return(NULL);
 	
+	gen.ids <- rownames(plink$fam) ;
+
 	phe.log <- try( read.csv(file.phe.long, header=T) );
 	if(class(phe.log )=="try-error")
 		return(NULL);
-	
-	gen.ids <- rownames(plink$fam) ;
 
 	# !!! First Column must be individual ID.
 	phe.ids <- phe.log[,1];
@@ -56,7 +56,7 @@ load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, fil
 	return(list(snp.mat=plink, phe.mat=phe.log));
 }
 
-get_sub_snp<-function(snp.mat, snp.set.idx)
+get_plink_subsnp<-function(snp.mat, snp.set.idx)
 {
 	s.mat <- as( snp.mat$genotypes[, snp.set.idx, drop=F ], "numeric");
 	snp.imp <-c();
@@ -151,8 +151,19 @@ convert_simpe_to_plink <- function( snp.mat, snp.file.base )
 	colnames(snps) <- sub.name;
 	rownames(snps) <- snp.name;
 	class(snps) <- "SnpMatrix";
-	
-	r <- write.plink( file.base=snp.file.base, snp.major = F, snps=t(snps), id=sub.name, chromosome=chromosome, position= position, na.code=0);
+
+	r <- write.plink( file.base=snp.file.base, snp.major = F, snps=t(snps), 
+	    	id=sub.name, 
+	    	father=rep(0,dim.snps[2]), 
+	    	mother=rep(0,dim.snps[2]), 
+	    	sex=rep(0,dim.snps[2]), 
+	    	phenotype=rep(-9,dim.snps[2]), 
+			chromosome=chromosome, 
+			genetic.distance=position, 
+			position= position, 
+			allele.1 = rep("A",dim.snps[1]), 
+			allele.2 = rep("B",dim.snps[1]), 
+			na.code=0);
 
 	cat("Genotype files have been converted into PLINK binary format(bed/bim/fam)\n");
 

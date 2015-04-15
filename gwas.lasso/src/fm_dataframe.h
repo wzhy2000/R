@@ -27,7 +27,7 @@ public:
 
     int Load(const char* szFile, bool bRowName, bool bColName);
 
-    CFmMatrix* GetMatrix();
+    CFmMatrix* GetMatrix(CFmVector* fmCols);
 
 private:
     int AllocMemory( int nMaxRows, int nMaxCols );

@@ -41,19 +41,28 @@ CFmDataFrame::~CFmDataFrame()
     Free( m_pData );
 }
 
-CFmMatrix* CFmDataFrame::GetMatrix()
+CFmMatrix* CFmDataFrame::GetMatrix(CFmVector* pVctCols=NULL)
 {
-	CFmNewTemp refNew;
-	CFmMatrix* pMat = new (refNew) CFmMatrix(m_nNumRows, m_nNumCols);
+	CFmVector fmCols(pVctCols);
+	if(fmCols.GetLength()==0)
+		for(int i=0;i<m_nNumCols;i++)
+			fmCols.Put(i);
 
-	for(int i=0; i<m_nNumCols; i++)
+	CFmNewTemp refNew;
+	CFmMatrix* pMat = new (refNew) CFmMatrix(m_nNumRows, fmCols.GetLength());
+
+	CFmVectorStr fmNameCols(0);
+
+	for(int i=0; i<fmCols.GetLength(); i++)
 	{
-		CFmVector& pVct = GetFloatCol(i);
+		CFmVector& pVct = GetFloatCol(fmCols.Get(i));
 		pMat->SetCol(i, pVct);
+
+		fmNameCols.Put( m_pColNames->Get(i) );
 	}
 
 	pMat->SetRowNames(m_pRowNames);
-	pMat->SetColNames(m_pColNames);
+	pMat->SetColNames( &fmNameCols );
 
     return(pMat);
 }

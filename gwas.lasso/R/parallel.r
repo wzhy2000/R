@@ -66,8 +66,8 @@ snpmat_parallel<-function( n.snp,
   		   	op.nMcmcIter,
 		   	op.fBurnInRound,
 		   	op.fRhoTuning,
-	        	op.fQval.add,
-	       		op.fQval.dom,
+		   	op.fQval.add,
+		   	op.fQval.dom,
 			op.debug,
 			op.cpu,
 			lasso.method)
@@ -80,7 +80,10 @@ snpmat_parallel<-function( n.snp,
 	{
 		
 		cat("* Final LASSO calling.\n");
-		r.xls <- snpmat_call( snp.mat,
+		
+		snpmat <- f_subset_op(snp.mat, c(1:n.snp) );
+		
+		r.xls <- snpmat_call( snpmat,
 				phe.mat,
 				Y.name, 
 				Z.name,
@@ -153,25 +156,12 @@ snpmat_parallel<-function( n.snp,
 	if( is.null(idx.sig) ) 
 	{
 		cat("! No SNPs are selected in the first run. \n");
-		return(r.cluster.init); 
+		return(r.cluster.init);
 	}
 	
-	if(lasso.method=="BLS")
-		varsel.snp.name <- rownames(r.cluster.init$varsel)[idx.sig]
-	else
-	#GLS model does not have thhe list of varsel!
-	{
-		if( !is.null(r.cluster.init$varsel_add))
-			varsel.snp.name <- rownames(r.cluster.init$varsel_add)[idx.sig];
-		if( !is.null(r.cluster.init$varsel_dom))
-			varsel.snp.name <- rownames(r.cluster.init$varsel_dom)[idx.sig];
-	}
-	
-cat("SNP selected by varsel procedure\n");
-show(idx.sig);
-show(varsel.snp.name);
-
+	varsel.snp.name <- rownames(r.cluster.init$varsel)[idx.sig];
 	varsel.snpmat <- c();
+	
 	for(i.sect in 1:ceiling(n.snp/1000))
 	{
 		sub.set <- (i.sect-1)*1000 + c(1:1000);
@@ -183,6 +173,7 @@ show(varsel.snp.name);
 		sub.snp.idx <- sub.snp.idx[!is.na(sub.snp.idx)]
 		if (length(sub.snp.idx) >0 ) varsel.snpmat <- rbind(varsel.snpmat, sub.snp[sub.snp.idx, ,drop=F]);
 	}
+	
 
 	cat("*", NROW(varsel.snpmat), "SNPs are selected in the first run.\n");
 	
@@ -301,7 +292,7 @@ snpmat_parallel_list<-function( phe.mat,
 {
 	cpu.fun<-function( sect )
 	{
-		library("gwas.lasso");
+		library(glasso);
 		
 		r.xls.i <- snpmat_call(
 				as.matrix( snpmat.list[[ sect ]]),
@@ -328,9 +319,9 @@ snpmat_parallel_list<-function( phe.mat,
 	if( op.ncpu>1 && require("snowfall") )
 	{
 		cat("Starting parallel computing, snowfall/snow......\n"); 
-		snowfall::sfInit(parallel = TRUE, cpus = op.ncpu, type = "SOCK")
+		sfInit(parallel = TRUE, cpus = op.ncpu, type = "SOCK")
 		
-		snowfall::sfExport("phe.mat", "Y.name", "Z.name", "covar.names", 
+		sfExport("phe.mat", "Y.name", "Z.name", "covar.names", 
 				"snpmat.list" ,
 				"refit",
 				"add.used",
@@ -343,9 +334,9 @@ snpmat_parallel_list<-function( phe.mat,
 				"op.debug",
 				"lasso.method");
 
-		r.cluster <- snowfall::sfClusterApplyLB( 1:length(snpmat.list), cpu.fun);
+		r.cluster <- sfClusterApplyLB( 1:length(snpmat.list), cpu.fun);
 
-		snowfall::sfStop();
+		sfStop();
 
 		cat("Stopping parallel computing......\n");
 	}		
@@ -374,13 +365,7 @@ snpmat_call<-function(  snp.mat,
 	           	op.fQval.dom,
 			op.debug,
 			lasso.method)
-{
-	if( is.null(snp.mat) || NROW(snp.mat)==0 )
-	{
-		cat("!!! No genotype data to call C/C++ functions. \n");
-		return(NULL);
-	}
-	
+{			
 	if(lasso.method=="BLS")
 	{
 		r <- .Call("bls_snpmat", 

@@ -289,7 +289,7 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 		options0 <- get_default_options();
         	options0[names(options)] <- options;
         	options <- options0;
-    	}
+	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
@@ -331,8 +331,8 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
   		   	options$nMcmcIter,
 		   	options$fBurnInRound,
 		   	options$fRhoTuning,
-	           	options$fQval.add,
-	           	options$fQval.dom,
+		   	options$fQval.add,
+		   	options$fQval.dom,
 			options$debug,
 			options$nParallel.cpu,
 			"BLS");
@@ -342,7 +342,7 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	{
 		subset_op <- function(snpmat, sub.idx)
 		{
-			snp.sub <- get_sub_snp(snpmat, sub.idx );
+			snp.sub <- get_plink_subsnp(snpmat, sub.idx );
 			snp.mat <- cbind( snp.sub$info[,c(2,3)], snp.sub$snp )
 			return( snp.mat );
 		}
@@ -362,8 +362,8 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
   		   	options$nMcmcIter,
 		   	options$fBurnInRound,
 		   	options$fRhoTuning,
-	           	options$fQval.add,
-	           	options$fQval.dom,
+		   	options$fQval.add,
+		   	options$fQval.dom,
 			options$debug,
 			options$nParallel.cpu,
 			"BLS");
@@ -847,6 +847,9 @@ get_sig_bls_snp <- function( r.bls )
 read_simple_bls_data <- function( file.phe, file.snp, bImputed=T )
 {
 	tb.phe <- read.csv(file.phe, header=T);
+	rownames(tb.phe) <- tb.phe[,1];
+	tb.phe <- tb.phe[,-1, drop=F];
+	
 	tb.snp <- read.csv(file.snp, header=T);
 
 	cat("Checking data files......\n");

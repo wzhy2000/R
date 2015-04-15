@@ -458,13 +458,17 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
 	if( m_szFile_pheno != NULL)
 	{
 	    CFmDataFrame df;
-		int ret = df.Load(m_szFile_pheno, true, true);
+		int ret = df.Load(m_szFile_pheno, false, true);
 		if (ret!=0)
 		{
 			_log_error(_HI_, "Failed to open the Phenotype file(%s)", m_szFile_pheno);
 			return( ERR_OPEN_FILE );
 		}
-		pFmPhe = df.GetMatrix();
+
+		CFmVector vctCol(0, 0.0);
+		for(int i=1;i<df.GetNumCol();i++)	vctCol.Put(i);
+		pFmPhe = df.GetMatrix( &vctCol );
+		pFmPhe->SetRowNames( df.GetStringCol(0) );
 	}
 	else
 		pFmPhe = m_pAttachedPhe;
@@ -680,14 +684,17 @@ int CFmDat_Pheno::LoadNonlongdt( CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSub
 	if( m_szFile_pheno!=NULL)
 	{
 	    CFmDataFrame df;
-		int ret = df.Load(m_szFile_pheno, true, true);
+		int ret = df.Load(m_szFile_pheno, false, true);
 		if (ret!=0)
 		{
 			_log_error(_HI_, "Failed to open the Phenotype file(%s)", m_szFile_pheno);
 			return( ERR_OPEN_FILE );
 		}
 
-		pFmPhe = df.GetMatrix();
+		CFmVector vctCol(0, 0.0);
+		for(int i=1;i<df.GetNumCol();i++)	vctCol.Put(i);
+		pFmPhe = df.GetMatrix( &vctCol );
+		pFmPhe->SetRowNames( df.GetStringCol(0) );
 	}
 	else
 		pFmPhe = m_pAttachedPhe;
