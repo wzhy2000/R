@@ -115,9 +115,16 @@ bls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n= 500, sim
 		convert_simpe_to_plink( tb.snp, file.snp.out );
 		
 		unlink(file.snp.out);
-	}
+		return(list(err=err,  
+			file.plink.bed = r$file.plink.bed,
+   	    	file.plink.bim = r$file.plink.bim,
+   	    	file.plink.fam = r$file.plink.fam));
 
-	return(err);		   
+	}
+	
+	return(list(err=err,  
+		file.simple.phe = file.phe.out,
+       	file.simple.snp = file.snp.out));
 }
 
 bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL)
