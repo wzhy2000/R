@@ -79,11 +79,14 @@ gls.phe.out <- "gls.test.simple.phe";
 gls.snp.out <- "gls.test.simple.snp";
 gls.simulate( gls.phe.out, gls.snp.out, simu_n=400, simu_p=10)
 
-tb.phe <- read.csv(gls.phe.out, header=T);
+tb.phe <- read.csv(gls.phe.out, header=TRUE);
 tb.snp <- read.csv(gls.snp.out);
 
-r.gls <- gls.snpmat(tb.phe, tb.snp, Y.prefix="Y", Z.prefix="Z", 
-                covar.names=c("X_1","X_2"), fgwas.filter = FALSE );
+r.gls <- gls.snpmat(tb.phe, tb.snp, 
+                Y.prefix="Y", 
+                Z.prefix="Z", 
+                covar.names=c("X_1","X_2"), 
+                fgwas.filter = FALSE );
 	
 summary(r.gls);
 

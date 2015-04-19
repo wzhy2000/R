@@ -79,11 +79,13 @@ bls.phe.out <- "bls.test.simple.phe";
 bls.snp.out <- "bls.test.simple.snp";
 bls.simulate( bls.phe.out, bls.snp.out,simu_n= 500, simu_p=100);
 
-tb.phe<-read.csv(bls.phe.out, header=T);
+tb.phe<-read.csv(bls.phe.out, header=TRUE);
 tb.snp<-read.csv(bls.snp.out);
 
-r.bls <- bls.snpmat(tb.phe, tb.snp, Y.name="Y", covar.names=c("X_1","X_2"), 
-                   fgwas.filter = FALSE );
+r.bls <- bls.snpmat(tb.phe, tb.snp, 
+      Y.name="Y", 
+      covar.names=c("X_1","X_2"), 
+      fgwas.filter = FALSE );
 
 summary(r.bls):
 

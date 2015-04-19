@@ -180,9 +180,6 @@ The control parameters include the following items.\cr
 
 gls.phe.out <- "gls.test.simple.phe"  
 gls.snp.out <- "gls.test.simple.snp"
-gls.snp.bed <- "gls.test.simple.snp.bed"
-gls.snp.bim <- "gls.test.simple.snp.bim"
-gls.snp.fam <- "gls.test.simple.snp.fam"
 
 a_effect <- array(0, dim=c(3,4));
 d_effect <- array(0, dim=c(3,4));
@@ -202,7 +199,7 @@ cov_effect[1,]<-c( 2.49, -1.135, 0.82, 0.425);
 cov_effect[2,]<-c( -1.045, 2.320, 0.905,  0.535);
 
 
-gls.simulate( gls.phe.out, gls.snp.out, 
+r.sim <- gls.simulate( gls.phe.out, gls.snp.out, 
                 simu_n= 400, simu_grp=1, simu_p=10, 
                 simu_snp_rho=0.4, simu_rho=0.1, simu_sigma2= 4, 
                 simu_mu= c(13.395, -3.08, 1.875, -3.195),  
@@ -213,11 +210,17 @@ gls.simulate( gls.phe.out, gls.snp.out,
                 simu_dom_pos    = c( sigsnp[3], sigsnp[4], sigsnp[5] ),
                 simu_dom_effect = d_effect, 
                 simu_z_range    = c(30,60), simu_z_count = c(5,12), 
-                plink.format=T, debug=F);
+                plink.format=TRUE, 
+                debug=FALSE);
 
-r.gls <- gls.plink(gls.phe.out, gls.snp.bed, gls.snp.bim, gls.snp.fam, 
-                Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), 
-                fgwas.filter = F );	
+r.gls <- gls.plink(gls.phe.out, 
+                r.sim$file.plink.bed,
+                r.sim$file.plink.bim,
+                r.sim$file.plink.fam,
+                Y.prefix="Y", 
+                Z.prefix="Z", 
+                covar.names=c("X_1","X_2"), 
+                fgwas.filter = FALSE );	
 		
 summary(r.gls);
 

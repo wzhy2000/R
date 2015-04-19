@@ -1,4 +1,4 @@
-                \name{bls.plink}
+\name{bls.plink}
 \alias{bls.plink}
 
 \title{ scan PLINK dataset with single measument by the BLS model}
@@ -13,9 +13,9 @@ bls.plink(file.phe,
       Y.name, 
       covar.names, 
       refit=TRUE, 
-      add.used=T, 
-      dom.used=T, 
-      fgwas.filter=F, 
+      add.used=TRUE, 
+      dom.used=TRUE, 
+      fgwas.filter=FALSE, 
       options=NULL)}
 
 \arguments{
@@ -125,13 +125,10 @@ Li, J., Das, K., Fu, G., Li, R., & Wu, R. (2011). The Bayesian lasso for genome-
 
 bls.phe.out <- "bls.test.plink.phe"  
 bls.snp.out <- "bls.test.plink.snp"
-bls.snp.bed <- "bls.test.plink.snp.bed"
-bls.snp.bim <- "bls.test.plink.snp.bim"
-bls.snp.fam <- "bls.test.plink.snp.fam"
 
 sigsnp <- c(1:5)*5;
 
-bls.simulate( bls.phe.out, bls.snp.out, 
+r.sim <- bls.simulate( bls.phe.out, bls.snp.out, 
                 simu_grp=1, simu_n= 600, simu_p=50, 
                 simu_snp_rho = 0.1, 
                 simu_rho     = 0.4, 
@@ -144,10 +141,16 @@ bls.simulate( bls.phe.out, bls.snp.out,
                 simu_dom_pos   = c( sigsnp[3], sigsnp[4], sigsnp[5]), 
                 simu_dom_effect= c( 2.8, 2.0, -2.5 ),
                 simu_t_range = c(-1, 1), 
-                plink.format=T,
-                debug=F );
+                plink.format = TRUE,
+                debug = FALSE );
 
-r.bls <- bls.plink( bls.phe.out, bls.snp.bed, bls.snp.bim, bls.snp.fam, Y.name="Y", covar.names=c("X_1", "X_2"), fgwas.filter=F );
+r.bls <- bls.plink( bls.phe.out, 
+                r.sim$file.plink.bed,
+                r.sim$file.plink.bim,
+                r.sim$file.plink.fam,
+                Y.name="Y", 
+                covar.names=c("X_1", "X_2"), 
+                fgwas.filter=F );
 
 summary(r.bls);
 

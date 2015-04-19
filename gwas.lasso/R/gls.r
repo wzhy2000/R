@@ -144,7 +144,7 @@ gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu
 	if( plink.format )
 	{
 		tb.snp <- read.csv(file.snp.out, header=T);
-		convert_simpe_to_plink( tb.snp, file.snp.out );
+		r <- convert_simpe_to_plink( tb.snp, file.snp.out );
 		
 		unlink(file.snp.out);
 		return(list(err=err,  
