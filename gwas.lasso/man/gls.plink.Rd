@@ -1,10 +1,10 @@
 \name{gls.plink}
 \alias{gls.plink}
 
-\title{ scan PLINK dataset with longitudinal measuments by the GLS model }
+\title{ Scan PLINK dataset by the Group lasso model }
 
 \description{ 
- Scan PLINK dataset with longitudinal measument and detect the joint additive and dominant effects by the Group Lasso Model.
+Scan PLINK dataset with longitudinal measument and detect the joint additive and dominant effects by the Group Lasso Model (GLS model).
 } 
 
 \usage{
@@ -13,11 +13,11 @@ gls.plink(file.phe,
       Y.prefix,
       Z.prefix,
       covar.names,
-      refit=TRUE,
-      add.used=T,
-      dom.used=T,
-      fgwas.filter=F, 
-      options=NULL) 
+      refit = TRUE,
+      add.used = TRUE,
+      dom.used = TRUE,
+      fgwas.filter = FALSE, 
+      options = NULL) 
 }
 \arguments{
 \item{file.phe}{Input CSV file containing longitudinal measuments and covariate data.}
@@ -32,8 +32,7 @@ gls.plink(file.phe,
 \item{dom.used}{Logical, if TRUE, dominant effects will be estimated jointly. \cr Default: TRUE.}
 \item{fgwas.filter}{Logical, If TRUE, the SNPs will be filtered by fGWAS midel before the LASSO methods are applied. Default: FALSE.}
 \item{options}{A list containing control parameters, including \code{nParallel.cpu}, \code{nMcmcIter}, \code{nPiecewise.ratio}, \code{fBurnInRound}, \code{fRhoTuning}, \code{fQval.add},\cr
-\code{fQval.dom}, \code{fgwas.cutoff}, and \code{debug}.\cr
-see details.
+\code{fQval.dom}, \code{fgwas.cutoff}, and \code{debug}. See the details in \code{\link{bls.plink}}.
 }
 }
 \value{
@@ -43,25 +42,25 @@ An object of class \code{GLS.ret} including the following elements.
 \itemize{
 \item{(1) chromosome group}{}
 \item{(2) position}{}
-\item{(3) the first Legendre coefficient of additive effcts}{}
-\item{(4) the secnod Legendre coefficient of additive effcts}{}
-\item{(5) the third Legendre coefficient of additive effcts}{}
-\item{(6) the forth Legendre coefficient of additive effcts}{}
-\item{(7) quadratic sum of mean values of additive effect}{}
-\item{(8) the first mean value of additive effect}{}
-\item{(9) the second mean value of additive effect}{}
-\item{(10) the third mean value of additive effect}{}
-\item{(11) the forth mean value of additive effect}{}
-\item{(12) quadratic sum of minimum value of addtive effect}{}
-\item{(13) the first minimum value of addtive effect}{}
-\item{(14) the second minimum value of addtive effect}{}
-\item{(15) the third minimum value of addtive effect}{}
-\item{(16) the forth minimum value of addtive effect}{}
-\item{(17) quadratic sum of maximum value of addtive effect}{}
-\item{(18) the first maximum value of addtive effect}{}
-\item{(19) the second maximum value of addtive effect}{}
-\item{(20) the third maximum value of addtive effect}{}
-\item{(21) the forth maximum value of addtive effect}{}
+\item{(3) the \strong{1st} Legendre coefficient of \strong{additive effcts}{}
+\item{(4) the \strong{2nd} Legendre coefficient of \strong{additive effcts}{}
+\item{(5) the \strong{3rd} Legendre coefficient of \strong{additive effcts}{}
+\item{(6) the \strong{4th} Legendre coefficient of \strong{additive effcts}{}
+\item{(7) the norm of mean values of \strong{additive effects, i,e, L=sqrt(x_1st^2 + x_2nd^2 + x_3rd^2 + x_4th^2)}{}
+\item{(8) the mean value of \strong{1st} Legendre coefficient of additive effects}{}
+\item{(9) the mean value of \strong{2nd Legendre coefficient of additive effects}{}
+\item{(10) the mean value of \strong{3rd} Legendre coefficient of additive effects}{}
+\item{(11) the mean value of \strong{4th} Legendre coefficient of additive effects}{}
+\item{(12) the norm of minimum values of additive effects}{}
+\item{(13) the minimum value of \strong{1st} Legendre coefficient of additive effects}{}
+\item{(14) the minimum value of \strong{2nd} Legendre coefficient of additive effects}{}
+\item{(15) the minimum value of \strong{3rd} Legendre coefficient of additive effects}{}
+\item{(16) the minimum value of \strong{4th} Legendre coefficient of additive effects}{}
+\item{(17) the norm of maximum values of additive effects}{}
+\item{(18) the maximum value of \strong{1st} Legendre coefficient of additive effects}{}
+\item{(19) the maximum value of \strong{2nd} Legendre coefficient of additive effects}{}
+\item{(20) the maximum value of \strong{3rd} Legendre coefficient of additive effects}{}
+\item{(21) the maximum value of \strong{4th} Legendre coefficient of additive effects}{}
 }
 }
 \item{varsel_dom}{Matrix, dominant effects estimated by the procedure of variable selection for each SNP. 
@@ -173,32 +172,39 @@ The control parameters include the following items.\cr
 \author{Zhong Wang and Nating Wang }
 
 \references{
- Li. J., Wang, Z., Li, R., Wu, R.(2015). Bayesian Group Lasso for nonparametric varying-coefficient models with application to functional genome-wide association studies. The Annals of Applied Statistics. 9(1).
+(1)Group lasso model\cr
+Li. J., Wang, Z., Li, R., Wu, R.(2015). Bayesian Group Lasso for nonparametric varying-coefficient models with application to functional genome-wide association studies. The Annals of Applied Statistics. 9(1).\cr
+(2)fGWAS model\cr
+Li, J., Wang, Z., Li, Y., & Wu, R. (2010). Functional genome-wide association studies of longitudinal traits. Handbook of Adaptive Designs in Pharmaceutical and Clinical Development.\cr
 }
 
 \examples{
 
+# Set the filename of simulation data set
 gls.phe.out <- "gls.test.simple.phe"  
 gls.snp.out <- "gls.test.simple.snp"
 
+# Set the additive effects for 3 SNPs
 a_effect <- array(0, dim=c(3,4));
-d_effect <- array(0, dim=c(3,4));
-cov_effect <- array(0, dim=c(2,4));
-
-sigsnp <- c(1,3, 5,7,9);
-
 a_effect[1,]<-c( 1.04, 0.885, -2.055, 0.545);
 a_effect[2,]<-c( 1.17, -0.20, 0.74, -4.715);
 a_effect[3,]<-c( 1.40, -2.25, 1.00,  0.00);
 
+# Set the dominant effects for 3 SNPs
+d_effect <- array(0, dim=c(3,4));
 d_effect[1,]<-c( 1.49, -2.135, 4.82, 1.425);
 d_effect[2,]<-c( 1.045, 1.320, 1.905,  1.535);
 d_effect[3,]<-c( 1.265, -1.225, 2.710, -1.96);
 
+# Set the coefficient for 2 covariates
+cov_effect <- array(0, dim=c(2,4));
 cov_effect[1,]<-c( 2.49, -1.135, 0.82, 0.425);
 cov_effect[2,]<-c( -1.045, 2.320, 0.905,  0.535);
 
+#Set the significant positions
+sigsnp <- c(1, 3, 5,7,9);
 
+#Create simulation dataset.
 r.sim <- gls.simulate( gls.phe.out, gls.snp.out, 
                 simu_n= 400, simu_grp=1, simu_p=10, 
                 simu_snp_rho=0.4, simu_rho=0.1, simu_sigma2= 4, 
@@ -213,6 +219,7 @@ r.sim <- gls.simulate( gls.phe.out, gls.snp.out,
                 plink.format=TRUE, 
                 debug=FALSE);
 
+# Call theGroup model to estimate the genetic effects 
 r.gls <- gls.plink(gls.phe.out, 
                 r.sim$file.plink.bed,
                 r.sim$file.plink.bim,
@@ -222,8 +229,11 @@ r.gls <- gls.plink(gls.phe.out,
                 covar.names=c("X_1","X_2"), 
                 fgwas.filter = FALSE );	
 		
+
+# Show the significant SNPs and effects		
 summary(r.gls);
 
+# Plot the results
 plot(r.gls);
 
 }
