@@ -183,9 +183,6 @@ Li, J., Wang, Z., Li, Y., & Wu, R. (2010). Functional genome-wide association st
 # Set the filename of simulation data set
 gls.phe.out <- "gls.test.simple.phe"  
 gls.snp.out <- "gls.test.simple.snp"
-gls.snp.bed <- "gls.test.simple.snp.bed"
-gls.snp.bim <- "gls.test.simple.snp.bim"
-gls.snp.fam <- "gls.test.simple.snp.fam"
 
 # Set the additive effects for 3 SNPs
 a_effect <- array(0, dim=c(3,4));
@@ -207,8 +204,8 @@ cov_effect[2,]<-c( -1.045, 2.320, 0.905,  0.535);
 #Set the significant positions
 sigsnp <- c(1, 3, 5,7,9);
 
-# Call simulation to generate the data set in PLINK format
-gls.simulate( gls.phe.out, gls.snp.out, 
+#Create simulation dataset.
+r.sim <- gls.simulate( gls.phe.out, gls.snp.out, 
                 simu_n= 400, simu_grp=1, simu_p=10, 
                 simu_snp_rho=0.4, simu_rho=0.1, simu_sigma2= 4, 
                 simu_mu= c(13.395, -3.08, 1.875, -3.195),  
@@ -219,12 +216,20 @@ gls.simulate( gls.phe.out, gls.snp.out,
                 simu_dom_pos    = c( sigsnp[3], sigsnp[4], sigsnp[5] ),
                 simu_dom_effect = d_effect, 
                 simu_z_range    = c(30,60), simu_z_count = c(5,12), 
-                plink.format=T, debug=F);
+                plink.format=TRUE, 
+                debug=FALSE);
 
 # Call theGroup model to estimate the genetic effects 
-r.gls <- gls.plink(gls.phe.out, gls.snp.bed, gls.snp.bim, gls.snp.fam, 
-                Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), 
-                fgwas.filter = F );	
+r.gls <- gls.plink(gls.phe.out, 
+                r.sim$file.plink.bed,
+                r.sim$file.plink.bim,
+                r.sim$file.plink.fam,
+                Y.prefix="Y", 
+                Z.prefix="Z", 
+                covar.names=c("X_1","X_2"), 
+                fgwas.filter = FALSE );	
+		
+
 # Show the significant SNPs and effects		
 summary(r.gls);
 

@@ -8,7 +8,7 @@
 } 
 
 \usage{gls.plink.tped(file.phe,file.plink.tped,file.plink.tfam,
-Y.prefix,Z.prefix,covar.names,refit=TRUE,add.used=T,dom.used=T,
+Y.prefix,Z.prefix,covar.names,refit=TRUE,add.used=TRUE,dom.used=TRUE,
 options=NULL )}
 
 \arguments{

@@ -844,7 +844,7 @@ int CFmSimulate::SaveSnpFile( char* szSnpoutFile )
 
         for(int i=nStartSNP; i < nStopSNP; i++)
         {
-            fprintf(fp, m_pSimuSnps->GetRowName(i) );
+            fprintf(fp, "%s", m_pSimuSnps->GetRowName(i) );
             // Chrmosome is from 1 to ...
             fprintf(fp, ",%d,%d", k+1, i+1 );
 

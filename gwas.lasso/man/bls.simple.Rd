@@ -54,9 +54,15 @@ start with 2 columns of chromosome information (chromosomenumber and SNP positio
 bls.phe.out <- "bls.test.simple.phe"; 
 bls.snp.out <- "bls.test.simple.snp";
 # Makea simulation data using the defalut parameters.
-bls.simulate(bls.phe.out, bls.snp.out,simu_n= 500, simu_p=50);
+bls.simulate(bls.phe.out, bls.snp.out,simu_n= 500, simu_p=50,
+            simu_add_pos=c( 10, 20, 30), simu_dom_pos=c( 30, 40, 50));
 # Call Beyasian lasso model to estimate the joint effects.
-r.bls <- bls.simple(bls.phe.out,bls.snp.out,Y.name="Y",covar.names=c(),refit=FALSE);
+r.bls <- bls.simple(bls.phe.out,bls.snp.out,
+      Y.name="Y",
+      covar.names=c(),
+      refit=FALSE,
+      options=list(nPiecewise.ratio=0));
+      
 # List the significant information detcted by the BLS model
 summary(r.bls);
 # Plot the data

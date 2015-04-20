@@ -292,7 +292,7 @@ snpmat_parallel_list<-function( phe.mat,
 {
 	cpu.fun<-function( sect )
 	{
-		library(glasso);
+		library(gwas.lasso);
 		
 		r.xls.i <- snpmat_call(
 				as.matrix( snpmat.list[[ sect ]]),

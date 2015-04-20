@@ -1778,8 +1778,8 @@ int CFmMatrix::ReadFromCSVFile(const char* filename, bool bColName, bool bRowNam
         col_size++;
     }
 
-    CFmVector tmpRow(col_size);
-    if (bRowName)
+    CFmVector tmpRow(col_size, 0.0);
+    if (bRowName && !bColName)
         tmpRow.Resize(col_size-1);
 
     CFmMatrix t_mat(tmpRow.GetLength(), 0);
@@ -1837,7 +1837,6 @@ int CFmMatrix::ReadFromCSVFile(const char* filename, bool bColName, bool bRowNam
             {
                 tmpRow[i-1] = atof( vctTmpRow[i]);
             }
-
             t_mat.Cbind(tmpRow);
             vctRowNames.Put( vctTmpRow[0]);
         }
@@ -1857,16 +1856,13 @@ int CFmMatrix::ReadFromCSVFile(const char* filename, bool bColName, bool bRowNam
         for(int j=0; j<m_nNumCols; j++)
             m_pData[MI(m_nNumRows, m_nNumCols, i, j)] = t_mat.Get(j, i);
 
-    for(int i=0; i<m_nNumRows; i++)
-        SetRowName(i, vctRowNames.Get(i));
+   	if(bRowName)
+    	for(int i=0; i<m_nNumRows; i++)
+    	    SetRowName(i, vctRowNames.Get(i));
 
-    for(int i=0; i<m_nNumCols; i++)
-    {
-        if (!bRowName)
-            SetColName(i, vctColNames.Get(i));
-        else
-            SetColName(i, vctColNames.Get(i+1));
-    }
+	if(bColName)
+	    for(int i=0; i<m_nNumCols; i++)
+	        SetColName(i, vctColNames.Get(i));
 
     return(0);
 }

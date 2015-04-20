@@ -309,13 +309,12 @@ int CFmDat_Simple::Load(char* szPresigFile)
     int ret = mat.ReadFromCSVFile( m_szFile_snp, true, true);
     if (ret!=0)
     {
-        _log_info(_HI_, "LoadSnpFile: Failed to load the SNP data into a matrix from %s",m_szFile_snp);
+        _log_error(_HI_, "LoadSnpFile: Failed to load the SNP data into a matrix from %s",m_szFile_snp);
         return(ret);
     }
 
     _log_info(_HI_, "LoadSnpFile: The SNP data is loaded into the matrix[%d,%d]",
                 mat.GetNumRows(), mat.GetNumCols()-2);
-
     if ( m_PackedSNP.GetNumSnps() == 0 )
         m_PackedSNP.InitData(mat.GetNumCols()-2, mat.GetNumRows());
 
@@ -519,7 +518,7 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
     m_nMesuQ = fmVctPosY.GetLength();
     if (m_nMesuQ<1)
     {
-        _log_error(_HI_, "Failed to find the colume(%s)", szVarY);
+        _log_error(_HI_, "Failed to find the column(%s)", szVarY);
         return( ERR_PARAM_VALUE );
     }
 
@@ -616,7 +615,7 @@ int CFmDat_Pheno::LoadLongdt( CFmPackedSNP* pPackedSNP , CFmVectorStr* pFamSubjs
         int nIdx = pFmPhe->FindColumn( szVarX );
         if (nIdx<0)
         {
-            _log_error(_HI_, "Failed to find the colume(%s)", szVarX);
+            _log_error(_HI_, "Failed to find the column(%s)", szVarX);
             return( ERR_PARAM_VALUE );
         }
         else
@@ -730,7 +729,7 @@ int CFmDat_Pheno::LoadNonlongdt( CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSub
     int nIdx = pFmPhe->FindColumn( m_pszYname );
     if (nIdx<0)
     {
-        _log_error(_HI_, "Failed to find the colume(%s)", m_pszYname );
+        _log_error(_HI_, "Failed to find the column(%s)", m_pszYname );
         return( ERR_OPEN_FILE );
     }
     else
@@ -754,7 +753,7 @@ int CFmDat_Pheno::LoadNonlongdt( CFmPackedSNP* pPackedSNP, CFmVectorStr* pFamSub
         int nIdx = pFmPhe->FindColumn( szVarX );
         if (nIdx<0)
         {
-            _log_error(_HI_, "Failed to find the colume(%s)", szVarX);
+            _log_error(_HI_, "Failed to find the column(%s)", szVarX);
             return( ERR_OPEN_FILE );
         }
         else

@@ -70,7 +70,7 @@ int CFmSys::GetTempId(char* szGrpId)
 
 int CFmSys::GetTempFile(char* szFile, const char*szExt, int nLen)
 {
-	SEXP sexpFile = run_script("tempfile()");
+	SEXP sexpFile = run_script((char*)"tempfile()");
 	const char* pszTmpfile = CHAR(STRING_ELT(sexpFile,0));
 
     if ( (unsigned int )nLen <= strlen(pszTmpfile) )

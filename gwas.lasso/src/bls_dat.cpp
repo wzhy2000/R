@@ -57,8 +57,18 @@ BLS_dat::~BLS_dat()
 
 void BLS_dat::ResetAllObjects()
 {
-    if (m_pPlink) destroy( m_pPlink );
-    if (m_pSimple) destroy( m_pSimple );
+    if (m_pPlink)
+    {
+		// m_pPackedSNP is a reference of the inner object of m_pPlink
+		m_pPackedSNP = NULL;
+		destroy( m_pPlink );
+	}
+    if (m_pSimple)
+    {
+		// m_pPackedSNP is a reference of the inner object of m_pSimple
+		m_pPackedSNP = NULL;
+		destroy( m_pSimple );
+	}
     if (m_pSimulate) destroy( m_pSimulate );
     if (m_pPhenoY) destroy( m_pPhenoY );
     if (m_pCovars) destroy( m_pCovars );

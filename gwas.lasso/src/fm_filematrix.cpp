@@ -146,13 +146,16 @@ int CFmFileMatrix::GetRow(int nRow, CFmVector& vct)
         return ERR_FILE_OPERATE;
 
     double* pDouble = new double[m_nNumCols];
-    fread( pDouble, sizeof(double), m_nNumCols, m_pFile );
+    size_t rlen = fread( pDouble, sizeof(double), m_nNumCols, m_pFile );
+    if(rlen <= 0)
+     	return ERR_FILE_OPERATE;
 
     vct.Resize(0);
     for (int i=0;i<m_nNumCols;i++)
         vct.Put(pDouble[i]);
 
     delete [] pDouble;
+    return(0);
 }
 
 int CFmFileMatrix::GetCol(int nCol, CFmVector& vct)
