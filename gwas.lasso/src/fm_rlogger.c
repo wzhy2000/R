@@ -162,29 +162,47 @@ void _log_prompt( const char* szSrc, int nSrcLine, const char* fmt, ... )
 
 void _log_error( const char* szSrc, int nSrcLine, const char*  fmt, ... )
 {
-	if(!pFLog) return;
-
     va_list arg_ptr ;
-    log_print_prefix_f("[!]", "");
     va_start( arg_ptr, fmt ) ;
+	if(!pFLog)
+	{
+		static char szMsg[1024]={0}
+		vsprintf( szMsg, fmt, arg_ptr);
+		Rprintf(szMsg);
+		Rprintf("\n");
+	}
+	else
+	{
 #ifdef DEBUG
-    vfprintf( stderr, fmt,arg_ptr) ;
-    fprintf( stderr, "\n");
+	    log_print_prefix_f("[!]", "");
+		vfprintf( stderr, fmt,arg_ptr) ;
+		fprintf( stderr, "\n");
 #endif
-    va_end(arg_ptr);
+	}
+	va_end(arg_ptr);
 }
 
 void _log_fatal( const char* szSrc, int nSrcLine, const char*  fmt, ... )
 {
-	if(!pFLog) return;
-
     va_list arg_ptr ;
-    log_print_prefix_f("[!]", "");
     va_start( arg_ptr, fmt ) ;
+
+	if(!pFLog)
+	{
+		static char szMsg[1024]={0}
+		vsprintf( szMsg, fmt, arg_ptr);
+		Rprintf("!!!!! ");
+		Rprintf(szMsg);
+		Rprintf("\n");
+	}
+	else
+	{
 #ifdef DEBUG
-    vfprintf( stderr, fmt,arg_ptr) ;
-    fprintf( stderr, "\n");
+		log_print_prefix_f("[!]", "");
+		vfprintf( stderr, fmt,arg_ptr) ;
+		fprintf( stderr, "\n");
 #endif
+	}
     va_end(arg_ptr);
 
     stop_log();

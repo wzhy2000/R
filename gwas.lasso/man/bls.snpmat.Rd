@@ -62,10 +62,14 @@ Li, J., Wang, Z., Li, Y., & Wu, R. (2010). Functional genome-wide association st
 # Generate the simulation data set.
 bls.phe.out <- "bls.test.simple.phe";
 bls.snp.out <- "bls.test.simple.snp";
-bls.simulate( bls.phe.out, bls.snp.out,simu_n= 500, simu_p=100);
+r.sim <- bls.simulate( bls.phe.out, bls.snp.out,simu_n= 500, simu_p=100, 
+            simu_add_pos=c( 10, 20, 30), simu_dom_pos=c( 30, 40, 50));
 
 # Load the phenotypic data into a matrix
 tb.phe<-read.csv(bls.phe.out, header=TRUE);
+# Set IDs as the row name
+rownames(tb.phe) <- tb.phe[,1];
+tb.phe <- tb.phe[,-1];
 
 # Load the genotypic data into a matrix
 tb.snp<-read.csv(bls.snp.out);
@@ -77,7 +81,7 @@ r.bls <- bls.snpmat(tb.phe, tb.snp,
       fgwas.filter = FALSE );
 
 # Show the signiciant SNPs and effects.
-summary(r.bls):
+summary(r.bls);
 
 # Plot the data
 plot(r.bls);

@@ -252,11 +252,9 @@ SEXP _blasso_simple(  CMDOPTIONS* pCmd, BLS_cfg *pCfg )
         status = sm.LoadSimple( pCmd );
         if (status!=0)
             goto _Abort3;
-
 		status = sm.Varsel(pCfg);
 		if (status!=0)
 			goto _Abort3;
-
         if(pCmd->bRefit)
         {
             status = sm.Refit( pCfg );
@@ -265,7 +263,6 @@ SEXP _blasso_simple(  CMDOPTIONS* pCmd, BLS_cfg *pCfg )
         }
 
         sRet = sm.GetRObj();
-
     }
     catch( char const* str )
     {
@@ -337,7 +334,6 @@ SEXP blasso_simple( const char* pszPheFile,
     SEXP sRet;
     sRet = _blasso_simple(&cmd, pCfg);
     destroy( pCfg );
-
     return(sRet);
 }
 

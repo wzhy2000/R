@@ -159,7 +159,7 @@ gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu
        	file.simple.snp = file.snp.out));
 }
 
-gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL )  
+gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL )  
 {
 	cat( "[ GLASSO SIMPLE ] Procedure.\n");
 	cat( "Checking the parameters ......\n");
@@ -206,7 +206,7 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 	{
 		cat( "Genetic Effect Analysis by GLASSO method......\n");
 
-		r <- .Call("gls_simple", 
+		r.gls <- .Call("gls_simple", 
 				file.phe,
 				file.snp, 
 				Y.prefix, 
@@ -294,12 +294,19 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 				dom.used       = dom.used, 
 				fgwas.filter   = fgwas.filter);
 	
-	r <- wrap_GLS_ret(r.gls, r.filter, options);
-	
-	return(r);		   
+	if(!is.null(r.gls) && !is.na(r.gls))
+	{
+		r <- wrap_GLS_ret(r.gls, r.filter, options);
+		return(r);		   
+	}
+	else
+	{
+		cat("! No results\n");
+		return(NULL);		   
+	}
 }
 
-gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL )        
+gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL )        
 {
 	cat( "[ GLASSO PLINK ] Procedure.\n");
 	cat( "Checking the parameters ......\n");
@@ -429,12 +436,19 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 				dom.used       = dom.used, 
 				fgwas.filter   = fgwas.filter);
 	
-	r <- wrap_GLS_ret(r.gls, r.filter, options);
-			
-	return(r);		   
+	if(!is.null(r.gls) && !is.na(r.gls))
+	{
+		r <- wrap_GLS_ret(r.gls, r.filter, options);
+		return(r);		   
+	}
+	else
+	{
+		cat("! No results\n");
+		return(NULL);		   
+	}
 }
 
-gls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=T, dom.used=T, options=NULL )       
+gls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, options=NULL )       
 {
 	cat( "[ GLASSO PLINK(tped) ] Procedure.\n");
 	cat( "Checking the parameters ......\n");
@@ -506,12 +520,22 @@ gls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.prefix, 
 				add.used       = add.used, 
 				dom.used       = dom.used );
 
-	r <- wrap_GLS_ret(r.gls, r.filter, options);
+
+	if(!is.null(r.gls) && !is.na(r.gls))
+	{
+		r <- wrap_GLS_ret(r.gls, r.filter, options);
+		return(r);		   
+	}
+	else
+	{
+		cat("! No results\n");
+		return(NULL);		   
+	}
 			
 	return(r);		   
 }
 
-gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL)     
+gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL)     
 {
 	cat( "[ GLASSO SNPMAT ] Procedure.\n");
 	cat( "Checking the parameters ......\n");
@@ -642,7 +666,16 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
 				dom.used       = dom.used, 
 				fgwas.filter   = fgwas.filter);
 	
-	r <- wrap_GLS_ret( r.gls, r.filter, options );
+	if(!is.null(r.gls) && !is.na(r.gls))
+	{
+		r <- wrap_GLS_ret(r.gls, r.filter, options);
+		return(r);		   
+	}
+	else
+	{
+		cat("! No results\n");
+		return(NULL);		   
+	}
 
 	return(r);
 }
@@ -964,7 +997,7 @@ plot.GLS.ret<-function( x, y=NULL, ... , fig.prefix=NULL )
 		cat("! No refit results.\n");		
 }
 
-read_simple_gls_data <- function( file.phe, file.snp, bImputed=T )
+read_simple_gls_data <- function( file.phe, file.snp, bImputed=TRUE )
 {
 	tb.phe <- read.csv(file.phe, header=T);
 	rownames(tb.phe) <- tb.phe[,1];
@@ -977,6 +1010,6 @@ read_simple_gls_data <- function( file.phe, file.snp, bImputed=T )
 	cat("* SNPs:", NROW(tb.snp), "\n");
 	
 	if(bImputed) tb.snp <- impute_simple_snp(tb.snp);
-	
+
 	return(list(phe.mat=tb.phe, snp.mat=tb.snp));
 }

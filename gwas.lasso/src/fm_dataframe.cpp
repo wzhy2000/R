@@ -55,14 +55,15 @@ CFmMatrix* CFmDataFrame::GetMatrix(CFmVector* pVctCols=NULL)
 
 	for(int i=0; i<fmCols.GetLength(); i++)
 	{
-		CFmVector& pVct = GetFloatCol(fmCols.Get(i));
+		CFmVector& pVct = GetFloatCol( fmCols.Get(i) );
 		pMat->SetCol(i, pVct);
 
-		fmNameCols.Put( m_pColNames->Get(i) );
+		if(m_pColNames)
+			fmNameCols.Put( m_pColNames->Get( fmCols.Get(i) ) );
 	}
 
-	pMat->SetRowNames(m_pRowNames);
-	pMat->SetColNames( &fmNameCols );
+	if(m_pRowNames)	pMat->SetRowNames( m_pRowNames);
+	if(m_pColNames)	pMat->SetColNames( &fmNameCols );
 
     return(pMat);
 }

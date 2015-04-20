@@ -8,7 +8,7 @@
 } 
 
 \usage{bls.plink.tped(file.phe, file.plink.tped, file.plink.tfam, 
-Y.name, covar.names, refit=TRUE, add.used=T, dom.used=T, 
+Y.name, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, 
 options=NULL)}
 
 \arguments{

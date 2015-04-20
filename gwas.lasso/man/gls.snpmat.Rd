@@ -13,11 +13,11 @@ gls.snpmat(phe.mat,
       Y.prefix,
       Z.prefix,
       covar.names, 
-      refit=TRUE,
-      add.used=T,
-      dom.used=T,
-      fgwas.filter=F,
-      options=NULL)}
+      refit = TRUE,
+      add.used = TRUE,
+      dom.used = TRUE,
+      fgwas.filter = FALSE,
+      options = NULL)}
 
 \arguments{
 \item{phe.mat}{Matrix, phenotypic data containing longitudinal measuments and covariate data.}
@@ -80,15 +80,19 @@ Li, J., Wang, Z., Li, Y., & Wu, R. (2010). Functional genome-wide association st
 
 gls.phe.out <- "gls.test.simple.phe";
 gls.snp.out <- "gls.test.simple.snp";
-gls.simulate( gls.phe.out, gls.snp.out, simu_n=400, simu_p=10)
+r.sim <- gls.simulate( gls.phe.out, gls.snp.out, simu_n=400, simu_p=10)
 
 tb.phe <- read.csv(gls.phe.out, header=TRUE);
+# Set IDs as the row name
+rownames(tb.phe) <- tb.phe[,1];
+tb.phe <- tb.phe[,-1];
+
 tb.snp <- read.csv(gls.snp.out);
 
 r.gls <- gls.snpmat(tb.phe, tb.snp, 
                 Y.prefix="Y", 
                 Z.prefix="Z", 
-                covar.names=c("X_1","X_2"), 
+                covar.names="X", 
                 fgwas.filter = FALSE );
 	
 summary(r.gls);

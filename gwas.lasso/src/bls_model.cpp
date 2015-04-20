@@ -42,7 +42,7 @@ BLS::BLS()
 BLS::~BLS()
 {
     if (m_pDat) destroy( m_pDat );
-    if (m_pRes) destroy( m_pRes );
+	if (m_pRes) destroy( m_pRes );
     //dont delete this point because its creator is not this class.
     //if (m_pCfg) destroy( m_pCfg );
 

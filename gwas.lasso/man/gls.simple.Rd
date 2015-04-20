@@ -59,14 +59,15 @@ Li, J., Wang, Z., Li, Y., & Wu, R. (2010). Functional genome-wide association st
 gls.phe.out <- "gls.test.simple.phe"
 gls.snp.out <- "gls.test.simple.snp"
 
-r.sim <- gls.simulate(gls.phe.out, gls.snp.out, simu_n=400, simu_p=10);
+r.sim <- gls.simulate(gls.phe.out, gls.snp.out, simu_n=600, simu_p=10);
 
 # Call the Grpup lasso model to estimate the effects.
 r.gls <- gls.simple(gls.phe.out, gls.snp.out, 
                 Y.prefix="Y", 
                 Z.prefix="Z", 
-                covar.names=c("X_1","X_2"), 
-                fgwas.filter = FALSE );	
+                covar.names="X", 
+                fgwas.filter = FALSE, 
+                options=list(nPiecewise.ratio=0) );	
 
 # Show the significant SNPs and effects,
 summary(r.gls);

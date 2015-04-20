@@ -127,7 +127,7 @@ bls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n= 500, sim
        	file.simple.snp = file.snp.out));
 }
 
-bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL)
+bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL)
 {
 	cat( "[ BLASSO SIMPLE ] Procedure.\n");
 	cat( "Checking the parameters ......\n");
@@ -255,12 +255,20 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 				add.used     = add.used, 
 				dom.used     = dom.used, 
 				fgwas.filter = fgwas.filter);
-	r <- wrap_BLS_ret( r.bls, r.filter, options );
-	
-	return(r);		   
+
+	if(!is.null(r.bls) && !is.na(r.bls))
+	{
+		r <- wrap_BLS_ret( r.bls, r.filter, options );
+		return(r);		   
+	}
+	else
+	{
+		cat("! No results\n");
+		return(NULL);		   
+	}
 }
 
-bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.name, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL)      
+bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.name, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL)      
 {
 	cat( "[ BLASSO PLINK ] Procedure.\n");
 	cat( "Checking the parameters ......\n");
@@ -387,12 +395,19 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 				dom.used     = dom.used, 
 				fgwas.filter = fgwas.filter);
 	
-	r <- wrap_BLS_ret(r.bls, r.filter, options);
-			
-	return(r);		   
+	if(!is.null(r.bls) && !is.na(r.bls))
+	{
+		r <- wrap_BLS_ret( r.bls, r.filter, options );
+		return(r);		   
+	}
+	else
+	{
+		cat("! No results\n");
+		return(NULL);		   
+	}
 }
 
-bls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.name, covar.names, refit=TRUE, add.used=T, dom.used=T, options=NULL)
+bls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.name, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, options=NULL)
 {
 	cat( "[ BLASSO PLINK.tped ] Procedure.\n");
 	cat( "Checking the parameters ......\n");
@@ -459,12 +474,19 @@ bls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.name, co
 				dom.used     = dom.used, 
 				fgwas.filter = FALSE);
 
-	r <- wrap_BLS_ret(r.bls , r.filter, options);
-	
-	return(r);		   
+	if(!is.null(r.bls) && !is.na(r.bls))
+	{
+		r <- wrap_BLS_ret( r.bls, r.filter, options );
+		return(r);		   
+	}
+	else
+	{
+		cat("! No results\n");
+		return(NULL);		   
+	}
 }
 
-bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used=T, dom.used=T, fgwas.filter=F, options=NULL)
+bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL)
 {
 	cat( "[ BLASSO SNPMAT ] Procedure.\n");
 	cat( "Checking the parameters ......\n");
@@ -589,9 +611,17 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 				add.used     = add.used, 
 				dom.used     = dom.used, 
 				fgwas.filter = fgwas.filter);
-	r <- wrap_BLS_ret( r.bls, r.filter, options );
-	
-	return(r);		   
+
+	if(!is.null(r.bls) && !is.na(r.bls))
+	{
+		r <- wrap_BLS_ret( r.bls, r.filter, options );
+		return(r);		   
+	}
+	else
+	{
+		cat("! No results\n");
+		return(NULL);		   
+	}
 }
 
 summary.BLS.ret<-function(object, ...)
