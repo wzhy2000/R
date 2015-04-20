@@ -166,7 +166,7 @@ void _log_error( const char* szSrc, int nSrcLine, const char*  fmt, ... )
     va_start( arg_ptr, fmt ) ;
 	if(!pFLog)
 	{
-		static char szMsg[1024]={0}
+		static char szMsg[1024]={0};
 		vsprintf( szMsg, fmt, arg_ptr);
 		Rprintf(szMsg);
 		Rprintf("\n");
@@ -189,7 +189,7 @@ void _log_fatal( const char* szSrc, int nSrcLine, const char*  fmt, ... )
 
 	if(!pFLog)
 	{
-		static char szMsg[1024]={0}
+		static char szMsg[1024]={0};
 		vsprintf( szMsg, fmt, arg_ptr);
 		Rprintf("!!!!! ");
 		Rprintf(szMsg);
