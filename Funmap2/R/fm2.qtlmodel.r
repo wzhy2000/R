@@ -351,7 +351,7 @@ fin.qtl_locate <- function( dat_obj, res)
 # Summarize the result object of the hypothesis test. 
 # Used by summary( Qtlmodel.ret object );
 #--------------------------------------------------------------
-Qtlmodel.summary_ret<-function( res10, dat_obj )
+Qtlmodel.summary_ret<-function( res10, dat_obj, perm_os )
 {
 	if (!is.null(res10) && res10$name != "Qtlmodel.ret")
 		stop("Not a result for hypothesis test 10");
@@ -362,14 +362,16 @@ Qtlmodel.summary_ret<-function( res10, dat_obj )
 		return(str);
 	}
 
+	FM2_cross <- FM2.get_cross(res10$cross_type);
+
 	str <- "";
 	str<- paste( str, "Hypothesis test 10: \n", sep="" );	
-	str<- paste( str, FM2.cross$hp_desc, "\n", sep="" )
+	str<- paste( str, FM2_cross$hp_desc, "\n", sep="" )
 	
 	str<- paste( str, "------------------------------------\n", sep="" );
 
 	str0 <- sprintf("%15s: %s\n", 	 "Curve",	dat_obj$curve_name );
-	str1 <- sprintf("%15s: %s\n", 	 "Cross", 	FM2.cross$name );
+	str1 <- sprintf("%15s: %s\n", 	 "Cross", 	FM2_cross$name );
 	str2 <- sprintf("%15s: %s\n", 	 "Covariance", 	FM2.covar$name );
 	str <- paste( str, str0, str1, str2, sep="" );
 
@@ -377,17 +379,20 @@ Qtlmodel.summary_ret<-function( res10, dat_obj )
 	str <- paste(str, st0, sep="");
 	st0 <- sprintf( "%15s: %-8.3f \n", "QTL LR", res10$qtl_LR);
 	str <- paste(str, st0, sep="");
-	st0 <- sprintf( "%15s: %-8.3f \n", "QTL p-value", res10$qtl_pvalue);
+	if(is.numeric(res10$qtl_pvalue))
+		st0 <- sprintf( "%15s: %-8.3f \n", "QTL p-value", res10$qtl_pvalue)
+	else		
+		st0 <- sprintf( "%15s: %s \n", "QTL p-value", res10$qtl_pvalue);
+		
 	str <- paste(str, st0, sep="");
-
 	st0<- sprintf("%15s: %-8.3f\n", "rho", 	res10$curve_par[1] );
 	str <- paste(str, st0, sep="");
 	st0<- sprintf("%15s: %-8.3f\n", "sigma2", res10$curve_par[2] );
 	str <- paste(str, st0, sep="");
 
-	wlen <- (length( res10$curve_par )-2 )/FM2.cross$gen_num;
+	wlen <- (length( res10$curve_par )-2 )/FM2_cross$gen_num;
 	nstart <- 2;
-	if(FM2.cross$gen_QQ)
+	if(FM2_cross$gen_QQ)
 	{
 		mu_QQ_str <- fin.format_param( res10$curve_par[(nstart+1):(wlen+nstart)] );
 		st0<- sprintf("%15s: mu=%s\n", "QTL para(QQ)", mu_QQ_str);
@@ -395,7 +400,7 @@ Qtlmodel.summary_ret<-function( res10, dat_obj )
 		nstart <- nstart+wlen;
 	}
 
-	if(FM2.cross$gen_Qq)
+	if(FM2_cross$gen_Qq)
 	{
 		mu_Qq_str <- fin.format_param( res10$curve_par[(nstart+1):(wlen+nstart)] );
 		st0<- sprintf("%15s: mu=%s\n", "QTL para(Qq)", mu_Qq_str );
@@ -403,7 +408,7 @@ Qtlmodel.summary_ret<-function( res10, dat_obj )
 		nstart <- nstart+wlen;
 	}
 	
-	if(FM2.cross$gen_qq)
+	if(FM2_cross$gen_qq)
 	{
 		mu_qq_str <- fin.format_param( res10$curve_par[(nstart+1):(wlen+nstart)] );
 		st0<- sprintf("%15s: mu=%s\n", "QTL para(qq)", mu_qq_str );
@@ -424,7 +429,7 @@ Qtlmodel.summary_ret<-function( res10, dat_obj )
 	}
 	str <- paste(str, "", sep="\n");
 
-	figlist <- Qtlmodel.plot_ret(res10, dat_obj, bPrintOut=FALSE);
+	figlist <- Qtlmodel.plot_ret(res10, dat_obj, perm_os, bPrintOut=FALSE);
 	for (i in 1:length(figlist[,1]))
 	{
 		str <- paste(str,"*", i, " The figure(",figlist[i,1],") for the hypothesis test(10) is saved to ",  figlist[i,2], ".\n", sep="");
@@ -440,7 +445,7 @@ Qtlmodel.summary_ret<-function( res10, dat_obj )
 # Summarize the result object of the hypothesis test. 
 # Used by summary( NP.ret object );
 #--------------------------------------------------------------
-Qtlmodel.report_ret<-function( res10, dat )
+Qtlmodel.report_ret<-function( res10, dat, perm )
 {
 	if (!is.null(res10) && res10$name != "Qtlmodel.ret")
 		stop("Not a result for hypothesis test 10");
@@ -472,7 +477,7 @@ Qtlmodel.report_ret<-function( res10, dat )
 	plotdoc.old <- FM2.get_value("plot_doctype");
 	FM2.set_value("plot_doctype", "png");
 
-	figlist <- Qtlmodel.plot_ret(res10, dat, bPrintOut=FALSE);
+	figlist <- Qtlmodel.plot_ret(res10, dat, perm, bPrintOut=FALSE);
 	FM2.set_value("plot_doctype", plotdoc.old);
 
 	return(list(sum=ret, fig=figlist));
@@ -486,20 +491,31 @@ Qtlmodel.report_ret<-function( res10, dat )
 # Plot the figure for the hypothesis test. 
 # Used by plot( NP.ret object );
 #--------------------------------------------------------------
-Qtlmodel.plot_ret<-function( res10, dat_obj, bPrintOut=TRUE  )
+Qtlmodel.plot_ret<-function( res10, dat_obj, perm_obj, bPrintOut=TRUE  )
 {
 	if (!is.null(res10) && res10$name != "Qtlmodel.ret")
 		stop("Not a result for hypothesis test 10");
 	
 	if (!res10$success )
 		stop( "Failed to do hypothesis test(10).");		
+
+	FM2_cross <- FM2.get_cross(res10$cross_type);
+	FM2_curve <- FM2.get_curve_name(res10$curve_name);
 	
 	figlist <- c();
 
 	#### Graph 1/3 ###########
 	if (!bPrintOut) strFile <- fpt.plot_to_doc( dat_obj$pheno_file, FM2.get_value("plot_doctype") ) else X11();
   	
-  	err.fig<-try ( fpt.plot_qtl_map( dat_obj, res10$full_res ) );
+  	cutoff.05 <- NULL;
+  	cutoff.01 <- NULL;
+  	if(!is.null(perm_obj))
+  	{
+  		cutoff.05 <- fin.find_cutoff(perm_obj, 0.05);
+  		cutoff.01 <- fin.find_cutoff(perm_obj, 0.01);
+  	}
+  	
+  	err.fig<-try ( fpt.plot_qtl_map( dat_obj, res10$full_res, cutoff.05=cutoff.05, cutoff.01=cutoff.01  ) );
 	if (class(err.fig)!="try-error")
 		title("The LR profile for all chromosomes");
 
@@ -516,7 +532,7 @@ Qtlmodel.plot_ret<-function( res10, dat_obj, bPrintOut=TRUE  )
 
 		#### Graph 2/3 ###########
 		if (!bPrintOut) strFile <- fpt.plot_to_doc( dat_obj$pheno_file, FM2.get_value("plot_doctype") ) else X11();
-		err.fig <- try ( fpt.plot_qtl_pos( res10$LR_peaks[i,1], dat_obj, res10$full_res, qtl_ps = c(qtls)  ) );
+		err.fig <- try ( fpt.plot_qtl_pos( res10$LR_peaks[i,1], dat_obj, res10$full_res, cutoff.05=cutoff.05, cutoff.01=cutoff.01, qtl_ps = c(qtls)  ) );
 		if (class(err.fig)!="try-error")
 			title(paste("The LR profile for QTL position(Group:", grp, ")", sep="") );
 		
@@ -530,10 +546,10 @@ Qtlmodel.plot_ret<-function( res10, dat_obj, bPrintOut=TRUE  )
 		if (!bPrintOut) strFile <- fpt.plot_to_doc( dat_obj$pheno_file, FM2.get_value("plot_doctype") ) else X11();
 		nLen <- length( res10$LR_peaks[i,] )
 		
-		par0<-FM2.cross$get_gen_par(res10$LR_peaks[i,7:nLen])
+		par0<-FM2_cross$get_gen_par(res10$LR_peaks[i,7:nLen])
 		err.fig <- try ( fpt.plot_com_curve ( max(dat_obj$sample_times), 
 								max(dat_obj$sample_times) + 4,
-								f_curve_mu = FM2.curve$get_mu,
+								f_curve_mu = FM2_curve$get_mu,
 								dat    = dat_obj,
 								QQ_par = par0$QQ, 
 								Qq_par = par0$Qq, 
@@ -633,14 +649,9 @@ Qtlmodel.set_lr2_cutoff<-function( res, p05, p01)
 #
 # used by summary( res_obj, dat_obj )
 #--------------------------------------------------------------
-summary.FM2.Qtlmodel.ret<-function( res_obj, dat_obj, file=NA , append = TRUE  )
+summary.FM2.Qtlmodel.ret<-function( res_obj, dat_obj, perm_obj=NULL, file=NA , append = TRUE  )
 {
-	if (is.null(FM2.curve))
-	{
-		stop("inavlid curve type");
-	}
-
-	str <- Qtlmodel.summary_ret( res_obj, dat_obj )
+	str <- Qtlmodel.summary_ret( res_obj, dat_obj, perm_obj )
 	if (is.na(file))
 		return ( cat( str ) )
 	else
@@ -652,14 +663,9 @@ summary.FM2.Qtlmodel.ret<-function( res_obj, dat_obj, file=NA , append = TRUE  )
 #
 # used by summary( FM2.ret.hp.obj )
 #--------------------------------------------------------------
-report.FM2.Qtlmodel.ret<-function( res_obj, dat_obj )
+report.FM2.Qtlmodel.ret<-function( res_obj, dat_obj, perm_obj=NULL )
 {
-	if (is.null(FM2.curve))
-	{
-		stop("inavlid curve type");
-	}
-
-	rptlist<- Qtlmodel.report_ret(res_obj, dat_obj );
+	rptlist<- Qtlmodel.report_ret(res_obj, dat_obj,perm_obj );
 	return(rptlist);
 }
 
@@ -668,15 +674,10 @@ report.FM2.Qtlmodel.ret<-function( res_obj, dat_obj )
 #
 # used by plot( FM2.ret.hp.obj )
 #--------------------------------------------------------------
-plot.FM2.Qtlmodel.ret<-function( res_obj, dat_obj )
+plot.FM2.Qtlmodel.ret<-function( res_obj, dat_obj, perm_obj=NULL )
 {
-	if (is.null(FM2.curve))
-	{
-		stop("inavlid curve type");
-	}
-
 	
-	Qtlmodel.plot_ret( res_obj, dat_obj );
+	Qtlmodel.plot_ret( res_obj, dat_obj, perm_obj );
 	invisible();
 }
 

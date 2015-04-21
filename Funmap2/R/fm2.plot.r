@@ -272,6 +272,7 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
 {
 	max_log <- 0;
 	min_log <- 0;
+	#Chromosome Length;max LR2; markernumber
 	ch_ev <- matrix(0, nrow=chr_nums, ncol=3);
 	
 	for ( i in  1:length(chr_logs[,1]) )
@@ -339,11 +340,11 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
    		y0 <- y0-h;
 	}
 
-	op <- par(mar=c(5, 4, 3, 2), mgp=c(0,0,0)  );
+	op <- par(mar=c(5, 4, 3, 2), mgp=c(1.8, 0.5, 0.00 )  );
 
 	plot(c(0,0), c(0,0), type="n",xaxt="n",yaxt="n",frame=T, xlab="",ylab="", xlim=c(0, 1000), ylim=c(0, 1000), bty="o", xaxs="i", yaxs="i" );
-	title(xlab="", ylab=" -2 Log Likelihood Ratio");	
-	
+	title(xlab="", ylab=" -2 Log Likelihood Ratio", cex.lab=1.2);	
+
 	for (i in 1:chr_nums )
 	{
 		sub_plot <- c(pos[i,1], pos[i,1]+pos[i,3], pos[i,2], pos[i,2]+pos[i,4]);
@@ -376,13 +377,15 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
 		if(!is.null(cutoff.05))
 		{
 			y0 <- cutoff.05*(sub_rc[4]-sub_rc[2])/(ylim.cur[2]-ylim.cur[1]) + sub_rc[2];
-			segments( x0, y0, x1, y0, col="red", lwd=1, lty="22");
+			if( y0 <= sub_rc[4] && y0 >= sub_rc[2] ) 
+				segments( x0, y0, x1, y0, col="red", lwd=1, lty="22");
 		}
 
 		if(!is.null(cutoff.01))
 		{
 			y0 <- cutoff.01*(sub_rc[4]-sub_rc[2])/(ylim.cur[2]-ylim.cur[1]) + sub_rc[2];
-			segments( x0, y0, x1, y0, col="orange", lwd=1, lty="22");
+			if( y0 <= sub_rc[4] && y0 >= sub_rc[2] ) 
+				segments( x0, y0, x1, y0, col="orange", lwd=1, lty="22");
 		}
 		
 		#marker
@@ -419,6 +422,24 @@ fpt.internal_plot_qtl_map<-function(chr_nums, level_cnt, chr_logs, marker_list=N
 		y0 <- (max_log*1.2)*(sub_rc[4]-sub_rc[2])/(ylim.cur[2]-ylim.cur[1]) + sub_rc[2];
 		
 		text(x0, y0, paste("",i) , font=4);
+	}
+	
+	
+	ticker <-  round(seq.int(ylim.cur[1], ylim.cur[2], length.out=5)[1:2]);
+	ticker5 <- seq.int(ticker[1], ylim.cur[2], ticker[2]-ticker[1])
+
+	for(i in 1:level_cnt)
+	{
+		if(i==level_cnt)
+		{
+			y0 <- ticker5[1:5]/(ylim.cur[2]-ylim.cur[1])*(1/level_cnt) + (i-1)*(1/level_cnt)
+			axis(2, at=y0*1000, labels=ticker5[1:5], cex.axis=0.9);
+		}
+		else	
+		{
+			y0 <- ticker5[1:4]/(ylim.cur[2]-ylim.cur[1])*(1/level_cnt) + (i-1)*(1/level_cnt)
+			axis(2, at=y0*1000, labels=ticker5[1:4], cex.axis=0.9);
+		}	
 	}
 	
 	par(op);

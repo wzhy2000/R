@@ -61,7 +61,6 @@ In the \code{\link{FM2.set_value}} page, all system variables are listed. But fo
 
 \examples{
 
-library(Funmap);
 ret <- FM2.qtlscan( "pheno.csv", "geno.csv", "marker.csv", CURVE_LC, CROSS_BC );
 
 }

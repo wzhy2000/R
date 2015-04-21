@@ -93,27 +93,27 @@ BC.get_simu_qtl<-function( simu_N, lmarker, rmarker, qtl.pos, lmarker.pos, rmark
 	return(qtl);
 }
 
-fin.get_gen_par<-function(par)
+fin.get_gen_par<-function(par, fm2_cross_gen_num, fm2_cross_gen_QQ, fm2_cross_gen_Qq, fm2_cross_gen_qq)
 {
 	mu_QQ <- c();
 	mu_Qq <- c();
 	mu_qq <- c();
 	
 	nstart <- 0;
-	wlen <- length(par)/FM2.cross$gen_num;
-	if(FM2.cross$gen_QQ)
+	wlen <- length(par)/fm2_cross_gen_num;
+	if(fm2_cross_gen_QQ)
 	{
 		mu_QQ <- par[(nstart+1):(wlen+nstart)];
 		nstart <- nstart+wlen;
 	}
 
-	if(FM2.cross$gen_Qq)
+	if(fm2_cross_gen_Qq)
 	{
 		mu_Qq <- par[(nstart+1):(wlen+nstart)];
 		nstart <- nstart+wlen;
 	}
 	
-	if(FM2.cross$gen_qq)
+	if(fm2_cross_gen_qq)
 	{
 		mu_qq <- par[(nstart+1):(wlen+nstart)];
 		nstart <- nstart+wlen;
@@ -133,7 +133,7 @@ cross_BC<-list(
 	gen_Qq  = T,
 	gen_qq  = T,
 	single_marker	= F,
-	get_gen_par  = fin.get_gen_par,
+	get_gen_par  = function(par){ fin.get_gen_par(par, 2, F, T, T)}, 
 	get_qtl_prob = BC.get_qtl_prob,
 	get_sum_par  = BC.sum_par,
 	get_simu_marker = BC.get_simu_marker,
@@ -248,7 +248,7 @@ cross_F2<-list(
 	gen_Qq  = T,
 	gen_qq  = T,
 	single_marker	= F,
-	get_gen_par  = fin.get_gen_par,
+	get_gen_par  = function(par){ fin.get_gen_par(par, 3, T, T, T)},
 	get_simu_marker = F2.get_simu_marker,
 	get_simu_qtl = F2.get_simu_qtl,
 	get_qtl_prob = F2.get_qtl_prob,
@@ -368,7 +368,7 @@ cross_RIL<-list(
 	gen_Qq  = F,
 	gen_qq  = T,
 	single_marker	= F,
-	get_gen_par  = fin.get_gen_par,
+	get_gen_par  = function(par){ fin.get_gen_par(par, 2, T, F, T)},
 	get_simu_marker = RIL.get_simu_marker,
 	get_qtl_prob = RIL.get_qtl_prob,
 	get_cond_mat = RIL.get_cond_prob,
@@ -606,7 +606,7 @@ cross_NP1<-list(
 	gen_num = 3,
 	par_num = 3,
 	single_marker	= T,
-	get_gen_par  = fin.get_gen_par,
+	get_gen_par  = function(par){ fin.get_gen_par(par, 3, T, T, T)},
 	get_init_rand= NP1.get_init_rand,
 	get_simu_marker = NP1.get_simu_marker,
 	get_simu_qtl = NP1.get_simu_qtl,

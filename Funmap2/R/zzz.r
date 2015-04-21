@@ -5,10 +5,10 @@ msg <- function(...)
     yr <- substr(date, x[1], x[1] + attr(x, "match.length") - 1);
  
     cat("||\n");
-    cat("|| Funmap Package v.2.3-1\n");
+    cat("|| Funmap2 Package v.2.5\n");
     cat("|| Build date: ", date(), "\n");
     cat("|| Copyright (C) 2011-", yr, ", http://statgen.psu.edu\n", sep="");
-    cat("|| Written by Zhong Wang(zhong.wang@yale.edu)\n");
+    cat("|| Written by Zhong Wang(wzhy2000@hotmail.com)\n");
     cat("||\n");
 }
 

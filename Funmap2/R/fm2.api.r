@@ -105,6 +105,15 @@ FM2.get_curve <- function(curve_type)
 	return(NULL);
 }
 
+FM2.get_curve_name <- function(curve_name)
+{
+	for (i in 1:length(FM2.curves))
+		if (FM2.curves[[i]]$name==curve_name)
+			return(FM2.curves[[i]])
+	
+	return(NULL);
+}
+
 FM2.reg_curve <- function(curve)
 {
 	if (is.null( FM_sys ) )
@@ -184,21 +193,21 @@ FM2.param <- function( par_obj, curve_type, cross_type = CROSS_BC, covar_type=CO
 	curve <- FM2.get_curve(curve_type);
 	if (is.null(curve))
 	{
-		stop("inavlid curve type");
+		stop("Invalid curve type");
 	}
 	FM2.curve <<-curve;
 
 	cross <- FM2.get_cross(cross_type);
 	if (is.null(cross))
 	{
-		stop("inavlid cross type");
+		stop("Invalid cross type");
 	}
 	FM2.cross <<- cross;
 
 	covar <- FM2.get_covar(covar_type);
 	if (is.null(covar))
 	{
-		stop("inavlid covar type");
+		stop("Invalid covar type");
 	}
 	FM2.covar <<- covar;
 
@@ -217,7 +226,7 @@ summary.FM2.par <- function( par_obj , file=NA , append = TRUE )
 {
 	if (is.null(FM2.curve))
 	{
-		stop("inavlid curve type");
+		stop("Invalid curve type");
 	}
 
 	str<- dat.summary_par( par_obj );
@@ -237,7 +246,7 @@ FM2.simulate<- function( par_obj )
 {
 	if ( is.null(FM2.curve) )
 	{
-		stop("inavlid curve type");
+		stop("Invalid curve type");
 	}
 
 	dat <- dat.simulate( par_obj );
@@ -259,7 +268,7 @@ FM2.load_data <- function( pheno_file, geno_file, marker_file, curve_type, cross
 	curve <- FM2.get_curve(curve_type);
 	if (is.null(curve))
 	{
-		stop("inavlid curve type");
+		stop("Invalid curve type");
 	}
 	
 	FM2.curve <<- curve;
@@ -267,14 +276,14 @@ FM2.load_data <- function( pheno_file, geno_file, marker_file, curve_type, cross
 	cross <- FM2.get_cross(cross_type);
 	if (is.null(cross))
 	{
-		stop("inavlid cross type");
+		stop("Invalid cross type");
 	}
 	FM2.cross <<- cross;
 
 	covar <- FM2.get_covar(covar_type);
 	if (is.null(covar))
 	{
-		stop("inavlid covar type");
+		stop("Invalid covar type");
 	}
 	FM2.covar <<- covar;
 
@@ -291,11 +300,6 @@ FM2.load_data <- function( pheno_file, geno_file, marker_file, curve_type, cross
 #--------------------------------------------------------------
 summary.FM2.dat<- function( dat_obj, file=NA , append = TRUE )
 {
-	if (is.null(FM2.curve))
-	{
-		stop("inavlid curve type");
-	}
-
 	str<- dat.summary( dat_obj );
 	if (is.na(file))
 		return ( cat( str ) )
@@ -310,12 +314,6 @@ summary.FM2.dat<- function( dat_obj, file=NA , append = TRUE )
 #--------------------------------------------------------------
 report.FM2.dat<- function( dat_obj )
 {
-	curve <- dat_obj$curve;
-	if (is.null(curve))
-	{
-		stop("inavlid curve type");
-	}
-
 	rprlist<- dat.report( curve, dat_obj );
 	return(rprlist);
 }
@@ -328,11 +326,6 @@ report.FM2.dat<- function( dat_obj )
 #--------------------------------------------------------------
 plot.FM2.dat<- function( dat_obj, plot_type=NA )
 {
-	if (is.null(FM2.curve))
-	{
-		stop("inavlid curve type");
-	}
-
 	dat.plot( dat_obj, plot_type );
 	invisible();
 }
@@ -370,7 +363,7 @@ FM2.qtlmodel<-function( dat_obj, options=list() )
 
 	if (is.null(FM2.curve))
 	{
-		stop("inavlid curve type");
+		stop("Invalid curve type");
 	}
 
 	ret<- FM2.model$qtlscan( dat_obj );
@@ -426,7 +419,7 @@ FM2.permutation<-function( dat_obj, options=list() )
 	curve <- dat_obj$curve;
 	if (is.null(FM2.curve))
 	{
-		stop("inavlid curve type");
+		stop("Invalid curve type");
 	}
 
 	ret<- permu.execute( dat_obj );

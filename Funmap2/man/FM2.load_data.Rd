@@ -74,9 +74,12 @@ id	Marker	Dist.	Grp_idx	Group
 \author{Zhong Wang, \email{zzw2@psu.edu} }
 
 \examples{
-dat <- FM2.load_data("pheno.csv","geno.csv","marker.csv", CURVE_LC, CROSS_BC, COVAR_AR1);
-summary( dat );
-plot(dat);
+if(0)
+{
+	dat <- FM2.load_data("pheno.csv","geno.csv","marker.csv", CURVE_LC, CROSS_BC, COVAR_AR1);
+	summary( dat );
+	plot(dat);
+}
 }
 
 \keyword{functions}

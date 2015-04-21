@@ -132,7 +132,7 @@ fre.report_res<-function( dat, res, perm=NULL )
 	
 	perm.cutoff.05 <- fin.find_cutoff(perm, 0.05);
 	perm.cutoff.01 <- fin.find_cutoff(perm, 0.01);
-	
+
 	c1 <- call("fpt.plot_qtl_map", dat, res$full_res, perm.cutoff.05, perm.cutoff.01 );
 	Report.AddFigure( c1, "QTL profile map", c(6, 6)*254, left.margin=0.5*254)
 
@@ -172,7 +172,7 @@ fre.report_res2<-function( dat, res, perm=NULL )
 		curve <- FM2.get_curve(dat$curve_type);
 		if (is.null(curve) || curve$name != dat$curve_name )
 		{
-			stop("inavlid curve type");
+			stop("Invalid curve type");
 		}
 		
 		FM2.curve <<- curve;
