@@ -36,6 +36,10 @@ gls.simulate( phe.out, snp.out, simu_grp=1, simu_n= 800, simu_p=4000, simu_snp_r
 tb.phe<-read.csv(phe.out);
 tb.snp<-read.csv(snp.out);
 
+rownames(tb.phe) <- tb.phe[,1];
+tb.phe <- tb.phe[,-1];
+
+
 ret1<-ret2<-ret3<-ret4<-ret5<-ret6<-ret7<-ret8<-c();
 
 ret1 <- gls.snpmat(tb.phe, tb.snp, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = T , options=list(nParallel.cpu=7));	
