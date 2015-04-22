@@ -10,9 +10,9 @@ library(gwas.lasso)
 #file.plink.fam <- "/home/zw224/f/bmi/FHS-bmi-v1-chr2.fam"  
 
 #TACC Stampede
-file.plink.bed <- "/work/03350/tg826494/test/bmidata/FHS-bmi-v1-chr2.bed"  
-file.plink.bim <- "/work/03350/tg826494/test/bmidata/FHS-bmi-v1-chr2.bim"  
-file.plink.fam <- "/work/03350/tg826494/test/bmidata/FHS-bmi-v1-chr2.fam"  
+file.plink.bed <- "/work/03350/tg826494/test/bmidata/FHS-bmi-v1-chr22.bed"  
+file.plink.bim <- "/work/03350/tg826494/test/bmidata/FHS-bmi-v1-chr22.bim"  
+file.plink.fam <- "/work/03350/tg826494/test/bmidata/FHS-bmi-v1-chr22.fam"  
 
 #file.phe.long  <- "/home/zw224/f/bmi/bmi-phenos-sex-longtime.csv"  
 file.phe.long  <- "/work/03350/tg826494/test/bmidata/bmi-phenos-sex-longtime.csv"  
