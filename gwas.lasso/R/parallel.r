@@ -158,7 +158,8 @@ snpmat_parallel<-function( n.snp,
 		cat("! No SNPs are selected in the first run. \n");
 		return(r.cluster.init);
 	}
-	
+	cat("*", length(idx.sig), "SNPs are selected in the first run.\n");
+		
 	varsel.snp.name <- rownames(r.cluster.init$varsel)[idx.sig];
 	varsel.snpmat <- c();
 	
@@ -176,6 +177,11 @@ snpmat_parallel<-function( n.snp,
 	
 
 	cat("*", NROW(varsel.snpmat), "SNPs are selected in the first run.\n");
+	if( NROW(varsel.snpmat) <1 )
+	{
+		#No SNPs are selected in the first run, exit with the variable selection results.
+		return(r.cluster.init);
+	}
 	
 	R <- 1;
 	while( NROW(varsel.snpmat) > n.inv * op.piecewise.ratio*1.2 )
