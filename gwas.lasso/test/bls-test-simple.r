@@ -29,7 +29,7 @@ bls.simulate( phe.out, snp.out, simu_grp=1, simu_n= 600, simu_p=100,
 
 
 ret0 <- bls.plink( phe.out, snp.out.bed, snp.out.bim, snp.out.fam, Y.name="Y", covar.names=c(), refit=T, fgwas.filter=F );	
-
+summary(ret0);
 
 bls.simulate( phe.out, snp.out, simu_grp=1, simu_n= 600, simu_p=2000, 
 		simu_snp_rho = 0.1, 
@@ -46,7 +46,7 @@ bls.simulate( phe.out, snp.out, simu_grp=1, simu_n= 600, simu_p=2000,
 		plink.format=F,
 		debug=F );
 
-ret1 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c(), refit=F );	
+ret1 <- bls.simple( phe.out, snp.out, Y.name="Y", covar.names=c(), refit=F, options=list(nPiecewise.ratio=0) );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, sigsnp, file="bls-test-simple.rdata");
 summary(ret1)

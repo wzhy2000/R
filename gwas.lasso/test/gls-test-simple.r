@@ -36,12 +36,15 @@ gls.simulate( phe.out, snp.out, simu_n= 500, simu_grp=1, simu_p=30, simu_snp_rho
 		 simu_z_range    = c(30,60), simu_z_count = c(5,12), 
 		 plink.format=T, debug=F);
 
-ret0 <- gls.plink(phe.out, snp.out.bed, snp.out.bim, snp.out.fam, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = F );	
+ret0 <- gls.plink(phe.out, snp.out.bed, snp.out.bim, snp.out.fam, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = F);	
+
+summary(ret0);
+plot(ret0);
 
 sigsnp <- sample(1:3000)[1:5];
 show(sigsnp);
 
-gls.simulate( phe.out, snp.out, simu_n= 300, simu_grp=1, simu_p=3000, simu_snp_rho=0.4, simu_rho=0.1, simu_sigma2= 4, 
+gls.simulate( phe.out, snp.out, simu_n= 600, simu_grp=1, simu_p=3000, simu_snp_rho=0.4, simu_rho=0.1, simu_sigma2= 4, 
 		 simu_mu= c(13.395, -3.08, 1.875, -3.195),  
 		 simu_cov_effect = cov_effect, 
 		 simu_cov_range  = c(-1,1),
@@ -53,13 +56,13 @@ gls.simulate( phe.out, snp.out, simu_n= 300, simu_grp=1, simu_p=3000, simu_snp_r
 
 ret1<-ret2<-ret3<-ret4<-ret5<-ret6<-ret7<-c();
 	
-ret1 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = T );	
+ret1 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = F,  options=list(nPiecewise.ratio=0)  );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-simple.rdata");
 summary(ret1);
 plot(ret1, fig.prefix="gls-test-simple-ret1");
 
-ret2 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = F );	
+ret2 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = T );	
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-test-simple.rdata");
 summary(ret2);
