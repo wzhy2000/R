@@ -9,35 +9,42 @@ draw_man_adh2<-function( adh2, fig.prefix=NULL, fig.name=NULL )
 		pdf( pdf.file, width=6, height= 2 * n.subfig );
 	}
 
-	draw_snplist<-function( values, yLabel, sigpos_list=NULL)
+	draw_snplist<-function( values, yLabel, cex=1.0)
 	{
 		xlim <- c(0, length(values));
 		ylim <- range(values);
 		nB <- length(values);
 		snps <- c(0:nB);
-		plot(1:10,1:10, xlim=xlim, ylim=ylim, type="n", xlab="SNP", ylab=yLabel);
+		plot(1:10,1:10, xlim=xlim, ylim=ylim, type="n", xlab="SNP", ylab=yLabel, cex.axis=cex );
 		rect(snps[-(nB+1)], 0, snps[-1L], values,  col = "blue", border = "black");
 	}
 
 	draw_call<-function()
 	{
-		par(mar=c(4.5, 4, 0.5, 2) + 0.1);
+		if( n.subfig >= 3)
+			par(mar=c(4.5, 4, 0.5, 2) + 0.1)
+		else
+		{
+			par(mar=c(3, 3.5, 0.5, 2) + 0.1);
+			par(mgp = c(1.6, 0.5, 0 ) );
+		}
+		
 		plot.new();
 		par(mfrow=c( NCOL(adh2)-2 , 1 ) );
 
 		par(mfg=c(1, 1));
-		draw_snplist( adh2[, 3, drop=F ], "Estimated additive effect", sigpos_list=NULL);
+		draw_snplist( adh2[, 3, drop=F ], "Additive effects", cex=ifelse( n.subfig >= 3, 1.0, 0.6) );
 
 		if( n.subfig >= 2)
 		{
 			par(mfg=c(2, 1));
-			draw_snplist( adh2[, 4, drop=F ], "Estimated dominant effect", sigpos_list=NULL);
+			draw_snplist( adh2[, 4, drop=F ], "Dominant effects", cex=ifelse( n.subfig >= 3, 1.0, 0.6) );
 		}
 	
 		if( n.subfig >= 3)
 		{
 			par(mfg=c(3, 1));
-			draw_snplist( adh2[, 5, drop=F ], "Heritability", sigpos_list=NULL);
+			draw_snplist( adh2[, 5, drop=F ], "Heritability", cex=ifelse( n.subfig >= 3, 1.0, 0.6) );
 		}	
 	}
 
@@ -57,11 +64,6 @@ draw_man_adh2<-function( adh2, fig.prefix=NULL, fig.name=NULL )
 
 draw_fgwas_manhattan<-function( res, map.title="", sig.thres, dot.cex, y.max=NA)
 {
-	#par( xaxs="r",  yaxs="r");  # Extend axis limits by 4%
-	#par( tck = -0.008 );
-	#par( mgp = c(2,0.2,0) );
-	#par( mar=c( 4, 4, 1.5, 1.5)+0.1);
-
 	pvalues <- -log10(res[,3]);
 	if( length( which(is.infinite(pvalues)) )>0 )
 	{
@@ -78,8 +80,14 @@ draw_fgwas_manhattan<-function( res, map.title="", sig.thres, dot.cex, y.max=NA)
 	if (length(which(pvalues>y.max))>0)
 		pvalues[which(pvalues>y.max)] <- y.max;
 
+	par( xaxs="r",  yaxs="r");  # Extend axis limits by 4%
+	par( tck = -0.04 );
+	par( mgp = c(1.6, 0.5, 0 ) );
+	par( mar=c( 2.5, 3.5, 2, 1.5)+0.1);
+
 	plot( 1,1, type="n", xlab="SNP", ylab=expression(-log[10](italic(p))),
 		  cex.axis=0.7, xlim=c(1, nrow), ylim=c(0,  y.max), xaxt="n", main=map.title );
+
 
 	p.lab <-  - c( log10( sig.thres) );
 
@@ -123,7 +131,7 @@ draw_man_fgwas<-function( r.fgwas, fig.prefix=NULL, fig.name=NULL )
 	# sort r.fgwas by grpup number and position.
 	r.fgwas <- r.fgwas[ order(r.fgwas[,1], r.fgwas[,2]),,drop=F]
 
-	r <- try( draw_fgwas_manhattan( r.fgwas, map.title="fGWAS Analysis", 0.05, 0.7 ) );
+	r <- try( draw_fgwas_manhattan( r.fgwas, map.title="fGWAS Analysis", 0.05/NROW(r.fgwas), 0.7 ) );
 	if(class(r) == "try-error")
 		cat("Failed to draw figure.\n")
 	
@@ -173,6 +181,8 @@ draw_refit_curve<-function( refit, fig.prefix=NULL, fig.name=NULL, n.lgr = 4)
 			par(mfg=c(i, j));
 			draw_single_curve( rownames(refit)[n.par], add=Add.par, dom=Dom.par);
 		}
+		
+		plot.new();
 	}
 	
 	if (!is.null( pdf.file ))

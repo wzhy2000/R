@@ -727,7 +727,7 @@ merge_add_dom<-function( re_add, re_dom )
 {
 	if( is.null(re_add) && is.null(re_dom) ) 
 		return(NULL);
-		
+
 	idx.add <- c();
 	if(!is.null(re_add))
 		idx.add <- which( rowSums( re_add[,c(3:6),drop=F] ) > 0  )
@@ -765,8 +765,11 @@ merge_add_dom<-function( re_add, re_dom )
 	colnames(sig.mat) <- c( "chr", "pos", 
 				"add.sig", "add.mode", "add.mu1", "add.mu2", "add.mu3", "add.mu4",
 				"dom.sig", "dom.mode", "dom.mu1", "dom.mu2", "dom.mu3", "dom.mu4" );
-				
-	rownames(sig.mat) <- rownames( ifelse( is.null(sig.dom), sig.add, sig.dom) );
+
+	if( is.null(sig.dom) )				
+		rownames(sig.mat) <- rownames( sig.add)
+	else	
+		rownames(sig.mat) <- rownames( sig.dom);
 
 	return(sig.mat);
 }

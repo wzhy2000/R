@@ -37,18 +37,18 @@ gls.plink(file.phe,
 }
 \value{
 An object of class \code{GLS.ret} including the following elements. 
-\item{varsel_add}{Matrix, additive effects estimated by the procedure of variable selection for each SNP. 
+\item{varsel_add}{Matrix, \strong{additive} effects estimated by the procedure of variable selection for each SNP. 
 21 columns are available, 
 \itemize{
 \item{(1) chromosome group}{}
 \item{(2) position}{}
-\item{(3) the \strong{1st} Legendre coefficient of \strong{additive effcts}{}
-\item{(4) the \strong{2nd} Legendre coefficient of \strong{additive effcts}{}
-\item{(5) the \strong{3rd} Legendre coefficient of \strong{additive effcts}{}
-\item{(6) the \strong{4th} Legendre coefficient of \strong{additive effcts}{}
-\item{(7) the norm of mean values of \strong{additive effects, i,e, L=sqrt(x_1st^2 + x_2nd^2 + x_3rd^2 + x_4th^2)}{}
+\item{(3) the \strong{1st} Legendre coefficient of additive effcts}{}
+\item{(4) the \strong{2nd} Legendre coefficient of additive effcts}{}
+\item{(5) the \strong{3rd} Legendre coefficient of additive effcts}{}
+\item{(6) the \strong{4th} Legendre coefficient of additive effcts}{}
+\item{(7) the norm of mean values of additive effects, i,e, L=sqrt(x_1st^2 + x_2nd^2 + x_3rd^2 + x_4th^2)}{}
 \item{(8) the mean value of \strong{1st} Legendre coefficient of additive effects}{}
-\item{(9) the mean value of \strong{2nd Legendre coefficient of additive effects}{}
+\item{(9) the mean value of \strong{2nd} Legendre coefficient of additive effects}{}
 \item{(10) the mean value of \strong{3rd} Legendre coefficient of additive effects}{}
 \item{(11) the mean value of \strong{4th} Legendre coefficient of additive effects}{}
 \item{(12) the norm of minimum values of additive effects}{}
@@ -112,9 +112,10 @@ An object of class \code{GLS.ret} including the following elements.
 \item{(19) the forthmaximum value of covariate effect}{}
 }
 }
-\item{refit_add}{Matrix, additive effects estimated by the refit procedure for the SNPs selected by variable selection, 21 columns are same as the matrix of varible selection \cr (\code{varsel_add}).}
-\item{refit_add}{Matrix, dominant effects estimated by the refit procedure for the SNPs selected by variable selection, 21 columns are same as the matrix of varible selection \cr (\code{varsel_dom}).}
-\item{refit_add}{Matrix, covariate effects estimated by the refit procedure for the SNPs selected by variable selection, 21 columns are same as the matrix of varible selection \cr (\code{refit_cov}).}
+
+\item{refit_add}{Matrix, additive effects estimated by the refit procedure for the SNPs selected by variable selection, 21 columns are same as the matrix of varible selection. See also (\code{varsel_add}).}
+\item{refit_dom}{Matrix, dominant effects estimated by the refit procedure for the SNPs selected by variable selection, 21 columns are same as the matrix of varible selection. See also (\code{varsel_dom}).}
+\item{refit_cov}{Matrix, covariate effects estimated by the refit procedure for the SNPs selected by variable selection, 21 columns are same as the matrix of varible selection. See also (\code{varsel_cov}).}
 \item{fgwas.filter}{Matrix, the p-values estimated by fGWAS method for each SNP, 5 columns as follows:  
 \itemize{
 \item{(1) SNP ID}{}
@@ -128,7 +129,6 @@ An object of class \code{GLS.ret} including the following elements.
 \item{refit_PSRF}{Matrix, the potential scale reduction factor in the refit procedure.}
 \item{options}{ List, data file names and all parameters, including the control parameters defined in \code{options} }
 }
-
 \details{
 (1) PLINK dataset\cr
 The PLINK dataset include three files, including \emph{bed},\emph{bim} and \emph{fam} file.\cr
@@ -168,16 +168,13 @@ The control parameters include the following items.\cr
 }
 
 }
-
 \author{Zhong Wang and Nating Wang }
-
 \references{
 (1)Group lasso model\cr
 Li. J., Wang, Z., Li, R., Wu, R.(2015). Bayesian Group Lasso for nonparametric varying-coefficient models with application to functional genome-wide association studies. The Annals of Applied Statistics. 9(1).\cr
 (2)fGWAS model\cr
 Li, J., Wang, Z., Li, Y., & Wu, R. (2010). Functional genome-wide association studies of longitudinal traits. Handbook of Adaptive Designs in Pharmaceutical and Clinical Development.\cr
 }
-
 \examples{
 
 # Set the filename of simulation data set
