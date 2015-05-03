@@ -155,10 +155,16 @@ bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 	if(length(phe.missing)>0)
 		phe.mat <- phe.mat[-phe.missing, , drop=F ];
 
-	reg.str0 <- ifelse( len.x>0, paste("Y ~ ", paste(covar.names,collapse= "+")),  "Y ~ 1" );
-	reg.str1 <- ifelse( len.x>0, paste("Y ~ ", paste(covar.names,collapse= "+"), "+ as.factor(SNP)") ,  "Y ~ 1 + as.factor(SNP)" );
+    str01 <- paste(Y.name, "~", paste(covar.names,collapse= "+") );
+    str00 <- paste(Y.name,"~ 1");
+	reg.str0 <- ifelse( len.x>0, str01, str00 );
 
 	cat("* H0 =", as.character(reg.str0), "\n" );
+
+	str01 <- paste(Y.name, "~", paste(covar.names,collapse= "+"), "+ as.factor(SNP)") ;
+	str00 <- paste(Y.name, "~ 1 + as.factor(SNP)" );
+	reg.str1 <- ifelse( len.x>0, str01, str00 );
+
 	cat("* H1 =", as.character(reg.str1), "\n" );
 	
 	#r0 <- try( gls( as.formula(reg.str0), phe.mat, method="ML" ) );	
