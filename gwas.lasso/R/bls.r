@@ -523,6 +523,16 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
+
+	if( class(phe.mat)=="data.frame" )
+ 	{
+ 		cat("Phenotypic data frame is converted to the matrix class.\n");  
+ 		phe.colnames <- colnames(phe.mat); 
+ 		phe.rownames <- rownames(phe.mat); 
+ 		phe.mat <- matrix(as.numeric(as.matrix(phe.mat, rownames.force=NA)), ncol=NCOL(phe.mat))
+ 		colnames(phe.mat) <- phe.colnames;
+ 	 	rownames(phe.mat) <- phe.rownames;
+	}
 	
 	r.bls <- list();
 	r.filter <- list();

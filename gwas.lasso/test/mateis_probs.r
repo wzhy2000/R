@@ -76,11 +76,16 @@ tb.phe <- tb.phe[,-1];
 
 colnames(tb.phe) <- c("x1", "x2", "timez_1", "timez_2", "timez_3", "timez_4", "timez_5", "timez_6", "timez_7", "phey_1", "phey_2", "phey_3", "phey_4", "phey_5", "phey_6", "phey_7");
 
+tb.phe$x1<-as.factor(tb.phe$x1);
+tb.phe$x2<-as.factor(tb.phe$x2);
+
+
 ret2 <- gls.snpmat(tb.phe, tb.snp, Y.prefix="phey", Z.prefix="timez", covar.names=c("x1","x2"), fgwas.filter = T , options=list(nParallel.cpu=7));	
 
 
 #Test 3
 
+library(gwas.lasso)
 phe.out <- "bls.test.snpmat.phe"  
 snp.out <- "bls.test.snpmat.snp"
 
@@ -108,8 +113,8 @@ tb.phe <- tb.phe[,-1];
 
 colnames(tb.phe) <- c("x1", "x2", "phey");
 
-browser();
-
+tb.phe$x1<-as.factor(tb.phe$x1);
+tb.phe$x2<-as.factor(tb.phe$x2);
 
 ret3 <- bls.snpmat(tb.phe, tb.snp, Y.name="phey", covar.names=c("x1","x2"), fgwas.filter = T , options=list(nParallel.cpu=7));	
 

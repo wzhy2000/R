@@ -292,6 +292,8 @@ fgwas_filter<-function( n.snp, n.ind, f_get_snpmat, snp.obj, phe.mat, Y.name, Z.
 	snp.sect0 <- seq( 1, n.snp, 20000 );
 	snp.sect1 <- c( snp.sect0[-1]-1, n.snp );
 	
+	if( class(phe.mat)=="matrix") phe.mat <- as.data.frame(phe.mat);
+
 	r.fgwas <- c();
 	snp.mat <- c();
 	
