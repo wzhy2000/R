@@ -276,7 +276,9 @@ get_sigsnp_nomulti_correction<-function( f_get_snpmat, snp.obj, r.fgwas, n.snp, 
 		sel.p <- min( which(pv.sort$x > fgwas.cutoff) )-1;
 		sel.id <- r.fgwas[ pv.sort$ix[1:sel.p], 1 ];
 	}
-	
+
+save( snp.obj, sel.id, r.fgwas, f_get_snpmat, fgwas.cutoff, file="before-crash.rdata");
+
 	snp.mat <- f_get_snpmat( snp.obj, sel.id );
 	return(list(error=F, snp.mat=snp.mat));
 }
