@@ -52,6 +52,27 @@ merge_xls_varsel<-function( r.old, r.cluster )
 	return(r.new);
 }
 
+
+get_snpmat_byname <- function( n.snp, snp.mat, varsel.snpname, f_subset_op)
+{
+	varsel.snpmat <- c();
+
+	for(i.sect in 1:ceiling(n.snp/1000))
+	{
+		sub.set <- (i.sect-1)*1000 + c(1:1000);
+		sub.set<- sub.set[which( sub.set<=n.snp)];
+
+		sub.snp <- f_subset_op( snp.mat, sub.set );	
+
+		sub.snp.idx <- match( varsel.snpname, rownames(sub.snp) );
+		sub.snp.idx <- sub.snp.idx[!is.na(sub.snp.idx)]
+		if (length(sub.snp.idx) >0 ) varsel.snpmat <- rbind(varsel.snpmat, sub.snp[sub.snp.idx, ,drop=F]);
+	}
+
+	
+	return( varsel.snpmat );
+}
+
 snpmat_parallel<-function( n.snp,
 			f_subset_op,
 			snp.mat,
@@ -139,8 +160,8 @@ snpmat_parallel<-function( n.snp,
 					op.nMcmcIter,
 					op.fBurnInRound,
 					op.fRhoTuning,
-					op.fQval.add,
-					op.fQval.dom,
+					op.fQval.add * 1.5, # For 1st run, more SNPs are selected than the pre-Q value
+					op.fQval.dom * 1.5,
 					op.debug,
 					op.cpu, 
 					lasso.method);
@@ -158,31 +179,37 @@ snpmat_parallel<-function( n.snp,
 		cat("! No SNPs are selected in the first run. \n");
 		return(r.cluster.init);
 	}
+
 	cat("*", length(idx.sig), "SNPs are selected in the first run.\n");
-		
-	varsel.snp.name <- rownames(r.cluster.init$varsel)[idx.sig];
-	varsel.snpmat <- c();
+
+	# ! One reason leads to select the SNP.mat by the name, not easily index(idx.sig)
+	# !  Some SNPs are removed by th C code becuase of MAF too small or missing too many.
+	# !  so index is not a safe way to proceed the variable selection.
 	
-	for(i.sect in 1:ceiling(n.snp/1000))
+	varsel.snpname <- c();
+	# for BLS functions, varsel can be used, but for GLS functions, varsel_add or varsel_dom can be used
+	if( !is.null(r.cluster.init$varsel) )
+		varsel.snpname <- rownames(r.cluster.init$varsel)[idx.sig]
+	else
+	if( !is.null(r.cluster.init$varsel_add) )
+		varsel.snpname <- rownames(r.cluster.init$varsel_add)[idx.sig]
+	else
+	if( !is.null(r.cluster.init$varsel_dom) )
+		varsel.snpname <- rownames(r.cluster.init$varsel_dom)[idx.sig]
+
+	varsel.snpmat <- get_snpmat_byname( n.snp, snp.mat, varsel.snpname, f_subset_op);
+	
+	## DOUBEL check for debug problem
+	if(length(idx.sig) != NROW(varsel.snpmat))
 	{
-		sub.set <- (i.sect-1)*1000 + c(1:1000);
-		sub.set<- sub.set[which( sub.set<=n.snp)];
-
-		sub.snp <- f_subset_op( snp.mat, sub.set );	
-
-		sub.snp.idx <- match( varsel.snp.name, rownames(sub.snp) );
-		sub.snp.idx <- sub.snp.idx[!is.na(sub.snp.idx)]
-		if (length(sub.snp.idx) >0 ) varsel.snpmat <- rbind(varsel.snpmat, sub.snp[sub.snp.idx, ,drop=F]);
+		cat("!", NROW(varsel.snpmat), "SNPs are selected in the first run.\n");
+		if( NROW(varsel.snpmat) <1 )
+		{
+			#No SNPs are selected in the first run, exit with the variable selection results.
+			return(r.cluster.init);
+		}
 	}
-	
 
-	cat("*", NROW(varsel.snpmat), "SNPs are selected in the first run.\n");
-	if( NROW(varsel.snpmat) <1 )
-	{
-		#No SNPs are selected in the first run, exit with the variable selection results.
-		return(r.cluster.init);
-	}
-	
 	R <- 1;
 	while( NROW(varsel.snpmat) > n.inv * op.piecewise.ratio*1.2 )
 	{

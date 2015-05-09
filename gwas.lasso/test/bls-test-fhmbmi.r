@@ -16,7 +16,7 @@ file.phe.long  <- "/home/zw224/f/bmi/bmi-pheno-mean.csv"
 # stempede
 #file.phe.long  <- "/work/03350/tg826494/test/bmidata/bmi-pheno-age-mean.csv";
 
-ret1 <- bls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.name="mean", covar.names=c(), fgwas.filter = T,  refit = T , options=list(nParallel.cpu=7));
+ret1 <- bls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.name="mean", covar.names=c(), fgwas.filter = T,  refit = T , options=list(nParallel.cpu=15, fgwas.cutoff=0.15));
 
 save( ret1, file="bls-test-fhmbmi.rdata");
 

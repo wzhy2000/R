@@ -52,8 +52,30 @@ load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, fil
 		plink$genotypes<- plink$genotypes[-phe.rem.idx,]
 		plink$fam      <- plink$fam[-phe.rem.idx ,]
 	}
+
+	#test_plink_func(plink);
 	
 	return(list(snp.mat=plink, phe.mat=phe.log));
+}
+
+test_plink_func<-function(plink)
+{
+	n.snp <- NCOL( plink$genotypes );
+
+	cat("...Get 100 SNPs\n");
+	r.snp <- get_plink_subsnp(plink, 1:100);
+	
+	cat("...Get 1000 SNPs\n");
+	r.snp <- get_plink_subsnp(plink, 1:1000);
+
+	cat("...Get 10000 SNPs\n");
+	r.snp <- get_plink_subsnp(plink, 1:10000);
+
+	cat("...Get 50000 SNPs\n");
+	r.snp <- get_plink_subsnp(plink, 1:50000);
+
+	cat("...Get 100000 SNPs\n");
+	r.snp <- get_plink_subsnp( plink, sample(n.snp)[1:100000] );
 }
 
 get_plink_subsnp<-function(snp.mat, snp.set.idx)
