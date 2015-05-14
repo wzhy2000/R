@@ -9,8 +9,8 @@ library(gwas.lasso)
 # simu_nPiecewise.ratio = as.numeric(get_par("NPIECEWISERATIAO"))
 
  simu_id = 1
- simu_p  = 10000
- simu_n  = 1000
+ simu_p  = 1000
+ simu_n  = 100
  simu_sigma2 = 9
  simu_fQval.add = 0.05
  simu_fQval.dom = 0.05
@@ -23,7 +23,7 @@ a_effect <- array(0, dim=c(3,4));
 d_effect <- array(0, dim=c(3,4));
 cov_effect <- array(0, dim=c(2,4));
   
-sigsnp <- c(1, 105, 106, 505, 506)*10;
+sigsnp <- c(1, 105, 106, 505, 506);
 
 simu_add_pos <- sigsnp[1:3]
 simu_dom_pos <- sigsnp[3:5]
@@ -45,21 +45,26 @@ gls.simulate( phe.out, snp.out, simu_n= simu_n, simu_grp=1, simu_p=simu_p, simu_
  		 simu_add_effect=a_effect,  simu_dom_effect=d_effect,  simu_add_pos= simu_add_pos, simu_dom_pos=simu_dom_pos,
  		 simu_z_range = c(30,60), simu_z_count = c(5,12), debug=F);
  		 
-ret1 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1", "X_2"), fgwas.filter = F , 
+ret1 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1", "X_2"), fgwas.filter = F , refit=F, 
  			options=list(nParallel.cpu=7, nPiecewise.ratio=1, fQval.add = simu_fQval.add, fQval.dom = simu_fQval.dom) );
 
 save(ret1, file="gls-parallel-demo.rdata");
+
+gls.best.qval(ret1, paste("G0-SNP", sigsnp, sep="") );
 
 ret2 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1", "X_2"), fgwas.filter = F , 
  			options=list(nParallel.cpu=7, nPiecewise.ratio=2, fQval.add = simu_fQval.add, fQval.dom = simu_fQval.dom) );
 
 save(ret1, ret2, file="gls-parallel-demo.rdata");
 
+gls.best.qval(ret2, paste("G0-SNP", sigsnp, sep="") );
 
 ret3 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1", "X_2"), fgwas.filter = F , 
  			options=list(nParallel.cpu=7, nPiecewise.ratio=3, fQval.add = simu_fQval.add, fQval.dom = simu_fQval.dom) );
 
 save(ret1, ret2, ret3, file="gls-parallel-demo.rdata");
+
+gls.best.qval(ret3, paste("G0-SNP", sigsnp, sep="") );
 
 
 ret4 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1", "X_2"), fgwas.filter = F , 
@@ -67,8 +72,12 @@ ret4 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("
 
 save(ret1, ret2, ret3, ret4, file="gls-parallel-demo.rdata");
 
+gls.best.qval(ret4, paste("G0-SNP", sigsnp, sep="") );
+
 ret5 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1", "X_2"), fgwas.filter = F , 
  			options=list(nParallel.cpu=7, nPiecewise.ratio=5, fQval.add = simu_fQval.add, fQval.dom = simu_fQval.dom) );
+
+gls.best.qval(ret5, paste("G0-SNP", sigsnp, sep="") );
 
 save(ret1, ret2, ret3, ret4, ret5, file="gls-parallel-demo.rdata");
 
@@ -78,17 +87,25 @@ ret6 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, file="gls-parallel-demo.rdata");
 
+gls.best.qval(ret6, paste("G0-SNP", sigsnp, sep="") );
+
 ret7 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1", "X_2"), fgwas.filter = F , 
  			options=list(nParallel.cpu=7, nPiecewise.ratio=7, fQval.add = simu_fQval.add, fQval.dom = simu_fQval.dom) );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, ret7, file="gls-parallel-demo.rdata");
+
+gls.best.qval(ret7, paste("G0-SNP", sigsnp, sep="") );
 
 ret8 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1", "X_2"), fgwas.filter = F , 
  			options=list(nParallel.cpu=7, nPiecewise.ratio=8, fQval.add = simu_fQval.add, fQval.dom = simu_fQval.dom) );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-parallel-demo.rdata");
 
+gls.best.qval(ret8, paste("G0-SNP", sigsnp, sep="") );
+
 ret10 <- gls.simple(phe.out, snp.out, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1", "X_2"), fgwas.filter = F , 
  			options=list(nParallel.cpu=7, nPiecewise.ratio=10, fQval.add = simu_fQval.add, fQval.dom = simu_fQval.dom) );
 
 save(ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, ret10, file="gls-parallel-demo.rdata");
+
+gls.best.qval(ret10, paste("G0-SNP", sigsnp, sep="") );

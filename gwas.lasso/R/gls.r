@@ -306,7 +306,7 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 	}
 }
 
-gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL )        
+gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL, force.split=FALSE, plink.command=NULL )        
 {
 	cat( "[ GLASSO PLINK ] Procedure.\n");
 	cat( "Checking the parameters ......\n");
@@ -329,11 +329,15 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 		stop("! The parameter of dom.used should be a logical value(TRUE or FALSE).");
 	if ( !(is.logical(fgwas.filter) && length(fgwas.filter)==1 ) )
 		stop("! The parameter of fgwas.filter should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(force.split) && length(force.split)==1 ) )
+		stop("! The parameter of force.split should be a logical value(TRUE or FALSE).");
 
 	cat("* Phenotypic Data File = ",  file.phe, "\n");
 	cat("* PLINK BED File = ",  file.plink.bed, "\n");
 	cat("* PLINK BIM File = ",  file.plink.bim, "\n");
 	cat("* PLINK FAM File = ",  file.plink.fam, "\n")
+	cat("* PLINK Command = ",   plink.command, "\n")
+	cat("* Force Split by PLINK Command = ", force.split, "\n")
 	
 	show_gls_parameters( Y.prefix, Z.prefix, covar.names, refit, add.used, dom.used, fgwas.filter ) ;
 
@@ -342,30 +346,45 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	else	
 	{
 		options0 <- get_default_options();
-        	options0[names(options)] <- options;
-        	options <- options0;
+        options0[names(options)] <- options;
+        options <- options0;
     }
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
 
-	#if(!require(snpStats))
-	#	stop("Package snpStats is required to load PLINK dataset!");
-
-	pd <- load_plink_binary( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe );
-	if( is.null(pd) )
-		stop("Failed to load PLINK dataset!");
-	
+	pd <- list();
 	r.filter <- list();
-	r.gls <- list();
-
-	if( fgwas.filter)
+	
+	if( force.split || !try_load_plink( file.plink.bed,  file.plink.bim, file.plink.fam ) )
 	{
+		# It is bigdata which need to split it into chromosome unit
+	    # The following will split the data and force to do fGWAS filter.
+
+	    r.filter <- plink_fgwas_bigdata ( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe, plink.command, 
+	    						          Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
+		if( r.filter$error )
+			stop(r.filter$err.info);
+
+	    fgwas.filter <- TRUE;
+	    pd <- list(phe.mat=r.filter$phe.mat, snp.mat=r.filter$snp.mat);
+	}	
+	else
+	{
+		pd <- load_plink_binary( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe );
+		if( is.null(pd) )
+			stop("Failed to load PLINK dataset!");
+
 		# call FGWAS.R to do FILTER and the gls__snpmat
 		r.filter <- plink_fgwas_filter( pd, Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
 		if( r.filter$error )
 			stop(r.filter$err.info);
-		
+	}
+	
+	r.gls <- list();
+
+	if( fgwas.filter)
+	{
 		subset_op <- function(snpmat, sub.idx)
 		{
 			return( snpmat[sub.idx,,drop=F] );
@@ -823,16 +842,23 @@ summary.GLS.ret<-function(object, ...)
 	if( r.add || r.dom )
 		r.sum.ret$varsel <- merge_add_dom( r.gls$varsel_add, r.gls$varsel_dom);
 
-	if(!is.null(r.gls$fgwas.filter))
+	if(!is.null(r.gls$fgwas))
 	{
-		re5 <- r.gls$fgwas.filter;
-		fgwas.sig <- which( re5[,5] <= r.gls$options$fgwas.cutoff );
+		re7 <- r.gls$fgwas;
+		fgwas.sig <- which( re7[,7] <= r.gls$options$fgwas.cutoff );
 		if(length(fgwas.sig)>0)
 		{
-			fgwas_sigs <- re5[ fgwas.sig, , drop=F];
-			fgwas.sig.inc <- order(fgwas_sigs[,5]);
+			fgwas_sigs <- re7[ fgwas.sig, , drop=F];
+			fgwas.sig.inc <- order(fgwas_sigs[,7]);
 			r.sum.ret$fgwas_sig <- fgwas_sigs[fgwas.sig.inc,];
 		}
+		
+		if(!is.null(r.sum.ret$varsel))
+			r.sum.ret$varsel <- cbind(r.sum.ret$varsel, fgwas.pvalue=find_fgwas_pvalue( r.gls$fgwas, rownames(r.sum.ret$varsel) ) ) ;
+
+		if(!is.null(r.sum.ret$refit))
+			r.sum.ret$refit <- cbind(r.sum.ret$refit, fgwas.pvalue=find_fgwas_pvalue( r.gls$fgwas, rownames(r.sum.ret$refit) ) ) ;
+		
 	}
 
 	class(r.sum.ret) <- "sum.GLS.ret";
@@ -933,7 +959,7 @@ wrap_GLS_ret<-function(r.gls, r.filter, options )
 			
 		}	
 
-		if(!is.null(r.filter)) r.gls$fgwas.filter <- r.filter$r;
+		if(!is.null(r.filter)) r.gls$fgwas <- r.filter$r;
 		
 		r.gls$options <- options;
 
@@ -979,9 +1005,9 @@ plot.GLS.ret<-function( x, y=NULL, ... , fig.prefix=NULL )
 
 	if( missing(fig.prefix)) fig.prefix <- "gls.plot";
 
-	if(!is.null(r.gls$fgwas.filter))
+	if(!is.null(r.gls$fgwas))
 	{
-		filter.man <- r.gls$fgwas.filter[, c(1,2,5), drop=F]
+		filter.man <- r.gls$fgwas[, c(1,2,7), drop=F]
 		draw_man_fgwas( filter.man, fig.prefix, "fgwas" );
 	}
 	else
@@ -1025,4 +1051,123 @@ read_simple_gls_data <- function( file.phe, file.snp, bImputed=TRUE )
 	if(bImputed) tb.snp <- impute_simple_snp(tb.snp);
 
 	return(list(phe.mat=tb.phe, snp.mat=tb.snp));
+}
+
+gls.best.qval<-function( r.gls, snp.names )
+{
+	if( class(r.gls) != "GLS.ret" )	
+	{
+		cat("! r.bls is NOT a GLS.ret object.\n");
+		return(NULL);
+	}
+
+	find_Qtable<-function( Q.table, snp.names)
+	{
+		pv.mat4 <- array( NA, dim=c(length(snp.names),4 ) );
+		pv <- rep( NA, length(snp.names) );
+	
+		idx <- match( snp.names, rownames(Q.table));
+		if( length(which(!is.na(idx)) ) > 0)
+		{
+			pv.mat4[!is.na(idx), ] <-  Q.table[ idx[!is.na(idx)], c(1:4) ];
+			pv[!is.na(idx)] <- apply(pv.mat4[!is.na(idx), ], 1, min, na.rm=TRUE)
+		}
+		
+		return(pv);
+	}
+	
+	Qval.vs.add <- rep( NA, length(snp.names) );
+	Qval.vs.dom <- rep( NA, length(snp.names) );
+	if( is.null(r.gls$varsel_Qbest ) )
+	{
+		cat("! No Qbest matrix for variable selection.\n");
+	}
+	else
+	{
+		if(any(r.gls$varsel_Qbest[,c(1:4)]!=0))
+			Qval.vs.add <- find_Qtable( r.gls$varsel_Qbest[,  c(1:4),drop=F], snp.names );
+		if(any(r.gls$varsel_Qbest[,c(20:23)]!=0))
+			Qval.vs.dom <- find_Qtable( r.gls$varsel_Qbest[,c(20:23),drop=F], snp.names );
+	}
+	
+	Qval.refit.add <- rep( NA, length(snp.names) );
+	Qval.refit.dom <- rep( NA, length(snp.names) );
+	if( is.null(r.gls$refit_Qbest ) )
+	{
+		cat("! No Qbest matrix for refit procedure.\n");
+	}
+	else
+	{
+		if(any(r.gls$refit_Qbest[,c(1:4)]!=0))
+			Qval.refit.add <- find_Qtable( r.gls$refit_Qbest[,c(1:4),drop=F], snp.names );
+		if(any(r.gls$refit_Qbest[,c(20:23)]!=0))
+			Qval.refit.dom <- find_Qtable( r.gls$refit_Qbest[,c(20:23),drop=F], snp.names );
+	}
+
+	fgwas.pv <- find_fgwas_pvalue( r.gls$fgwas, snp.names)
+
+	r.qval <- cbind( fgwas.pv, Qval.vs.add, Qval.vs.dom, Qval.refit.add, Qval.refit.dom);
+	colnames(r.qval) <- c("fgwas.pv", "Qval.vs.add", "Qval.vs.dom", "Qval.refit.add", "Qval.refit.dom");
+	rownames(r.qval) <- snp.names;
+	
+	return(r.qval);
+}
+
+gls.qval.cutoff<-function( r.gls, qval.add, qval.dom, refit.select = FALSE )
+{
+	if( class(r.gls) != "GLS.ret" )	
+	{
+		cat("! r.gls is NOT a GLS.ret object.\n");
+		return(NULL);
+	}
+
+	find_Qtable<-function( Q.table, qval)
+	{
+		pv <- apply(Q.table[, c(1:4) ], 1, min, na.rm=TRUE)
+		return(which(pv<=qval));
+	}
+	
+	if( is.null(r.gls$varsel_Qbest ) && !refit.select )
+	{
+		cat("! No Qbest matrix for variable selection.\n");
+	}
+	else
+	{
+		idx.vs.add <- c();
+		idx.vs.dom <- c();
+
+		if(any(r.gls$varsel_Qbest[,c(1:4)]!=0))
+			idx.vs.add <- find_Qtable( r.gls$varsel_Qbest[,  c(1:4),drop=F], qval.add );
+		if(any(r.gls$varsel_Qbest[,c(20:23)]!=0))
+			idx.vs.dom <- find_Qtable( r.gls$varsel_Qbest[,c(20:23),drop=F], qval.dom );
+		
+		idx.vs <- sort( unique(c(idx.vs.add, idx.vs.dom)) )
+		if(length(idx.vs)>0)
+			return( rownames(r.gls$varsel_Qbest)[idx.vs])
+		else
+			return(NULL);			
+	}
+	
+	if( is.null(r.gls$refit_Qbest )  && refit.select )
+	{
+		cat("! No Qbest matrix for refit procedure.\n");
+	}
+	else
+	{
+		idx.refit.add <- c();
+		idx.refit.dom <- c();
+
+		if(any(r.gls$refit_Qbest[,c(1:4)]!=0))
+			idx.refit.add <- find_Qtable( r.gls$refit_Qbest[,c(1:4),drop=F], qval.add );
+		if(any(r.gls$refit_Qbest[,c(20:23)]!=0))
+			idx.refit.dom <- find_Qtable( r.gls$refit_Qbest[,c(20:23),drop=F], qval.dom );
+
+		idx.refit <- sort( unique(c(idx.refit.add, idx.refit.dom)) )
+		if(length(idx.refit)>0)
+			return( rownames(r.gls$refit_Qbest)[idx.refit])
+		else
+			return(NULL);			
+	}
+
+	return(NULL);
 }

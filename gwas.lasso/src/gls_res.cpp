@@ -623,6 +623,7 @@ SEXP GLS_res::GetRObj()
 			SEXP expQBest = GetSEXP(m_pRefit_BestQ);
 			SETCAR( t, expQBest );
 			SET_TAG(t, install("refit_Qbest") );
+			t = CDR(t);
 		}
 
 		if (m_pRefit_PSRF)
@@ -630,6 +631,7 @@ SEXP GLS_res::GetRObj()
 			SEXP expPSRF = GetSEXP(m_pRefit_PSRF);
 			SETCAR( t, expPSRF );
 			SET_TAG(t, install("refit_PSRF") );
+			t = CDR(t);
 		}
     }
 

@@ -268,7 +268,7 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 	}
 }
 
-bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.name, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL)      
+bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.name, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL, force.split=FALSE, plink.command=NULL )      
 {
 	cat( "[ BLASSO PLINK ] Procedure.\n");
 	cat( "Checking the parameters ......\n");
@@ -289,11 +289,15 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 		stop("! The parameter of dom.used should be a logical value(TRUE or FALSE).");
 	if ( !(is.logical(fgwas.filter) && length(fgwas.filter)==1 ) )
 		stop("! The parameter of fgwas.filter should be a logical value(TRUE or FALSE).");
+	if ( !(is.logical(force.split) && length(force.split)==1 ) )
+		stop("! The parameter of force.split should be a logical value(TRUE or FALSE).");
 
 	cat("* Phenotypic Data File = ",  file.phe, "\n");
 	cat("* PLINK BED File = ",  file.plink.bed, "\n");
 	cat("* PLINK BIM File = ",  file.plink.bim, "\n");
 	cat("* PLINK FAM File = ",  file.plink.fam, "\n")
+	cat("* PLINK Command = ",   plink.command, "\n")
+	cat("* Force Split by PLINK Command = ", force.split, "\n")
 
 	show_bls_parameters( Y.name, covar.names, refit, add.used, dom.used, fgwas.filter ) ;
 
@@ -302,30 +306,46 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	else	
 	{
 		options0 <- get_default_options();
-        	options0[names(options)] <- options;
-        	options <- options0;
+        options0[names(options)] <- options;
+        options <- options0;
 	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
-	
-	#if(!require(snpStats))
-	#	stop("! Package snpStats is required to load PLINK dataset.");
 
-	pd <- load_plink_binary( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe );
-	if( is.null(pd) )
-		stop("! Failed to load PLINK dataset.");
-
+	pd <- list();
 	r.filter <- list();
-	r.bls <- list();
-
-	if( fgwas.filter)
+	
+	if( force.split || !try_load_plink( file.plink.bed,  file.plink.bim, file.plink.fam ) )
 	{
+		# It is bigdata which need to split it into chromosome unit
+	    # The following will split the data and force to do fGWAS filter.
+
+	    r.filter <- plink_fgwas_bigdata ( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe, plink.command, 
+	    						          Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS");
+		if( r.filter$error )
+			stop(r.filter$err.info);
+
+	    fgwas.filter <- TRUE;
+
+	    pd <- list(phe.mat=r.filter$phe.mat, snp.mat=r.filter$snp.mat);
+	}	
+	else
+	{
+		pd <- load_plink_binary( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe );
+		if( is.null(pd) )
+			stop("! Failed to load PLINK dataset.");
+
 		# call FGWAS.R to do FILTER and the bls_snpmat
 		r.filter <- plink_fgwas_filter( pd, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS")
 		if( r.filter$error )
 			stop(r.filter$err.info);
-		
+	}
+	
+	r.bls <- list();
+
+	if( fgwas.filter )
+	{
 		subset_op <- function(snpmat, sub.idx)
 		{
 			return( snpmat[sub.idx,,drop=F] );
@@ -676,7 +696,6 @@ summary.BLS.ret<-function(object, ...)
 		rownames(r.sum.ret$varsel_cov) <- rownames( re3 );
 	}
 	
-	
 	if(!is.null(r.bls$varsel))
 	{
 		re4 <- r.bls$varsel;
@@ -700,16 +719,22 @@ summary.BLS.ret<-function(object, ...)
 		}
 	}
 
-	if(!is.null(r.bls$fgwas.filter))
+	if(!is.null(r.bls$fgwas))
 	{
-		re5 <- r.bls$fgwas.filter;
-		fgwas.sig <- which( re5[,5] <= r.bls$options$fgwas.cutoff );
+		re7 <- r.bls$fgwas;
+		fgwas.sig <- which( re7[,7] <= r.bls$options$fgwas.cutoff );
 		if(length(fgwas.sig)>0)
 		{
-			fgwas_sigs <- re5[ fgwas.sig, , drop=F];
-			fgwas.sig.inc <- order(fgwas_sigs[,5]);
+			fgwas_sigs <- re7[ fgwas.sig, , drop=F];
+			fgwas.sig.inc <- order(fgwas_sigs[,7]);
 			r.sum.ret$fgwas_sig <- fgwas_sigs[fgwas.sig.inc,];
-		}	
+		}
+		
+		if(!is.null(r.sum.ret$varsel))
+			r.sum.ret$varsel <- cbind(r.sum.ret$varsel, fgwas.pvalue=find_fgwas_pvalue( r.bls$fgwas, rownames(r.sum.ret$varsel) ) ) ;
+
+		if(!is.null(r.sum.ret$refit))
+			r.sum.ret$refit <- cbind(r.sum.ret$refit, fgwas.pvalue=find_fgwas_pvalue( r.bls$fgwas, rownames(r.sum.ret$refit) ) ) ;
 	}
 
 	class(r.sum.ret) <- "sum.BLS.ret";
@@ -782,9 +807,9 @@ plot.BLS.ret<-function( x, y=NULL, ..., fig.prefix=NULL )
 	
 	if( missing(fig.prefix)) fig.prefix <- "bls.plot";
 	
-	if(!is.null(r.bls$fgwas.filter))
+	if(!is.null(r.bls$fgwas))
 	{
-		filter.man <- r.bls$fgwas.filter[, c(1,2,5), drop=F]
+		filter.man <- r.bls$fgwas[, c(1,2,5), drop=F]
 		draw_man_fgwas( filter.man, fig.prefix, "fgwas" );
 	}
 	else
@@ -829,7 +854,7 @@ wrap_BLS_ret<-function(r.bls, r.filter, options)
 			rownames(r.bls$refit_cov) <- c("intercept",  options$params$covar.names);
 		}
 		
-		if(!is.null(r.filter)) r.bls$fgwas.filter <- r.filter$r;
+		if(!is.null(r.filter)) r.bls$fgwas <- r.filter$r;
 		
 		r.bls$options <- options;
 
@@ -908,6 +933,114 @@ read_simple_bls_data <- function( file.phe, file.snp, bImputed=T )
 	return(list(phe.mat=tb.phe, snp.mat=tb.snp));
 }
 
+bls.best.qval<-function( r.bls, snp.names )
+{
+	if( class(r.bls) != "BLS.ret" )	
+	{
+		cat("! r.bls is NOT a BLS.ret object.\n");
+		return(NULL);
+	}
 
+	find_Qtable<-function( Q.table, snp.names)
+	{
+		pv <- rep(NA, length(snp.names));
+	
+		idx <- match( snp.names, rownames(Q.table));
+		if( length(which(!is.na(idx)) ) > 0)
+			pv[ !is.na(idx) ] <-  Q.table[ idx[!is.na(idx)], 1 ];
+	
+		return(pv);
+	}
+	
+	vs.Qval.add <- rep(NA, length(snp.names));
+	vs.Qval.dom <- rep(NA, length(snp.names));
+	
+	if( is.null(r.bls$varsel_Qbest ) )
+	{
+		cat("! No Qbest matrix for variable selection.\n");
+	}
+	else
+	{
+		if(any(r.bls$varsel_Qbest[,1]!=0))
+			vs.Qval.add <- find_Qtable( r.bls$varsel_Qbest[,1,drop=F], snp.names );
+		if(any(r.bls$varsel_Qbest[,5]!=0))
+			vs.Qval.dom <- find_Qtable( r.bls$varsel_Qbest[,5,drop=F], snp.names );
+		
+	}
+	
+	refit.Qval.add <- rep(NA, length(snp.names));
+	refit.Qval.dom <- rep(NA, length(snp.names));
+	if( is.null(r.bls$refit_Qbest ) )
+	{
+		cat("! No Qbest matrix for refit procedure.\n");
+	}
+	else
+	{
+		if(any(r.bls$refit_Qbest[,1]!=0))
+			refit.Qval.add <- find_Qtable( r.bls$refit_Qbest[,1,drop=F], snp.names );
+		if(any(r.bls$refit_Qbest[,5]!=0))
+			refit.Qval.dom <- find_Qtable( r.bls$refit_Qbest[,5,drop=F], snp.names );
+	
+	}
 
+	fgwas.pv <- find_fgwas_pvalue( r.bls$fgwas, snp.names)
 
+	r.qval <- cbind( fgwas.pv, vs.Qval.add, vs.Qval.dom, refit.Qval.add, refit.Qval.dom);
+	colnames(r.qval) <- c("fgwas.pv", "Qval.vs.add", "Qval.vs.dom", "Qval.refit.add", "Qval.refit.dom");
+	rownames(r.qval) <- snp.names;
+
+	return(r.qval);
+}
+
+bls.qval.cutoff<-function( r.bls, qval.add, qval.dom, refit.select = FALSE )
+{
+	if( class(r.bls) != "BLS.ret" )	
+	{
+		cat("! r.bls is NOT a BLS.ret object.\n");
+		return(NULL);
+	}
+
+	if( is.null(r.bls$varsel_Qbest ) && !refit.select )
+	{
+		cat("! No Qbest matrix for variable selection.\n");
+	}
+	else
+	{
+		idx.vs.add <- c();
+		idx.vs.dom <- c();
+
+		if(any(r.bls$varsel_Qbest[,1]!=0))
+			idx.vs.add <- which( r.bls$varsel_Qbest[, 1] <= qval.add); 
+		if(any(r.bls$varsel_Qbest[,5]!=0))
+			idx.vs.dom <- which( r.bls$varsel_Qbest[, 5] <= qval.dom); 
+		
+		idx.vs <- sort( unique(c(idx.vs.add, idx.vs.dom)) )
+		if(length(idx.vs)>0)
+			return( rownames(r.bls$varsel_Qbest)[idx.vs])
+		else
+			return(NULL);			
+	}
+	
+	if( is.null(r.bls$refit_Qbest )  && refit.select )
+	{
+		cat("! No Qbest matrix for refit procedure.\n");
+	}
+	else
+	{
+		idx.refit.add <- c();
+		idx.refit.dom <- c();
+
+		if(any(r.bls$refit_Qbest[,1]!=0))
+			idx.refit.add <- which( r.bls$refit_Qbest[, 1] <= qval.add); 
+		if(any(r.bls$refit_Qbest[,5]!=0))
+			idx.refit.dom <- which( r.bls$refit_Qbest[, 5] <= qval.dom); 
+		
+		idx.vs <- sort( unique(c(idx.refit.add, idx.refit.dom)) )
+		if(length(idx.vs)>0)
+			return( rownames(r.bls$refit_Qbest)[idx.vs])
+		else
+			return(NULL);			
+	}
+
+	return(NULL);
+}

@@ -1,4 +1,13 @@
-load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, file.phe.long )
+try_load_plink<-function( file.plink.bed,  file.plink.bim, file.plink.fam )
+{
+	plink <- try( read.plink( file.plink.bed,  file.plink.bim, file.plink.fam) );
+	if(class(plink)=="try-error")
+		return(FALSE);
+	
+	return(TRUE);
+}
+
+load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, file.phe.long, verbose=FALSE  )
 {
 	plink <- try( read.plink( file.plink.bed,  file.plink.bim, file.plink.fam) );
 	if(class(plink)=="try-error")
@@ -26,10 +35,10 @@ load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, fil
 		else
 		{
 			gen.rem.idx <- c(gen.rem.idx, i);
-			cat("*ID:", gen.ids[i], " dont have longitudinal phenos.\n" );
+			if( verbose) cat("*ID:", gen.ids[i], " does not have phenotypic values.\n" );
 		}
 	}
-
+	
 	phe.log <- phe.log[ phe.idx, ,drop=F];
 	if(length(gen.rem.idx)>0)
 	{
@@ -41,7 +50,7 @@ load_plink_binary<-function(file.plink.bed,  file.plink.bim, file.plink.fam, fil
 	phe.rem.idx <- c();
 	for(i in 1:NROW(phe.log))
 	{
-		if (all(is.na(phe.log[m.idx[1],])))
+		if (all(is.na(phe.log[i,])))
 			phe.rem.idx <-c(phe.rem.idx, i);
 	}				
 

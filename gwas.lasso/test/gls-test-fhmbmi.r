@@ -14,7 +14,7 @@ file.phe.long  <- "/home/zw224/f/bmi/bmi-phenos-sex-longtime.csv"
 
 ret1 <- gls.plink( file.phe.long, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix="Y", Z.prefix="Z", covar.names=c("X"), fgwas.filter = T , options=list(nParallel.cpu=15) );	
 
-save( ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, file="gls-test-fhmbmi.rdata");
+save( ret1, file="gls-test-fhmbmi.rdata");
 
 summary(ret1);
 plot(ret1, fig.prefix="gls-test-fhmbmi");
