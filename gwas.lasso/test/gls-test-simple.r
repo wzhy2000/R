@@ -36,7 +36,7 @@ gls.simulate( phe.out, snp.out, simu_n= 500, simu_grp=1, simu_p=30, simu_snp_rho
 		 simu_z_range    = c(30,60), simu_z_count = c(5,12), 
 		 plink.format=T, debug=F);
 
-ret0 <- gls.plink(phe.out, snp.out.bed, snp.out.bim, snp.out.fam, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = F);	
+ret0 <- gls.plink(phe.out, snp.out.bed, snp.out.bim, snp.out.fam, Y.prefix="Y", Z.prefix="Z", covar.names=c("X_1","X_2"), fgwas.filter = F,  options=list(nPiecewiseRatio=0));	
 
 summary(ret0);
 plot(ret0);

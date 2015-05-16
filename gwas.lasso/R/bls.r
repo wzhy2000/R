@@ -336,10 +336,13 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 		if( is.null(pd) )
 			stop("! Failed to load PLINK dataset.");
 
-		# call FGWAS.R to do FILTER and the bls_snpmat
-		r.filter <- plink_fgwas_filter( pd, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS")
-		if( r.filter$error )
-			stop(r.filter$err.info);
+		if(fgwas.filter)
+		{
+			# call FGWAS.R to do FILTER and the bls_snpmat
+			r.filter <- plink_fgwas_filter( pd, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS")
+			if( r.filter$error )
+				stop(r.filter$err.info);
+		}				
 	}
 	
 	r.bls <- list();
@@ -562,9 +565,9 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 		cat( "Genetic Effect Analysis by BLASSO method......\n");
 
 		r.bls <- .Call("bls_snpmat", 
-			phe.mat,
-  		   	snp.mat, 
-  		   	Y.name, 
+			as.matrix( phe.mat ),
+			as.matrix( snp.mat*1.0 ),
+			Y.name, 
   		   	paste(covar.names, collapse=","), 
   		   	refit,
   		   	add.used,
