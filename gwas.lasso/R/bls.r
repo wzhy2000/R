@@ -116,6 +116,7 @@ bls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n= 500, sim
 		
 		unlink(file.snp.out);
 		return(list(err=err,  
+			file.simple.phe = file.phe.out,
 			file.plink.bed = r$file.plink.bed,
    	    	file.plink.bim = r$file.plink.bim,
    	    	file.plink.fam = r$file.plink.fam));
