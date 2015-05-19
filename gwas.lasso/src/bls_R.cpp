@@ -99,7 +99,7 @@ int blasso_simulate( const char* szPhe_out,
 
 	pPar->sig_p		   = nSimu_sig_p;
 
-	pPar->simu_a_len   = nSimu_d_len;
+	pPar->simu_a_len   = nSimu_a_len;
 	for(int i=0;i<nSimu_a_len;i++)
 	{
 		pPar->simu_a_pos[i] = pnSimu_a_pos[i];
