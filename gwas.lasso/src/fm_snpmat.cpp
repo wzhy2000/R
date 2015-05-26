@@ -163,21 +163,26 @@ bool CFmSnpMat::GetSnpInfo(CFmVectorStr* pVctSnp, CFmVector* pVctChr, CFmVector*
 
     for (int i=0; i<m_nNumSnps; i++)
     {
-        char szChr[256]={"-1.0"};
-        char szPos[256]={"-1.0"};
-        char szSnpName[256]={"Unknown"};
+        char szChr[256]={""};
+        char szPos[256]={""};
+        char szSnpName[256]={""};
 
         char* szSnpInfo = m_pSnpInfos->Get( i );
         char* pos0 = strchr(szSnpInfo, '/');
         if ( pos0==NULL )
             return(false);
         if ( pos0 )
-            strncpy( szSnpName, szSnpInfo, (pos0-szSnpInfo) );
+        {
+			strncpy( szSnpName, szSnpInfo, (pos0-szSnpInfo) );
+			szSnpName[pos0 - szSnpInfo] = '\0';
+		}
 
         char* pos1 = strchr(pos0+1, '/');
         if ( pos1 )
         {
             strncpy( szChr, pos0+1, (pos1-pos0) );
+			szChr[ pos1-pos0 ] = '\0';
+
             strcpy( szPos, pos1+1);
         }
 
