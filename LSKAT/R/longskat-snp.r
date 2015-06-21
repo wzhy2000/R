@@ -261,21 +261,21 @@ longskat_snp_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, fi
 	if (is.null(options$weights.rare)  || is.na(options$weights.rare)) options$weights.rare<-c(1,25);
 	cat( "* Beta Weights for Rare SNPs: ",  options$weights.rare[1], options$weights.rare[2], "\n");
 
-	chk.plink <- check_plink_file( file.plink.bed, file.plink.bim, file.plink.fam )
-	if ( !chk.plink$bSuccess )
-		stop("PLINK file can not be loaded by the snpStats package.")
-
-	chk.phe <- check_pheno_file( file.phe.long, file.phe.time, chk.plink$family ) 
-	if ( !chk.phe$bSuccess )
-		stop("Phenotypic data file is failed to load.")
-
-	chk.cov <- check_covariate_file( file.phe.cov, chk.plink$family, options$y.cov.count )
-	if ( !chk.cov$bSuccess )
-		stop("Covariate data file is failed to load.")
-
 	chk.genset <- check_geneset_file( file.gene.set )
 	if ( !chk.genset$bSuccess )
 		stop("Gene defintion file  is failed to load.")
+
+	chk.phe <- check_pheno_file( file.phe.long, file.phe.time, file.plink.fam ) 
+	if ( !chk.phe$bSuccess )
+		stop("Phenotypic data file is failed to load.")
+
+	chk.cov <- check_covariate_file( file.phe.cov, file.plink.fam, options$y.cov.count )
+	if ( !chk.cov$bSuccess )
+		stop("Covariate data file is failed to load.")
+
+	chk.plink <- check_plink_file( file.plink.bed, file.plink.bim, file.plink.fam )
+	if ( !chk.plink$bSuccess )
+		stop("PLINK file can not be loaded by the snpStats package.")
 
 	cat( "Starting to load all data files......\n");
 

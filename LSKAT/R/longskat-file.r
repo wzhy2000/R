@@ -29,7 +29,7 @@ check_plink_file<-function( file.plink.bed, file.plink.bim, file.plink.fam )
 # Format 3:
 # shareid, TIME1, TIME2, ...
 
-check_pheno_file<-function( file.phe.long, file.phe.time, chk.family ) 
+check_pheno_file<-function( file.phe.long, file.phe.time, file.plink.fam ) 
 {
 	cat("Checking phenotype file......\n");
 	cat("* PHE.LONG =", file.phe.long , "\n");
@@ -63,13 +63,20 @@ check_pheno_file<-function( file.phe.long, file.phe.time, chk.family )
 		}		
 	}
 
-	m.phe <- match( as.character(phe.long[,1]), as.character(chk.family$member)  );
+	phe.fam <- try( read.table(file.plink.fam) );
+	if (class(phe.fam)=="try-error")
+	{
+		cat("! Can not open file(", file.phe.fam, ")\n");
+		return(list(bSuccess=F));
+	}
+
+	m.phe <- match( as.character(phe.long[,1]), as.character(phe.fam$V2)  );
 	if (length(which(is.na(m.phe))) > 0 )
 		cat("! ID:", phe.long[is.na(m.phe),1], "can not be found in the PLINK file.\n" );
 
-	m.snp <- match( as.character(chk.family$member) , as.character(phe.long[,1]) );
+	m.snp <- match( as.character(phe.fam$V2) , as.character(phe.long[,1]) );
 	if (length(which(is.na(m.snp))) > 0 )
-		cat("! ID:", as.character(chk.family$member)[is.na(m.snp)], "can not be found in the phenotype file.\n" );
+		cat("! ID:", as.character(phe.fam$V2)[is.na(m.snp)], "can not be found in the phenotype file.\n" );
 		
 	all.na <- which( is.na( rowSums(phe.long[,-1], na.rm=T)	) )
 	if (length(all.na)>0 )
@@ -83,7 +90,7 @@ check_pheno_file<-function( file.phe.long, file.phe.time, chk.family )
 # 
 # shareid, COV1,....
 
-check_covariate_file<-function( file.phe.cov, chk.family, y.ncov ) 
+check_covariate_file<-function( file.phe.cov, file.plink.fam, y.ncov ) 
 {
 	cat("Checking covariate file......\n");
 	cat("* COV.FILE =", file.phe.cov , "\n");
@@ -98,14 +105,21 @@ check_covariate_file<-function( file.phe.cov, chk.family, y.ncov )
 		cat("! Insufficient covariates in the covariate file, ", NCOL(phe.cov), "<", 1 + y.ncov, ".\n" );
 		return(list(bSuccess=F));
 	}	
+
+	phe.fam <- try( read.table(file.plink.fam) );
+	if (class(phe.fam)=="try-error")
+	{
+		cat("! Can not open file(", file.phe.fam, ")\n");
+		return(list(bSuccess=F));
+	}
 	
-	m.phe <- match( as.character(phe.cov[,1]), as.character(chk.family$member)  );
+	m.phe <- match( as.character(phe.cov[,1]), as.character(phe.fam$V2)  );
 	if (length(which(is.na(m.phe))) > 0 )
 		cat("! ID:", phe.cov[is.na(m.phe),1], "can not be found in the PLINK file.\n" );
 
-	m.snp <- match( as.character(chk.family$member) , as.character(phe.cov[,1]) );
+	m.snp <- match( as.character(phe.fam$V2) , as.character(phe.cov[,1]) );
 	if (length(which(is.na(m.snp))) > 0 )
-		cat("! ID:", as.character(chk.family$member)[is.na(m.snp)], "can not be found in the phenotype file.\n" );
+		cat("! ID:", as.character(phe.fam$V2)[is.na(m.snp)], "can not be found in the phenotype file.\n" );
 		
 	all.na <- which( is.na( rowSums(phe.cov[,-1], na.rm=T)	) )
 	if (length(all.na)>0 )
