@@ -15,7 +15,7 @@ draw_manhattan<-function( res, map.title="", sig.thres, dot.cex, y.max=NA)
 	if (length(which(pvalues>y.max))>0)
 		pvalues[which(pvalues>y.max)] <- y.max;
 
-	plot( 1,1, type="n", xlab="SNP", ylab=expression(-log[10](italic(p))),
+	plot( 1,1, type="n", xlab="Chromosome", ylab=expression(-log[10](italic(p))),
 		  cex.axis=0.7, xlim=c(1, nrow), ylim=c(0,  y.max), xaxt="n", main=map.title );
 
 	p.lab <-  - c( log10( sig.thres) );

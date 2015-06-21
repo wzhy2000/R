@@ -1,8 +1,8 @@
 Package: LSKAT
 Type: Package
 Title: SNP-set (Sequence) Kernel Association Test for longitudinal data.
-Version: 0.10
-Date: 2014-10-09
+Version: 0.2
+Date: 2015-06-20
 Author: Zhong Wang and Zuoheng Wang
 Maintainer: Zhong Wang Lee <zhong.wang@yale.edu>
 Description: Kernel based SNP set test for longitudinal data.

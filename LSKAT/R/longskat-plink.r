@@ -5,11 +5,11 @@ read_gen_dataset<-function( file.set )
 	return(list(len=length(genes), ids=genes, snps=tb));
 }
 
-get_gen_group<-function(gen.lib, idx)
+get_gen_group<-function(gen.list, idx)
 {
-	gen.name <- gen.lib$ids[idx];
-	snp.idx <- which(gen.lib$snps[,1]==gen.name);
-	return(list(name=gen.name, snps=gen.lib$snps[snp.idx,2]))
+	gen.name <- gen.list$ids[idx];
+	snp.idx <- which(gen.list$snps[,1]==gen.name);
+	return(list(name=gen.name, snps=gen.list$snps[snp.idx,2]))
 }
 
 get_gen_family<-function(gen.lib, gen.name)
@@ -21,7 +21,7 @@ get_gen_family<-function(gen.lib, gen.name)
 		return(list(name=gen.name, snps=gen.lib$snps[snp.idx,2]));
 }
 
-get_snp_info<-function(idx, snp.mat, gen.tb=NA)
+get_snp_plink_info<-function(idx, snp.mat, gen.tb=NA)
 {
 	s <- snp.mat$genotypes[, idx, drop=F ]
 
@@ -111,7 +111,7 @@ read_gen_phe_cov<-function(file.plink.bed, file.plink.bim, file.plink.fam, file.
 
 	snp.mat <- read.plink( file.plink.bed,  file.plink.bim, file.plink.fam);
 
-	phe.long <- read.csv(file.phe.long);
+	phe.long <- read.csv(file.phe.long, header=T);
 	cat("  PHE LONG =", file.phe.long, "\n");
 	cat("* Individuals =", NROW(phe.long), "\n");
 	cat("* Times =", NCOL(phe.long)-1, "\n");
@@ -123,7 +123,7 @@ read_gen_phe_cov<-function(file.plink.bed, file.plink.bim, file.plink.fam, file.
 	phe.time <- NULL;
 	if (!is.null(file.phe.time))
 	{
-		phe.time <- read.csv(file.phe.time);
+		phe.time <- read.csv(file.phe.time, header=T);
 		cat("  PHE TIME =", file.phe.time, "\n");
 		cat("* Individuals =", NROW(phe.time), "\n");
 		cat("* Times =", NCOL(phe.time)-1, "\n");
@@ -133,35 +133,35 @@ read_gen_phe_cov<-function(file.plink.bed, file.plink.bim, file.plink.fam, file.
 		if( length(idx.na)>0) phe.time <- phe.time[ -idx.na, ];
 	}
 	
-	phe.cov <- read.table(file.phe.cov, sep=" ", header=F);
+	phe.cov <- read.csv(file.phe.cov, header=T);
 	cat("  PHE COV =", file.phe.cov, "\n");
 	cat("* Individuals =", NROW(phe.cov), "\n");
-	cat("* Covariate =", NCOL(phe.cov)-2, "\n");
-	cat("* Mean =",  colMeans(phe.cov[,-c(1,2)], na.rm=T), "\n");
-	cat("* SD =",    colSds(phe.cov[,-c(1,2)], na.rm=T), "\n");
+	cat("* Covariate =", NCOL(phe.cov)-1, "\n");
+	cat("* Mean =",  colMeans(phe.cov[,-c(1)], na.rm=T), "\n");
+	cat("* SD =",    colSds(phe.cov[,-c(1)], na.rm=T), "\n");
 	
-	ids.fam<-as.integer(rownames(snp.mat$fam));
+	ids.fam<-as.character(snp.mat$fam$member);
 	cat("  GENO FAM =", file.plink.fam, "\n");
 	cat("* Individuals =", NROW(phe.cov), "\n");
 
-	ids.phe <- intersect(phe.long[,1], phe.cov[,2]);
+	ids.phe <- intersect(as.character(phe.long[,1]), as.character(phe.cov[,1]) );
 	if(!is.null(phe.time))
-		ids.phe <- intersect(ids.phe, phe.time[,1]);
+		ids.phe <- intersect(ids.phe, as.character(phe.time[,1]) );
 	
 	ids.set <- intersect(ids.phe, ids.fam);
 	cat("  COMMON Individuals=", length(ids.set), "\n");
 	
 	# eg. c(10:1)[match(c(4, 6,8,2,3), c(10:1))]
 	
-	idx.long <- match( ids.set, phe.long[,1] );
+	idx.long <- match( ids.set, as.character(phe.long[,1]) );
 	phe.long <- phe.long[idx.long, ];
 	
-	idx.cov <- match( ids.set, phe.cov[,2] );
+	idx.cov <- match( ids.set, as.character(phe.cov[,1]) );
 	phe.cov <- phe.cov[idx.cov, ];
 
 	if(!is.null(phe.time))
 	{
-		idx.time <- match( ids.set, phe.time[,1] );
+		idx.time <- match( ids.set, as.character(phe.time[,1]) );
 		phe.time <- phe.time[idx.time, ];
 	}
 
@@ -170,150 +170,73 @@ read_gen_phe_cov<-function(file.plink.bed, file.plink.bim, file.plink.fam, file.
 		idx.fam <- match( ids.set, ids.fam );
 		snp.mat$genotypes<- snp.mat$genotypes[idx.fam,]
 		snp.mat$fam      <- snp.mat$fam[idx.fam,]
+		ids.fam <- as.character(snp.mat$fam$member);
 	}
-	
-	if( !is.null(phe.time) && !all(phe.long[,1]==phe.time[,1]) )
+
+	if( !is.null(phe.time) && !all( phe.long[,1] == phe.time[,1]) )
 		stop("! ID MATCH ERROR between PHE.LONG and PHE.TIME. \n");
-	
-	if (!( all(phe.long[,1]==phe.cov[,2]) && all(phe.long[,1]==rownames(snp.mat$fam)) ) )
+
+	if (!( all(phe.long[,1]==phe.cov[,1]) && all(phe.long[,1]==ids.fam) ) )
 		stop("! ID MATCH ERROR among 3 files( PHE.LONG, PHE.COV, PLINK.FAM). \n");
 
 	return(list(snp.mat=snp.mat, phe.long=phe.long, phe.time=phe.time, phe.cov = phe.cov));
 }
 
-check_plink_file<-function( file.plink.bed, file.plink.bim, file.plink.fam )
-{
-	cat("Checking PLINK file......\n");
-	cat("* BED file =", file.plink.bed, "\n");
-	cat("* BIM file =", file.plink.bim, "\n");
-	cat("* FAM file =", file.plink.fam, "\n");
-	
-	library(snpStats);
+convert_simpe_to_plink <- function( snp.mat, snp.file.base )
+{	
+	chromosome <- snp.mat[,1];
+	position <- snp.mat[,2];
 
-	snp.mat <- try( read.plink( file.plink.bed,  file.plink.bim, file.plink.fam) );
-	if(class(snp.mat)=="try-error")
-	{
-		return(list(bSuccess=F));
-	}
-	
-	n.idv <- NROW(snp.mat$fam)
-	n.snp <- NCOL(snp.mat$genotypes)
-	cat("* Individuals =", n.idv, "SNPs=", n.snp, "\n")
-	cat("* PLINK loading successfully.\n")
-	
-	return(list(bSuccess=T, family=snp.mat$fam));
-}
-	
-check_pheno_file<-function( file.phe.long, file.phe.time, chk.family ) 
-{
-	cat("Checking phenotype file......\n");
-	cat("* PHE.LONG =", file.phe.long , "\n");
-	cat("* PHE.TIME =", file.phe.time , "\n");
+	# PLINK raw data: 1/2/3==> AA,AB,BB, 0==>NA
+	snp.mat <- snp.mat[,-c(1,2),drop=F] + 1;
 
-	phe.long <- try( read.csv(file.phe.long) );
-	if (class(phe.long)=="try-error")
-	{
-		cat("! Can not open file(", file.phe.long, ")\n");
-		return(list(bSuccess=F));
-	}
+	sub.name <- colnames(snp.mat);
+	snp.name <- rownames(snp.mat);
 	
-	phe.time <- NULL;
-	if(!is.null(file.phe.time))
-	{
-		phe.time <- try( read.csv(file.phe.time) );
-		if (class(phe.time)=="try-error")
-		{
-			cat("! Can not open file(", file.phe.time, ")\n");
-			return(list(bSuccess=F));
-		}
-	}
-	
-	if(!is.null(phe.time))
-	{
-		idx.inter <- intersect( phe.long[,1], phe.time[,1] );
-		if( !( length(idx.inter)==length(phe.long[,1]) && length(idx.inter)==length(phe.time[,1] ) ) )
-		{
-			cat("! PHE.LONG don't have consistent IDs with PHE.TIME.\n" );
-			return(list(bSuccess=F));
-		}		
-	}
+	###snps
+	dim.snps <- dim(snp.mat);
 
-	ids <- as.integer(rownames(chk.family));
-	phe.idx <- c();
-	for(i in 1:length(ids))
-	{
-		m.idx <- which(phe.long[,1]==ids[i]);
-		if (length(m.idx)==1)
-			phe.idx<-c(phe.idx, m.idx[1])
-		else
-		{
-			cat("! ID:", ids[i], "can not be found in the phenotype file.\n" );
-			next;
-		}
-		
-		if (all(is.na(phe.long[ m.idx[1],-1] )))
-			cat("! ID:", ids[i], "all time points are missed.\n" );
-	}
+	snps <- as.raw( as.matrix(snp.mat ) );
+	snps <- array(snps, dim=dim.snps);
+	colnames(snps) <- sub.name;
+	rownames(snps) <- snp.name;
+	class(snps) <- "SnpMatrix";
 
-	return(list(bSuccess=T))
+	r <- write.plink( file.base=snp.file.base, snp.major = F, snps=t(snps), 
+	    	id=sub.name, 
+	    	father=rep(0,dim.snps[2]), 
+	    	mother=rep(0,dim.snps[2]), 
+	    	sex=rep(0,dim.snps[2]), 
+	    	phenotype=rep(-9,dim.snps[2]), 
+			chromosome=chromosome, 
+			genetic.distance=position, 
+			position= position, 
+			allele.1 = rep("A",dim.snps[1]), 
+			allele.2 = rep("B",dim.snps[1]), 
+			na.code=0);
+
+	cat("Genotype files have been converted into PLINK binary format(bed/bim/fam)\n");
+
+	return(list(file.plink.bed = paste(snp.file.base, ".bed", sep=""),
+   	    	file.plink.bim = paste(snp.file.base, ".bim", sep=""),
+   	    	file.plink.fam = paste(snp.file.base, ".fam", sep="")));
 }
 
-check_covariate_file<-function( file.phe.cov, chk.family, n.cov ) 
+shrink_snpmat<-function(snp.mat, gen.list, gene.range )
 {
-	cat("Checking covariate file......\n");
-	cat("* COV.FILE =", file.phe.cov , "\n");
+	snp.mat0 <- snp.mat; 
+
+	snp.idx  <- unlist( lapply( gene.range, function(i) { which( gen.list$snps[,1] == gen.list$ids[i] ) } ) );
+	snp.name <- gen.list$snps[snp.idx,2];
 	
-	phe.cov <- try( read.table(file.phe.cov, sep=" ", header=F) );
-	if (class(phe.cov)=="try-error")
-		return(list(bSuccess=F));
+	snp.idx0 <- match( as.character(snp.name), as.character(snp.mat$map[,2]));
+	if (length(which(is.na(snp.idx0)))>0)
+		snp.idx0 <- snp.idx0[-which(is.na(snp.idx0))];
 
-	if( NCOL(phe.cov) < 2 + n.cov)
-	{
-		cat("! Insufficient covariates in the covariate file, ", NCOL(phe.cov), "<", 2 + n.cov, ".\n" );
-		return(list(bSuccess=F));
-	}	
+	if(length(snp.idx0)==0) return(NULL);
+
+	snp.mat0$genotypes <- snp.mat$genotypes[, snp.idx0, drop=F ];
+	snp.mat0$map <- snp.mat$map[snp.idx0,];
 	
-	ids <- as.integer(rownames(chk.family));
-	phe.idx<-c();
-	for(i in 1:length(ids))
-	{
-		m.idx <- which( phe.cov[,2] == ids[i] );
-		if (length(m.idx)>=1)
-			phe.idx<-c(phe.idx, m.idx[1])
-		else
-		{
-			m.idx <- which( phe.cov[,1] == ids[i] );
-			if (length(m.idx)>=1)
-				phe.idx<-c(phe.idx, m.idx[1])
-			else
-			{
-				cat("! ID:", ids[i], "can not be found in the covariate file.\n" );
-				return(list(bSuccess=F));
-			}
-		}
-	}
-
-	cat("* Individuals =", NROW(phe.cov), "\n");
-	cat("* COV.LEN =", NCOL(phe.cov)-2, "\n");
-	cat("* COV.MEAN =", colMeans(phe.cov[,-c(1:2), drop=F], na.rm=T), "\n");
-	cat("* COV.SD =", colSds(phe.cov[,-c(1:2), drop=F], na.rm=T), "\n");	
-
-	return(list(bSuccess=T))
-}
-
-check_geneset_file<-function( file.gene.set ) 
-{
-	cat("Checking gene definition file......\n");
-	cat("* GEN.SET.FILE =", file.gene.set , "\n");
-
-	tb <- try( read.table(file.gene.set, sep=" ", header=F) );
-	if(class(tb)=="try-error")
-		return(list(bSuccess=F));
-
-	genes <- unique(tb[,1]);
-	
-	cat("* GENEs =", length(genes), "\n");
-	cat("* SNPs =", NROW(tb), "\n");
-	
-	return(list(bSuccess=T))
+	return( snp.mat0 );
 }

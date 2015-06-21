@@ -199,7 +199,7 @@ get_Q_pvale<-function(Q, W)
 	return(re)
 }
 
-SKAT_Scale_Genotypes <- function(X1, Z, weights.rare=c(1,25), weights.common=c(1,1), weights=NULL, r.corr1=0, r.corr2=0)
+SKAT_Scale_Genotypes <- function(X1, Z, weights.common=c(1,1), weights.rare=c(1,25), weights=NULL, r.corr1=0, r.corr2=0)
 {
 	#X1=obj.res$X1
 	out_type="C" 
