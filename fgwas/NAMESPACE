@@ -1,4 +1,4 @@
-useDynLib(fgwas, .registration = TRUE)
+#useDynLib(fgwas, .registration = TRUE)
 
 # functions
 export(fgwas.plink)

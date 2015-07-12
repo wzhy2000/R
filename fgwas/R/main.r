@@ -77,7 +77,7 @@ fgwas.simple<-function( file.phe, file.snp, Y.prefix, Z.prefix, covariate.names,
 		
 		r.simple$filter <- r.filter$r.fgwas;
 		r.simple$org.snp.mat <- r.simple$snp.mat;
-		r.simple$snp.mat <- r.filter$snp.mat,
+		r.simple$snp.mat <- r.filter$snp.mat;
 	}
 
 	subset_op <- function(snpmat, sub.idx)
@@ -175,7 +175,7 @@ fgwas.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam,
 
 	r.est  <- fg.estimate( r.plink$phe.mat, Y.prefix, Z.prefix, covariate.names, curve, covariance )
 	if( r.est$error )
-		stop(r.est$err.info);
+		stop(r.est$err.info)
 	else
 	{
 		if(is.na(curve)) curve <- r.est$curve;	
