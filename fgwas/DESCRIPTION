@@ -1,0 +1,14 @@
+Package: fgwas
+Type: Package
+Title: Functional GWAS
+Version: 0.2
+Date: 2014-10-29
+Author: Zhong Wang and Rongling Wu
+Maintainer: Zhong Wang <wzhy2000@hotmail.com>
+Description: Functional GWAS
+License: GPL (>= 2)
+Depends: R (>= 2.12.0)
+Packaged: 2014-11-01 02:23:25 UTC; sglee
+NeedsCompilation: yes
+Repository: CRAN
+Date/Publication: 2014-11-01 07:21:49

@@ -1,0 +1,26 @@
+useDynLib(fgwas, .registration = TRUE)
+
+# functions
+export(fgwas.plink)
+export(fgwas.simple)
+export(fgwas.snpmat)
+
+export(summary.fgwas.ret)
+export(plot.fgwas.ret)
+export(show.fgwas.ret)
+
+export(fg.getCurve)
+export(fg.getCovariance)
+
+export(fg.simulate)
+export(fg.estimate)
+export(fg.snpscan)
+export(fg.permutation)
+export(fg.report)
+export(fg.plot)
+
+export(fg.addCurve);
+export(fg.addCovariance);
+
+# variables
+#export(SSD_FILE_OPEN.isOpen,SSD_FILE_OPEN.FileName)
