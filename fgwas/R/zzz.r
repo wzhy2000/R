@@ -29,7 +29,7 @@ msg <- function(...)
     fgwas.sys <<-list( curves=list(), covariances=list(), n.seed=1, log=LOG_INFO, try.slient = T, loop.est=10, loop.mle=4, mu.range.loop=100 );
 	
 	ZZZ.regcurve();
-	ZZZ.regcovar();
+	#ZZZ.regcovar();
     
     cat("========================================\n")
 }

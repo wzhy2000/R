@@ -173,7 +173,7 @@ fgwas.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam,
 	
 	r.plink$phe.mat <- r.phe$phe.mat;
 
-	r.est  <- fg.estimate( r.plink$phe.mat, Y.prefix, Z.prefix, covariate.names, curve, covariance )
+	r.est  <- fg.loadfile( r.plink$phe.mat, Y.prefix, Z.prefix, covariate.names, curve, covariance )
 	if( r.est$error )
 		stop(r.est$err.info)
 	else
@@ -387,58 +387,21 @@ fgwas.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covariate.names, c
 	}
 }
 
-summary.fGWAS.ret<-function(object, ...)
+
+fg.addCurve<-function()
 {
- 	r.fgwas <- object;
- 	#fgwas
- 	#filter
- 	#options
- 	#params
- 	#curve
- 	#covariance
- 	#est.values
- 	
-	r.sum.ret <- list();
-
-	if(!is.null(r.gls$fgwas))
-	{
-		re7 <- r.gls$fgwas;
-		fgwas.sig <- which( re7[,7] <= r.gls$options$fgwas.cutoff );
-		if(length(fgwas.sig)>0)
-		{
-			fgwas_sigs <- re7[ fgwas.sig, , drop=F];
-			fgwas.sig.inc <- order(fgwas_sigs[,7]);
-			r.sum.ret$fgwas_sig <- fgwas_sigs[fgwas.sig.inc,];
-		}
-		
-		if(!is.null(r.sum.ret$varsel))
-			r.sum.ret$varsel <- cbind(r.sum.ret$varsel, fgwas.pvalue=find_fgwas_pvalue( r.gls$fgwas, rownames(r.sum.ret$varsel) ) ) ;
-
-		if(!is.null(r.sum.ret$refit))
-			r.sum.ret$refit <- cbind(r.sum.ret$refit, fgwas.pvalue=find_fgwas_pvalue( r.gls$fgwas, rownames(r.sum.ret$refit) ) ) ;
-		
-	}
-
-	class(r.sum.ret) <- "sum.fGWAS.ret";
-	
-	r.sum.ret
 }
 
-print.sum.fGWAS.ret<-function(x, ...)
+fg.addCovariance <- function()
 {
- 	r.sum.ret <- x;
+}
 
-	if(!is.null(r.sum.ret$fgwas_sig))
-	{
-		cat("--- Significant SNPs Estimate by fGWAS method:", NROW(r.sum.ret$fgwas_sig), "SNPs\n");
-		if( NROW(r.sum.ret$fgwas_sig)>25 )
-		{
-			cat("Top 25 SNPs:\n");
-			show(r.sum.ret$fgwas_sig[1:25,,drop=F]);
-		}
-		else	
-			show(r.sum.ret$fgwas_sig);
-	}
+fg.getCovariance<-function()
+{
+}
+
+fg.loadfile<-function()
+{
 }
 
 
@@ -449,6 +412,7 @@ show_fgwas_parameters<-function( curve, covariance, Y.prefix, Z.prefix, covariat
 	cat( "* Covariate Columns =",  covariate.names, "\n");
 	cat( "* fGWAS Filter Used =",  ifelse( fgwas.filter, "Yes", "No"), "\n");
 }
+
 
 get_sig_fgwas_snp <- function( r.gls )
 {
@@ -466,44 +430,6 @@ get_sig_fgwas_snp <- function( r.gls )
 	if (length( idx.sig )==0) return(NULL);
 	
 	return(idx.sig);
-}
-
-
-plot.fGWAS.ret<-function( x, y=NULL, ... , fig.prefix=NULL )
-{
-	r.gls <- x;
-
-	if( missing(fig.prefix)) fig.prefix <- "gls.plot";
-
-	if(!is.null(r.gls$fgwas))
-	{
-		filter.man <- r.gls$fgwas[, c(1,2,7), drop=F]
-		draw_man_fgwas( filter.man, fig.prefix, "fgwas" );
-	}
-	else
-		cat("! No fGWAS filter results.\n");		
-		
-	if( !is.null(r.gls$varsel_add) || !is.null(r.gls$varsel_dom))
-	{
-		if ( !is.null(r.gls$varsel_add) )  varsel <- r.gls$varsel_add[, c(1,2), drop=F]
-		if ( !is.null(r.gls$varsel_dom) )  varsel <- r.gls$varsel_dom[, c(1,2), drop=F]
-
-		if ( !is.null(r.gls$varsel_add) ) varsel<- cbind( varsel, r.gls$varsel_add[,7] );
-		if ( !is.null(r.gls$varsel_dom) ) varsel<- cbind( varsel, r.gls$varsel_dom[,7] );
-
-		draw_man_adh2( varsel, fig.prefix, "varsel" );
-	}
-	else
-		cat("! No varible selection results.\n");		
-
-	if( !is.null(r.gls$refit_add) || !is.null(r.gls$refit_dom) )
-	{
-		refit<- merge_add_dom( r.gls$refit_add, r.gls$refit_dom);
-
-		draw_refit_curve( refit, fig.prefix, "curve" );
-	}
-	else
-		cat("! No refit results.\n");		
 }
 
 read_simple_fgwas_data <- function( file.phe, file.snp, bImputed=TRUE )
