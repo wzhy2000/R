@@ -1,23 +1,23 @@
 \name{summary.BLS.ret}
 \alias{summary.BLS.ret}
 
-\title{Summary of detection result obtained by the BLS model }
+\title{Summarize the result obtained from the BLS model }
 
 \description{ 
- Summarize a result object obtained by the BLS method.
+ Summarize the result object obtained from the BLS method.
 } 
 
 \usage{ 
-\method{summary}{BLS.ret}(object, ...) 
+\method{summary}{BLS.ret}(object, \dots) 
 }
 
 \arguments{
 \item{object}{an object obtained by \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}}}
-\item{...}{Other parameters}
+\item{\dots}{Other parameters}
 }
 
 \details{
-The summary command gives some tables of the result object r.bls which contains multiple values, and the command will export all of this values to the to the console.
+The \code{summary} command summarizes some tables of the result object \code{r.bls}, and the command exports all of this values to R console.
 }
 
 \author{Zhong Wang and Nating Wang }

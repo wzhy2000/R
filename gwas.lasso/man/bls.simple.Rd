@@ -4,7 +4,7 @@
 \title{Scan simple format dataset by the Bayesian lasso model}
 
 \description{ 
-Scan simple format dataset with single measument and detect the joint additive and dominant effects by the Bayesian lasso model (BLS model).
+Scan simple format dataset with single measurement and detect the joint additive and dominant effects by the Bayesian lasso model (BLS model).
 } 
 
 \usage{ 
@@ -19,14 +19,14 @@ bls.simple(file.phe,
       options=NULL)}
 
 \arguments{
-\item{file.phe}{Input CSV file containing one single measument and covariate data.}
+\item{file.phe}{Input CSV file containing one single measurement and covariate data.}
 \item{file.snp}{Input CSV file containing chromosome, position and genotypes of SNPs.}
 \item{Y.name}{String indicating the column name of response variable.}
 \item{covar.names}{String or vector of string indicating the column names of covariates.}
-\item{refit}{ Logical, if TRUE, the refit procedure should be processed. Default: TRUE.}
-\item{add.used}{Logical, if TRUE, the additive effects will be estimated jointly. Default: TRUE.}
-\item{dom.used}{Logical, if TRUE, the dominant effects will be estimated jointly. Default: TRUE.}
-\item{fgwas.filter}{Logical, If TRUE, the SNPs will be filtered by fGWAS model before the lasso method is applied. Default: FALSE.}
+\item{refit}{ Logical, if TRUE, the refit procedure should be processed. \cr Default: TRUE.}
+\item{add.used}{Logical, if TRUE, the additive effects will be estimated jointly. \cr Default: TRUE.}
+\item{dom.used}{Logical, if TRUE, the dominant effects will be estimated jointly. \cr Default: TRUE.}
+\item{fgwas.filter}{Logical, If TRUE, the SNPs will be filtered by fGWAS model before the lasso method is applied. \cr Default: FALSE.}
 \item{options}{A list containing the control parameters, including \code{nParallel.cpu}, \code{nMcmcIter}, \code{nPiecewise.ratio}, \code{fBurnInRound}, \code{fRhoTuning}, \code{fQval.add},\cr
 \code{fQval.dom}, \code{fgwas.cutoff}, and \code{debug}. See "Details" in the \code{\link{bls.plink}}.}
 }
@@ -40,7 +40,7 @@ An object of class \code{BLS.ret}, see "Details" in the \code{\link{bls.plink}}.
 The simple format is a user-defined format which is designed to store small amount of SNPs 
 for the users who do not use PLINK.\cr
 The genotypic data are stored in the CSV format, where each line describes a single SNP and must 
-start with 2 columns of chromosome information (chromosomenumber and SNP position).Three genotypes 
+start with 2 columns of chromosome information (chromosome number and SNP position).Three genotypes 
 (aa=0,Aa=1,AA=2) and missing data (coded as -1 or NA ) are valid SNP values.\cr
 
 }

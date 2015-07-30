@@ -1,10 +1,10 @@
 \name{plot.BLS.ret}
 \alias{plot.BLS.ret}
 
-\title{Plotting the detection result obtained by the BLS model}
+\title{Plot the results of the BLS model}
 
 \description{ 
-  Plot a result object obtained by the BLS method.
+  Plot a result object obtained from the BLS method.
 } 
 
 \usage{ 
@@ -12,34 +12,34 @@
 }
 
 \arguments{
-\item{x}{An object obtained by \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}}.}
-\item{y}{An null parameter.}
+\item{x}{An object obtained from \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}}.}
+\item{y}{An null parameter, not used. }
+\item{\dots}{Other parameters.}
 \item{fig.prefix}{String, the prefix of output file name.}
-\item{...}{Other parameters.}
 }
 
 \details{
-The function plot can output three types of PDF figure, including: \cr
+The plot function can output three types of PDF figure, including: \cr
 
-1) The Manhattan figure exported by the fGWAS method (*.fgwas.pdf) \cr
+1) The Manhattan figure exported by the fGWAS method (*.fgwas.pdf). \cr
 
-2) The genetic effects of all SNPs estimated by the variable select procedure (*. varsel.pdf.) \cr
+2) The genetic effects of all SNPs estimated by the variable selection procedure (*.varsel.pdf). \cr
 
 3) The genetic effects of significant SNPs estimated by the refit procedure (*.refit.pdf). \cr
 
-The Manhattan figure gives -log10 (p-values) for each SNP, from which the SNP with -log10 p-values 
-greater than the threshold value specified in the control parameters will be selected to variable selection.\cr
+The Manhattan figure gives -log10(p-value) for each SNP. The variable selection only selects the SNPs with -log10(p-value) 
+greater than the threshold value specified in the control parameters.\cr
 
-In the BLS model, the figures of genetic effects will output heritability sub-graph.\cr
+In the BLS model, the figures of genetic effects output heritability information.\cr
 }
 
 \author{Zhong Wang and Nating Wang }
 
 \references{
- Li, J., Das, K., Fu, G., Li, R., & Wu, R. (2011). The Bayesian lasso for genome-wide association studies. Bioinformatics, 27(4), 516-523.
+Li, J., Das, K., Fu, G., Li, R., & Wu, R. (2011). The Bayesian lasso for genome-wide association studies. Bioinformatics, 27(4), 516-523.
 }
 
-\seealso{See \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}} to generate an object. }
+\seealso{See \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}} to generate an \code{BLS.ret} object. }
 
 \examples{
 

@@ -1,10 +1,10 @@
 \name{print.sum.BLS.ret}
 \alias{print.sum.BLS.ret}
 
-\title{Printing the detection result obtained by the BLS model}
+\title{Print the results obtained from the BLS model}
 
 \description{ 
-Print a result object obtained by the BLS method.
+Print a result object obtained from the BLS method.
 } 
 
 \usage{ 
@@ -12,8 +12,8 @@ Print a result object obtained by the BLS method.
 }
 
 \arguments{
-\item{x}{An object obtained by \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}}}
-\item{...}{Other parameters}
+\item{x}{An object obtained from \code{\link{bls.simple}} or \code{\link{bls.plink}}or \code{\link{bls.snpmat}}}
+\item{\dots}{Other parameters}
 }
 
 \details{

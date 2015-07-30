@@ -4,7 +4,7 @@
 \title{ Scan PLINK dataset by the Bayesian lasso model}
 
 \description{ 
-Scan PLINK dataset with single measument and detect the joint additive and dominant effects by the Bayesian lasso Model(BLS Mode).
+Scan PLINK dataset with single measurement and detect the joint additive and dominant effects by the Bayesian lasso Model(BLS Model).
 } 
 
 \usage{
@@ -16,51 +16,54 @@ bls.plink(file.phe,
       add.used = TRUE, 
       dom.used = TRUE, 
       fgwas.filter = FALSE, 
-      options = NULL)}
+      options = NULL,
+      force.split=TRUE,
+      plink.command=NULL)}
 
 \arguments{
-\item{file.phe}{Input CSV file containing one single measument and covariate data.}
+\item{file.phe}{Input CSV file containing one single measurement and covariate data.}
 \item{file.plink.bed}{Input PLINK data file, a binary file containing genotype information.}
 \item{file.plink.bim}{Input PLINK data file, an extended map file.}
 \item{file.plink.fam}{Input PLINK data file, family information.}
 \item{Y.name}{String indicating column name of response variable.}
 \item{covar.names}{String or vector of string indicating column names of covariates. }
-\item{refit}{ Logical, if TRUE, the refit procedure should be processed. Default: TRUE.}
+\item{refit}{ Logical, if TRUE, the refit procedure should be processed. \cr Default: TRUE.}
 \item{add.used}{Logical, if TRUE, additive effects will be estimated jointly. \cr Default: TRUE.}
 \item{dom.used}{Logical, if TRUE, dominant effects will be estimated jointly. \cr Default: TRUE.}
-\item{fgwas.filter}{Logical, If TRUE, the SNPs will be filtered by fGWAS model before the LASSO method is applied. Default: FALSE.}
+\item{fgwas.filter}{Logical, if TRUE, the SNPs will be filtered by fGWAS model before the LASSO method is applied. \cr Default: FALSE.}
 \item{options}{A list containing control parameters, including \code{nParallel.cpu}, \code{nMcmcIter}, \code{nPiecewise.ratio}, \code{fBurnInRound}, \code{fRhoTuning}, \code{fQval.add},\cr
-\code{fQval.dom}, \code{fgwas.cutoff}, and \code{debug}.See blow details. 
-}
+\code{fQval.dom}, \code{fgwas.cutoff}, and \code{debug}.See blow details. }
+\item{force.split}{Logical, if TRUE, the PLINK command will be applied to extract the data for each single chromosome and then the analysis will be performed on these single chromosomes separately. \cr Default: TRUE.}
+\item{plink.command}{String, the full path of PLINK command, if not assigned, data extraction maybe failed due to PLINK command can not be found from defulat path. }
 }
 
 \value{
 An object of class \code{BLS.ret} including the following elements. 
 \item{varsel}{Matrix, additive and dominant effects estimated by the procedure of variable selection for each SNP. 
-11 columns are available, 
+Eleven columns are available, 
 \itemize{
 \item{(1) chromosome group}{}
 \item{(2) position}{}
-\item{(3) significant sign of additive effect, 1: siginificant, 0:non-significant.}{}
+\item{(3) significant sign of additive effect, 1: siginificant, 0:nonsignificant.}{}
 \item{(4) mean value of additive effect}{}
 \item{(5) minimum value of addtive effect}{}
 \item{(6) maximum value of addtive effect}{}
-\item{(7) significant sign of dominant effect, 1: siginificant, 0:non-significant.}{}
+\item{(7) significant sign of dominant effect, 1: siginificant, 0:nonsignificant.}{}
 \item{(8) mean value of dominant effect}{}
 \item{(9) minimum value of dominant effect}{}
 \item{(10) maximum value of dominant effect}{}
 \item{(11) Heritability rate}{}
 }
 }
-\item{varsel_cov}{Matrix, covariate effects estimated by the variable selection procedure, 4 columns as follows:
+\item{varsel_cov}{Matrix, covariate effects estimated by the variable selection procedure, Four columns as follows:
 \itemize{
-\item{(1) significant sign of covariate effect, 1: siginificant, 0:non-significant.}{}
+\item{(1) significant sign of covariate effect, 1: siginificant, 0:nonsignificant.}{}
 \item{(2) overall mean value of covariate effect}{}
 \item{(3) minimum value of covariate effect}{}
 \item{(4) maximum value of covariate effect}{}
 }
 }
-\item{refit}{Matrix, additive and dominant effects estimated by the refit procedure for the SNPs selected by the variable selection, 11 columns are same as the matrix of varible selection(\code{varsel}).}
+\item{refit}{Matrix, additive and dominant effects estimated by the refit procedure for the SNPs selected by the variable selection, Eleven columns are same as the matrix of varible selection(\code{varsel}).}
 \item{refit_cov}{Matrix, covariate effects estimated by the refit procedure, 4 columns are same as the matrix of varible selection(\code{varsel_cov}).}
 \item{fgwas.filter}{Matrix, the p-values estimated by fGWAS method for each SNP, 5 columns as follows:  
 \itemize{
@@ -71,12 +74,12 @@ An object of class \code{BLS.ret} including the following elements.
 \item{(5) p-value}{}
 }
 }
-\item{options}{ List, data file names and all parameters, including the control parameters defined in \code{options} }
+\item{options}{ List, data file names and all calling parameters, including the control parameters defined in \code{options} }
 }
 
 \details{
-(1) PLINK dataset\cr
-The PLINK dataset includes three files, \emph{bed},\emph{bim} and \emph{fam} file.\cr
+(1) PLINK binary dataset\cr
+The PLINK binary dataset includes three files, \emph{bed},\emph{bim} and \emph{fam} file.\cr
 The \emph{bed} file is a compressed binary file containing genotype information.\cr
 The \emph{bim} file is an extended map file where each line of this file defines a SNP information 
 containing exactly 4 columns: chromosome, SNP identifier, genetic distance and base-pair 
@@ -96,21 +99,21 @@ SNPs are remained to do lasso process.\cr
 
 (3) Variable selection and refit\cr
 A two-stage procedure based on Bayesian lasso or Group lasso is proposed, including variable selection 
-and refit process. It is necessary to refit the fGWAS model after variable selection, where only selected SNPs 
+and refit process. It is necessary to refit the lasso model after variable selection, where only selected SNPs 
 are included in the final process. The parameter \code{refit} indicates whether to carry out the refit function.\cr
 
 (4) Control parameters\cr
 The control parameters include the following items.\cr
 \itemize{
-\item{\code{nParallel.cpu}}    {Default:1, the number of the CPU used to compute.}
+\item{\code{nParallel.cpu}}    {Default:1, the number of the CPU used to calculate.}
 \item{\code{nPiecewise.ratio}} {Default:2, the ratio of grouping SNPs.}
-\item{\code{nMcmcIter}}        {Default:2000, the number of times of the MCMC algorithm execution. }
-\item{\code{fBurnInRound}}     {Default:0.3, a ratio to cut off unstable calculations in order to obtain the reasonable results.}
+\item{\code{nMcmcIter}}        {Default:2000, the number of iteration of the MCMC algorithm. }
+\item{\code{fBurnInRound}}     {Default:0.3, a ratio to cut off unstable iterations in order to obtain the reasonable results.}
 \item{\code{fRhoTuning}}       {Default:0.095, a ratio used for narrowing the scope of parameter rho to reduce parameter oscillation.}
 \item{\code{fQval.add}}        {Default:0.05, }
-\item{\code{fQval.dom}}        {Default:0.05,the Q-value of additive and dominant genetic effects respectively.}
+\item{\code{fQval.dom}}        {Default:0.05, the Q-values of additive and dominant genetic effects respectively.}
 \item{\code{fgwas.cutoff}}     {Default:0.05, a p-value cutoff for fGWAS model to select the significant marginal SNPs.}
-\item{\code{debug}}            {Default:FALSE, logical value, indicating whether or not debug should be outputted.}
+\item{\code{debug}}            {Default:FALSE, logical value, indicating whether or not debug information is outputted.}
 }
 
 }

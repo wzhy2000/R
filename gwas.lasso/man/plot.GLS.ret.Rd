@@ -1,7 +1,7 @@
 \name{plot.GLS.ret}
 \alias{plot.GLS.ret}
 
-\title{Plotting the detection result obtained by the GLS model}
+\title{Plot the results of the GLS model}
 
 \description{ 
   Plot a result object obtained by the GLS method.
@@ -12,31 +12,31 @@
 }
 
 \arguments{
-\item{x}{An object obtained by \code{\link{gls.simple}} or \code{\link{gls.plink}}or \code{\link{gls.snpmat}}}
-\item{y}{An null parameter}
+\item{x}{An object obtained from \code{\link{gls.simple}} or \code{\link{gls.plink}}or \code{\link{gls.snpmat}}}
+\item{y}{An null parameter, not used.}
 \item{fig.prefix}{String, the prefix of output file name}
 \item{...}{Other parameters}
 }
 
 \details{
-The function plot can output three types of PDF figure, including: \cr
+The plot function can output three types of PDF figure, including: \cr
 
-1) The Manhattan figure exported by the fGWAS method (*.fgwas.pdf) \cr
+1) The Manhattan figure exported by the fGWAS method (*.fgwas.pdf). \cr
 
-2) The genetic effects of all SNPs estimated by the variable select procedure (*. varsel.pdf.) \cr
+2) The genetic effects of all SNPs estimated by the variable selection procedure (*.varsel.pdf). \cr
 
 3) The genetic effects of significant SNPs estimated by the refit procedure (*.refit.pdf). \cr
 
-The Manhattan figure gives -log10 (p-values) for each SNP, from which the SNP with -log10 p-values greater than 
-the threshold value specified in the control parameters will be selected to variable selection. \cr
+The Manhattan figure gives -log10(p-value) for each SNP. The variable selection only selects the SNPs with -log10(p-value) 
+greater than the threshold value specified in the control parameters.\cr
 
-In the GLS model, the figures of genetic effects will output the time-varying additive and dominant effects for each significant SNP.
+In the GLS model, the figures of genetic effects will output the time-varying additive and dominant curves for each significant SNP.
 }
 
 \author{Zhong Wang and Nating Wang }
 
 \references{
- Li. J., Wang, Z., Li, R., Wu, R.(2015). Bayesian Group Lasso for nonparametric varying-coefficient models with application to functional genome-wide association studies. The Annals of Applied Statistics. 9(1).
+Li, J., Wang, Z., Li, R., & Wu, R. (2015). Bayesian group Lasso for nonparametric varying-coefficient models with application to functional genome-wide association studies. The Annals of Applied Statistics, 9(2), 640-664.\cr
 }
 
 \seealso{See \code{\link{gls.simple}} or \code{\link{gls.plink}}or \code{\link{gls.snpmat}} to generate an object }

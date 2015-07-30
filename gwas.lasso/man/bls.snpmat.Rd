@@ -4,7 +4,7 @@
 \title{ Scan matrix dataset by the Bayesian lasso model}
 
 \description{ 
-Scan matrix dataset with single measument and detect the joint additive and dominant effects by the Bayesian lasso model(BLS model).
+Scan matrix dataset with single measurement and detect the joint additive and dominant effects by the Bayesian lasso model (BLS model).
 } 
 
 \usage{
@@ -19,16 +19,16 @@ bls.snpmat(phe.mat,
       options = NULL)}
 
 \arguments{
-\item{phe.mat}{Matrix, phenotypic data containing one single measument and covariate data.}
+\item{phe.mat}{Matrix, phenotypic data containing one single measurement and covariate data.}
 \item{snp.mat}{Matrix, genotypic data containing chromosome, position and genotypes of SNPs.}
 \item{Y.name}{String, the column name of response variable.}
 \item{covar.names}{String or vector of string indicating the column names of covariates.}
-\item{refit}{ Logical, if TRUE, the refit procedure should be processed. Default: TRUE.}
-\item{add.used}{ Logical, if TRUE, the additive effects will be estimated jointly. Default: TRUE.}
-\item{dom.used}{ Logical, if TRUE, the dominant effects will be estimated jointly. Default: TRUE.}
-\item{fgwas.filter}{ Logical, If TRUE, the SNPs will be filtered by fGWAS model before the lasso methods is applied. Default: FALSE.}
+\item{refit}{ Logical, if TRUE, the refit procedure should be processed. \cr Default: TRUE.}
+\item{add.used}{ Logical, if TRUE, the additive effects will be estimated jointly. \cr Default: TRUE.}
+\item{dom.used}{ Logical, if TRUE, the dominant effects will be estimated jointly. \cr Default: TRUE.}
+\item{fgwas.filter}{ Logical, If TRUE, the SNPs will be filtered by fGWAS model before the lasso method is applied. \cr Default: FALSE.}
 \item{options}{A list containing control parameters, including \code{nParallel.cpu}, \code{nMcmcIter}, \code{nPiecewise.ratio}, \code{fBurnInRound}, \code{fRhoTuning}, \code{fQval.add},\cr
-\code{fQval.dom}, \code{fgwas.cutoff}, and \code{debug}.See details in the \code{\link{bls.plink}}.
+\code{fQval.dom}, \code{fgwas.cutoff}, and \code{debug}. See details in \code{\link{bls.plink}}.
 }
 }
 
@@ -42,8 +42,8 @@ The phenotypic data and genotypic data are stored in the matrix. The first two c
 
 The phenotypic matrix inludes the following columns:\cr
 1) Individual ID\cr
-2) Reponse varible(Y)\cr
-3) one or more Covarites(X, X_1,...\cr
+2) Response varible(Y)\cr
+3) One or more covariates(X, X_1,...\cr
 
 }
 
