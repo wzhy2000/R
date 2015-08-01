@@ -17,6 +17,7 @@ longskat_gene_plink_profile<-function( file.plink.bed, file.plink.bim, file.plin
 	cat( "* Covariate Time Effect: ",  options$y.cov.time, "\n");
 	cat( "* Parallel Computing: ", ifelse( options$n.cpu>1, "Yes,", "No,"), options$n.cpu,  "CPU(s)\n");
 	cat( "* Debug Output: ", ifelse( options$debug, "Yes", "No"),"\n");
+	cat( "* SNP Impute: ", options$snp.impute,"\n");
 	cat( "* C/C++ Module Used Output: ", ifelse( options$run.cpp, "Yes", "No"), "\n");
 	cat( "* Beta Weights for Common SNPs: ",  options$w.common[1], options$w.common[2], "\n");
 	cat( "* Beta Weights for Rare SNPs: ",  options$w.rare[1], options$w.rare[2], "\n");
@@ -85,7 +86,7 @@ longskat_gene_plink_profile<-function( file.plink.bed, file.plink.bim, file.plin
 	{
 		gen <- get_gen_family ( gen.list, gene.names[k] );
 		if (options$debug) cat(" Finding", length(gen$snps), "SNPs...\n");
-		gen.mat <- get_snp_mat( PF$snp.mat, gen );
+		gen.mat <- get_snp_mat( PF$snp.mat, gen, snp.impute );
 
 		if (is.null(gen.mat)) next;
 		

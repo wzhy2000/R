@@ -168,7 +168,7 @@ longskat_snp_run<-function(r.model, snp, weights.common=c(0.5,0.5), weights.rare
 
 	Q <- est_snp_Q( Y.delt, Z.scale$maf, Z.scale$new, Y.t, X, par_null, time.effect, run.cpp=run.cpp );
 
-	P <- get_Q_pvale(Q$v, Q$w);
+	P <- get_Qv_pvalue(Q$v, Q$w);
 
 	r.lskat<- list( snp.total=length(Z.scale$maf), snp.rare=Z.scale$rare, qv=Q$v, pv=P$p.value, maf=snp.info$maf, nmiss=snp.info$nmiss,
 	               mle=list(par=r.model$par, likelihood=r.model$likelihood) ); 
@@ -200,7 +200,7 @@ print.LSKAT.snp.ret<-function(r.lskat, useS4 = FALSE)
 }
 
 #private:
-longskat_snp_task<-function(r.model, snp.range, file.gene.set, PF, weights.common, weights.rare, run.cpp=F, debug=debug)
+longskat_snp_task<-function(r.model, snp.range, file.gene.set, PF, weights.common, weights.rare, run.cpp=F, snp.impute="mean", debug=debug)
 {
 	gen.tb <- read.table(file.gene.set, sep=" ", header=F);
 
@@ -243,22 +243,22 @@ longskat_snp_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, fi
 	cat( "[ LONGSKAT_SNP_PLINK ] Procedure\n");
 	cat( "Checking the optional items......\n");
 
+	if (missing(options)) 
+		options <- get_default_options()
+	else	
+	{
+		options0 <- get_default_options();
+		options0[names(options)] <- options;
+		options <- options0;
+	}
+
 	cat( "* Covariate Count: ",  options$y.cov.count,  "\n");
 	cat( "* Covariate Time Effect: ",  options$y.cov.time, "\n");
-
-	if (is.null(options$n.cpu)   || is.na(options$n.cpu)) options$n.cpu<-1;
 	cat( "* Parallel Computing: ", ifelse( options$n.cpu>1, "Yes,", "No,"), options$n.cpu,  "CPU(s)\n");
-
-	if (is.null(options$debug)   || is.na(options$debug)) options$debug<-FALSE;
 	cat( "* Debug Output: ", ifelse( options$debug, "Yes", "No"),"\n");
-
-	if (is.null(options$run.cpp) || is.na(options$run.cpp)) options$run.cpp<-TRUE;
+	cat( "* SNP Impute: ",  options$snp.impute, "\n");
 	cat( "* C/C++ Module Used Output: ", ifelse( options$run.cpp, "Yes", "No"), "\n");
-
-	if (is.null(options$weights.common)|| is.na(options$weights.common)) options$weights.common<-c(0.5,0.5);
 	cat( "* Beta Weights for Common SNPs: ",  options$weights.common[1], options$weights.common[2], "\n");
-	
-	if (is.null(options$weights.rare)  || is.na(options$weights.rare)) options$weights.rare<-c(1,25);
 	cat( "* Beta Weights for Rare SNPs: ",  options$weights.rare[1], options$weights.rare[2], "\n");
 
 	chk.genset <- check_geneset_file( file.gene.set )
@@ -328,7 +328,7 @@ longskat_snp_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, fi
 		
 		PF <- read_gen_phe_cov ( PF.par$file.plink.bed, PF.par$file.plink.bim, PF.par$file.plink.fam, PF.par$file.phe.long, PF.par$file.phe.cov );
 		
-		ret.cluster <- longskat_snp_task( r.model, snp.range0, PF.par$file.gene.set, PF, weights.common=options$weights.common, weights.rare=options$weights.rare, run.cpp=options$run.cpp, debug=options$debug );
+		ret.cluster <- longskat_snp_task( r.model, snp.range0, PF.par$file.gene.set, PF, weights.common=options$weights.common, weights.rare=options$weights.rare, run.cpp=options$run.cpp, snp.impute=options$snp.impute, debug=options$debug );
 
 		return(ret.cluster);
 	}
@@ -352,7 +352,7 @@ longskat_snp_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, fi
 	else
 	{
 		cat("Starting the LSKAT estimate for each gene......\n");
-		lskat.ret <- longskat_snp_task( r.model, snp.range, file.gene.set, PF, weights.common=options$weights.common, weights.rare=options$weights.rare, run.cpp=options$run.cpp, debug=options$debug );
+		lskat.ret <- longskat_snp_task( r.model, snp.range, file.gene.set, PF, weights.common=options$weights.common, weights.rare=options$weights.rare, run.cpp=options$run.cpp, snp.impute=options$snp.impute, debug=options$debug );
 	}
 	
 	tm <- proc.time() - tm.start;

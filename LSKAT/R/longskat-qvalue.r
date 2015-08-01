@@ -192,12 +192,20 @@ Get_Lambda<-function(K){
 	return(lambda)
 }
 
-get_Q_pvale<-function(Q, W)
+get_Qv_pvalue<-function(Q, W)
 {
 	lambda<-Get_Lambda(W)
 	re<-Get_PValue.Lambda(lambda,Q)
 	return(re)
 }
+
+get_Qu_pvalue<-function(Q, W)
+{
+	lambda<-Get_Lambda( matrix(1, nrow=NROW(W), ncol=NCOL(W) ) %*% W )
+	re<-Get_PValue.Lambda(lambda,Q)
+	return(re)
+}
+
 
 SKAT_Scale_Genotypes <- function(X1, Z, weights.common=c(1,1), weights.rare=c(1,25), weights=NULL, r.corr1=0, r.corr2=0)
 {

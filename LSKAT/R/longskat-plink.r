@@ -51,7 +51,7 @@ get_snp_plink_info<-function(idx, snp.mat, gen.tb=NA)
 	return(list(snp=snp.imp, maf=snp.maf, name=snp.map$snp.name, chr=snp.map$chromosome, loc=snp.map$position, gene=gene.name, nmiss=length(s.miss), miss=s.miss ) );
 }
 
-get_snp_mat<-function(snp.mat, gen.info)
+get_snp_mat<-function(snp.mat, gen.info, snp.impute="mean")
 {
 	snps <- match(as.character(gen.info$snps), as.character(snp.mat$map[,2]));
 	if (length(which(is.na(snps)))>0)
@@ -71,20 +71,27 @@ get_snp_mat<-function(snp.mat, gen.info)
 
 		if (length(s.miss)>0)
 		{
-			n.s0 <- length( which( s.mat.i == 0 ) );
-			n.s1 <- length( which( s.mat.i == 1 ) );
-			n.s2 <- length( which( s.mat.i == 2 ) );
-			n.s  <- length(s.mat.i)
-			
-			r.miss<- runif( length(s.miss) );
-			r.snp <- rep(2, length(s.miss));
-			r.snp[r.miss <= n.s0/n.s ]<-0;
-			r.snp[r.miss <= (n.s0 + n.s1)/n.s ]<-1;
-			s.mat.i[s.miss] <- r.snp;
+			if(snp.impute=="mean")
+			{
+				s.mat.i[s.miss] <- mean(s.mat.i, na.rm=T);
+			}
+			else
+			{
+				n.s0 <- length( which( s.mat.i == 0 ) );
+				n.s1 <- length( which( s.mat.i == 1 ) );
+				n.s2 <- length( which( s.mat.i == 2 ) );
+				n.s  <- length(s.mat.i)
+
+				r.miss<- runif( length(s.miss) );
+				r.snp <- rep(2, length(s.miss));
+				r.snp[r.miss <= n.s0/n.s ]<-0;
+				r.snp[r.miss <= (n.s0 + n.s1)/n.s ]<-1;
+				s.mat.i[s.miss] <- r.snp;
+			}
 		}
 		
 		if (mean(s.mat.i)/2>0.5) s.mat.i <- 2 - s.mat.i;
-
+	   
 		snp.imp <- rbind( snp.imp, s.mat.i );
 		snp.maf <- c(snp.maf, mean(s.mat.i)/2);
 		snp.names <- c(snp.names, gen.info$snps[i]);
