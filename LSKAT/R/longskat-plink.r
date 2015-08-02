@@ -184,6 +184,8 @@ read_gen_phe_cov<-function(file.plink.bed, file.plink.bim, file.plink.fam, file.
 		snp.mat$genotypes<- snp.mat$genotypes[idx.fam,]
 		snp.mat$fam      <- snp.mat$fam[idx.fam,]
 		ids.fam <- as.character(snp.mat$fam$member);
+
+		cat("* PLINK (", length(ids.fam) - length(ids.set), ") individuals are removed.\n");
 	}
 
 	if( !is.null(phe.time) && !all( phe.long[,1] == phe.time[,1]) )
