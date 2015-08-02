@@ -77,7 +77,7 @@ longskat_gene_plink_profile<-function( file.plink.bed, file.plink.bim, file.plin
 
 	tm.start <- proc.time();
 	
-	gen.list <- read_gen_dataset(file.gene.set);
+	gen.list <- read_gen_dataset(file.gene.set, file.plink.bim);
 	
 	rs.lst <- list();
 	rs.lst.idx <- 0;

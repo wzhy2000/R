@@ -41,21 +41,21 @@ est_gen_Q.R<-function(Y.delt, Y.time, maf, Z, X, par_null, y.cov.time)
 		Y.j_x <- list();
 		M.j_x <- c();
 
-		hdummy<-lapply(1:n, function(i){
+		for(i in 1:n){
 			y.i <- Y.delt[i,];
 			y.j_i <- V.j[!is.na(y.i), !is.na(y.i)];
 			V.j_x[[i]] <- solve(y.j_i);
 			Y.j_x[[i]] <- y.i[!is.na(y.i)];
 			M.j_x[i] <- length(Y.j_x[[i]]);
-		});
+		}
 
-		hdummy<-lapply(1:k, function(i){
+		for(i in 1:k){
 			Q.i <- 0;
 			for(j in 1:n)
 				Q.i <- Q.i + Z[j,i]*t(rep(1, M.j_x[j] )) %*% V.j_x[[j]] %*% (Y.j_x[[j]])
 			Q.v <- Q.v + (Q.i)^2;
 			Q.u <- Q.u + Q.i;
-		});
+		}
 		
 		Q.v <- Q.v/2;
 		Q.u <- Q.u^2/2;
@@ -66,7 +66,7 @@ est_gen_Q.R<-function(Y.delt, Y.time, maf, Z, X, par_null, y.cov.time)
 		W2 <- array(0, dim=c(n.x,n.x));
 		W3 <- array(0, dim=c(n.x,k));
 		
-		hdummy<-lapply(1:k, function(i){
+		for (i in 1:n){
 			m.i <- M.j_x[i] ;
 
 			kr.X<- kronecker( X[i,,drop=F], array(1, dim=c(m.i,1)) )
@@ -86,7 +86,7 @@ est_gen_Q.R<-function(Y.delt, Y.time, maf, Z, X, par_null, y.cov.time)
 			W1 <- W1 + t(kr.Z) %*% V.j_x[[i]] %*% kr.X;
 			W2 <- W2 + t(kr.X) %*% V.j_x[[i]] %*% kr.X;
 			W3 <- W3 + t(kr.X) %*% V.j_x[[i]] %*% kr.Z;
-		});
+		}
 		
 		Q.w <- W0 - W1 %*% solve(W2) %*% W3;
 	}
@@ -173,6 +173,8 @@ longskat_gene_task<-function(r.model, gene.range, PF, gen.list, weights.common, 
 	snpmat <- shrink_snpmat(PF$snp.mat, gen.list, gene.range );
 	if(is.null(snpmat))
 		stop("No SNP selected from PLINK files.");
+
+	if(debug) cat("Shrinked genotype data!\n");
 
 	for(i in gene.range )
 	{
@@ -284,7 +286,7 @@ longskat_gene_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, f
 	cat("* Beta(Time) =",r.model$par$par_t, "\n");
 	cat("* L(min) =",    r.model$likelihood, "\n");
 
-	gen.list <- read_gen_dataset( file.gene.set );
+	gen.list <- read_gen_dataset( file.gene.set, file.plink.bim );
 	
 	if (is.null(gene.range)) 
 		gene.range<- c(1:gen.list$len)

@@ -1,8 +1,14 @@
-read_gen_dataset<-function( file.set )
+read_gen_dataset<-function( file.set, file.bim )
 {
-	tb <- read.table(file.set, sep=" ", header=F);
-	genes <- unique(tb[,1]);
-	return(list(len=length(genes), ids=genes, snps=tb));
+	tb.bim <- read.table(file.bim);
+	snp <- tb.bim$V2;
+	
+	tb.gen <- read.table(file.set, sep=" ", header=F);
+	idx <- match(tb.bim$V2, tb.gen$V2)
+	
+	genes <- unique(tb.gen[idx,1]);
+	
+	return(list(len=length(genes), ids=genes, snps=tb.gen[idx,]));
 }
 
 get_gen_group<-function(gen.list, idx)
@@ -232,9 +238,10 @@ convert_simpe_to_plink <- function( snp.mat, snp.file.base )
 shrink_snpmat<-function(snp.mat, gen.list, gene.range )
 {
 	snp.mat0 <- snp.mat; 
-
-	snp.idx  <- unlist( lapply( gene.range, function(i) { which( gen.list$snps[,1] == gen.list$ids[i] ) } ) );
-	snp.name <- gen.list$snps[snp.idx,2];
+	
+	#snp.idx  <- unlist( lapply( gene.range, function(i) { which( gen.list$snps[,1] == gen.list$ids[i] ) } ) );
+	snp.idx <- which(!is.na(match(gen.list$snp[,1], gen.list$id[gene.range])))
+	snp.name <- unique( gen.list$snps[snp.idx,2] );
 	
 	snp.idx0 <- match( as.character(snp.name), as.character(snp.mat$map[,2]));
 	if (length(which(is.na(snp.idx0)))>0)
