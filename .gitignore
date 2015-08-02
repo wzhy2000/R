@@ -6,3 +6,10 @@
 
 # R data files from past sessions
 .Rdata
+
+# C/C++ compiled object
+.o
+
+# PDF file
+.pdf
+
