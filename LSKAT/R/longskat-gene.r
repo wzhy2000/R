@@ -132,7 +132,7 @@ longskat_gene_run<-function( r.model, snp.mat, weights.common=c(0.5,0.5), weight
 	pv <- get_Qv_pvalue(Q$v, Q$w);
 	pu <- get_Qu_pvalue(Q$u, Q$w);
 
-	if(debug) cat( " MAF=", (Z.scale$maf), "\n");
+	# if(debug) cat( " MAF=", (Z.scale$maf), "\n");
 	
 	r.lskat <- list( mle = r.model, snp.total=length(Z.scale$maf), snp.rare=Z.scale$rare, qv=Q$v, pv=pv$p.value, qu=Q$u, pu=pu$p.value);
 	class(r.lskat) <- "LSKAT.gen.ret";
@@ -181,27 +181,31 @@ longskat_gene_task<-function(r.model, gene.range, PF, gen.list, weights.common, 
 		if (is.na(i)) next;
 		
 		gen <- get_gen_group( gen.list, i );
-		if (debug) cat(" Finding", length(gen$snps), "SNPs...\n");
+		if (debug) cat("  Finding", length(gen$snps), "SNPs...\n");
 
-		gen.mat <- get_snp_mat( snpmat, gen, snp.impute );
-		if(is.null(gen.mat)) next;
-
-		if (length(gen.mat$maf)==0) next;
-		
-		#gen.mat$snp:[P,N]=>[N,P]
-		ls <- longskat_gene_run(r.model, t(gen.mat$snp), weights.common=weights.common, weights.rare=weights.rare, run.cpp=run.cpp, debug = debug);
-		
-		if(is.null(ls))
+		gen.mat <- try( get_snp_mat( snpmat, gen, snp.impute ) );
+		if( is.null(gen.mat) || class(gen.mat)=="try-error" || length(gen.mat$maf)==0 ) 
 		{
-			cat("! Failed to calculate Gene[", i, "]=", as.character(gen$name), "\n");
+			if (debug) cat("! No SNPS for Gene[", i, "]=", as.character(gen$name), "\n");
 			next;
-		}	
-		
-		rs.lst.idx <- rs.lst.idx + 1;
-		rs.lst[[rs.lst.idx]] <- c(i, min(gen.mat$info[,2]), min(gen.mat$info[,3]), ls$snp.total, ls$snp.rare, ls$qv, ls$pv, ls$qu, ls$pu );
-		rs.name <- c(rs.name, as.character(gen$name));
+		}
+	
+		#gen.mat$snp:[P,N]=>[N,P]
+		ls <- try( longskat_gene_run(r.model, t(gen.mat$snp), weights.common=weights.common, weights.rare=weights.rare, run.cpp=run.cpp, debug = debug) );
 
-		if(debug) cat(" [", i, "]", as.character(gen$name), ls$snp.total,ls$snp.rare, ls$qv, ls$pv, ls$qu, ls$pu,"\n");
+		rs.lst.idx <- rs.lst.idx + 1;
+		rs.name <- c(rs.name, as.character(gen$name));
+		
+		if(is.null(ls) || class(ls) == "try-error" )
+		{
+			rs.lst[[rs.lst.idx]] <- c( i, min(gen.mat$info[,2]), min(gen.mat$info[,3]), NROW(gen.mat$mat), NA, NA, NA, NA, NA );
+			cat("! Failed to calculate Gene[", i, "]=", as.character(gen$name), "\n");
+		}	
+		else
+		{
+			rs.lst[[rs.lst.idx]] <- c(i, min(gen.mat$info[,2]), min(gen.mat$info[,3]), ls$snp.total, ls$snp.rare, ls$qv, ls$pv, ls$qu, ls$pu );
+			if(debug) cat(" [", i, "]", as.character(gen$name), ls$snp.total,ls$snp.rare, ls$qv, ls$pv, ls$qu, ls$pu,"\n");
+		}
 	}	
 
 	rs <- do.call( "rbind", rs.lst );
