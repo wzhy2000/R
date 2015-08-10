@@ -120,8 +120,8 @@ show(head(y.time));
 	min.val <- Inf;
 	min.par <- par.init;
 
-if(0)
-{
+#if(0)
+#{
 	while( loop.n <= g.maxiter && tolerance > 1e-5 )
 	{
 		r0 <- try( optim( par.init, get_par, y = y.log, y.time=y.time, y.cov=y.cov, method = "BFGS", control=list(maxit=500) ), silent = F );
@@ -148,10 +148,10 @@ if(0)
 
 		par.init <- par.init*runif( length(par.init), 0.8, 1.2 );
 	}
-}
-min.par <- c( 0.9547819,0.001353964, 4.391251, -0.7643996, 29.70828, -1.628676, -0.0157181, 1.041869, 17.94511, 2.521273, -27.39673, 15.84292);
-min.val <-  37791.93;
-loop.n <- 5.2;
+#}
+#min.par <- c( 0.9547819,0.001353964, 4.391251, -0.7643996, 29.70828, -1.628676, -0.0157181, 1.041869, 17.94511, 2.521273, -27.39673, 15.84292);
+#min.val <-  37791.93;
+#loop.n <- 5.2;
 	
 	if(debug) cat("  Final =", loop.n, " min.val=", min.val, "par=", min.par, "\n");
 	
