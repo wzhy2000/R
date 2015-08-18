@@ -170,7 +170,9 @@ do.plink.qc2 <- function( plink.obj, options=NULL )
 		folder = "qc2",
 		plink.out.mds   = plink.out.mds, 
 		plink.out.bfile = plink.out.bfile );
-		
+	
+	plink.obj$genotype$qc2 <- plink.out.bfile;
+	
 	return( plink.obj );
 }
 
@@ -203,6 +205,7 @@ do.post.qc2 <- function( plink.obj, options=list(mds.cov=5) )
 		cat(t2, file = plink.out.log, append = TRUE);	
 	}
 
+	plink.obj$phenotype$qc.cov <- file.pca.cov;
 	plink.obj$qc2$file.pca.cov <- file.pca.cov;
 	return(plink.obj);
 }

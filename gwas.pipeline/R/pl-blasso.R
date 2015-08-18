@@ -1,4 +1,4 @@
-do.blasso<-function( plink.obj, options=list() )
+do.blasso<-function( plink.obj, options=list( qc.method="qc2" ) )
 {
 	library(gwas.lasso)
 	
@@ -38,10 +38,15 @@ do.blasso<-function( plink.obj, options=list() )
 	write.csv( newphe, file=newphe.csv , row.names=F, quote=F);
 
 	show(head(newphe));
+	
+	plink.bfile <- plink.obj$genotype$plink.bfile.nobed;
+	if(options$qc.method=="qc2") plink.obj$genotype$qc2
+	if(options$qc.method=="impute") plink.obj$genotype$impute
+		
+	file.plink.bed <- paste( plink.bfile, "bed", sep="." );
+	file.plink.bim <- paste( plink.bfile, "bim", sep="." );
+	file.plink.fam <- paste( plink.bfile, "fam", sep="." );
 
-	file.plink.bed <- paste( plink.obj$qc2$plink.out.bfile, "bed", sep="." );
-	file.plink.bim <- paste( plink.obj$qc2$plink.out.bfile, "bim", sep="." );
-	file.plink.fam <- paste( plink.obj$qc2$plink.out.bfile, "fam", sep="." );
 	file.ret.rdata <- "blasso/blasso-ret.rdata";
 
 	ret <- bls.plink( newphe.csv, 

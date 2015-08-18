@@ -1,4 +1,4 @@
-do.LSKAT <- function(plink.obj, options=NULL)
+do.LSKAT <- function(plink.obj, options=list(qc.method="qc2") )
 {
 	library(LSKAT);
 	cat("[ LSKAT ...]\n");
@@ -19,9 +19,13 @@ do.LSKAT <- function(plink.obj, options=NULL)
 	file.phe.cov   <- plink.obj$qc2$file.pca.cov;
 	file.gene.set  <- plink.obj$gene$file.gene.hg19;
 	
-	file.plink.bed <- paste( plink.obj$qc2$plink.out.bfile, "bed", sep=".");
-	file.plink.bim <- paste( plink.obj$qc2$plink.out.bfile, "bim", sep=".");
-	file.plink.fam <- paste( plink.obj$qc2$plink.out.bfile, "fam", sep=".");
+	plink.bfile <- plink.obj$genotype$plink.bfile.nobed;
+	if(options$qc.method=="qc2") plink.obj$genotype$qc2
+	if(options$qc.method=="impute") plink.obj$genotype$impute
+		
+	file.plink.bed <- paste( plink.bfile, "bed", sep="." );
+	file.plink.bim <- paste( plink.bfile, "bim", sep="." );
+	file.plink.fam <- paste( plink.bfile, "fam", sep="." );
 
 	file.ret.rdata <- "lskat/lskat-ret.rdata"
 

@@ -1,4 +1,4 @@
-do.plink.gwas <- function( plink.obj, options=NULL)
+do.plink.gwas <- function( plink.obj, options=list())
 {
 	subDir  <- "plink.gwas/"
 	mainDir <- plink.obj$main.path;
