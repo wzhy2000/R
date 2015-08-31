@@ -159,12 +159,22 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 	else	
 	{
 		options0 <- get_default_options();
-        	options0[names(options)] <- options;
-        	options <- options0;
-    	}
+       	options0[names(options)] <- options;
+       	options <- options0;
+    }
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
+	
+	options$params <- list( file.phe     = file.phe, 
+				file.snp     = file.snp, 
+				Y.name       = Y.name, 
+				covar.names  = covar.names, 
+				refit        = refit, 
+				add.used     = add.used, 
+				dom.used     = dom.used, 
+				fgwas.filter = fgwas.filter);
+
 	
 	r.bls <- list();
 	r.filter <- list();
@@ -199,8 +209,9 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 		if(fgwas.filter)
 		{
 			r.filter <- snpmat_fgwas_filter( simple$phe.mat, simple$snp.mat, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS");
-			if( r.filter$error )
-				stop(r.filter$err.info);
+			
+			if( r.filter$error ) stop(r.filter$err.info);
+			if( is.null(r.filter$snp.mat)) return( wrap_fgwas_ret( r.filter, options) ); 
 		
 			r.bls <- snpmat_parallel(
 				NROW( r.filter$snp.mat ),
@@ -248,15 +259,6 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 		}
 	}
 	
-	options$params <- list( file.phe     = file.phe, 
-				file.snp     = file.snp, 
-				Y.name       = Y.name, 
-				covar.names  = covar.names, 
-				refit        = refit, 
-				add.used     = add.used, 
-				dom.used     = dom.used, 
-				fgwas.filter = fgwas.filter);
-
 	if(!is.null(r.bls) && !is.na(r.bls))
 	{
 		r <- wrap_BLS_ret( r.bls, r.filter, options );
@@ -314,6 +316,17 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	cat( "Checking the optional items......\n");
 	show_options( options);
 
+	options$params <- list( file.phe     = file.phe, 
+				file.plink.bed = file.plink.bed, 
+				file.plink.bim = file.plink.bim, 
+				file.plink.fam = file.plink.fam,
+				Y.name       = Y.name, 
+				covar.names  = covar.names, 
+				refit        = refit, 
+				add.used     = add.used, 
+				dom.used     = dom.used, 
+				fgwas.filter = fgwas.filter);
+	
 	pd <- list();
 	r.filter <- list();
 	
@@ -324,8 +337,7 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 
 	    r.filter <- plink_fgwas_bigdata ( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe, plink.command, 
 	    						          Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS");
-		if( r.filter$error )
-			stop(r.filter$err.info);
+		if( r.filter$error ) stop(r.filter$err.info);
 
 	    fgwas.filter <- TRUE;
 
@@ -341,8 +353,8 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 		{
 			# call FGWAS.R to do FILTER and the bls_snpmat
 			r.filter <- plink_fgwas_filter( pd, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS")
-			if( r.filter$error )
-				stop(r.filter$err.info);
+
+			if( r.filter$error ) stop(r.filter$err.info);
 		}				
 	}
 	
@@ -350,6 +362,8 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 
 	if( fgwas.filter )
 	{
+		if( is.null(r.filter$snp.mat)) return( wrap_fgwas_ret( r.filter, options) ); 
+	
 		subset_op <- function(snpmat, sub.idx)
 		{
 			return( snpmat[sub.idx,,drop=F] );
@@ -407,17 +421,6 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 			options$nParallel.cpu,
 			"BLS");
 	}
-	
-	options$params <- list( file.phe     = file.phe, 
-				file.plink.bed = file.plink.bed, 
-				file.plink.bim = file.plink.bim, 
-				file.plink.fam = file.plink.fam,
-				Y.name       = Y.name, 
-				covar.names  = covar.names, 
-				refit        = refit, 
-				add.used     = add.used, 
-				dom.used     = dom.used, 
-				fgwas.filter = fgwas.filter);
 	
 	if(!is.null(r.bls) && !is.na(r.bls))
 	{
@@ -541,12 +544,19 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 	else	
 	{
 		options0 <- get_default_options();
-        	options0[names(options)] <- options;
-        	options <- options0;
+       	options0[names(options)] <- options;
+       	options <- options0;
     }
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
+
+	options$params <- list( Y.name       = Y.name, 
+				covar.names  = covar.names, 
+				refit        = refit, 
+				add.used     = add.used, 
+				dom.used     = dom.used, 
+				fgwas.filter = fgwas.filter);
 
 	if( class(phe.mat)=="data.frame" )
  	{
@@ -590,8 +600,9 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 		if(fgwas.filter)
 		{
 			r.filter <- snpmat_fgwas_filter( phe.mat, snp.mat, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS")
-			if( r.filter$error )
-				stop(r.filter$err.info);
+
+			if( r.filter$error ) stop(r.filter$err.info);
+			if( is.null(r.filter$snp.mat)) return( wrap_fgwas_ret( r.filter, options) ); 
 		
 			r.bls <- snpmat_parallel(
 				NROW(r.filter$snp.mat),
@@ -639,13 +650,6 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 		}
 	}
 	
-	options$params <- list( Y.name       = Y.name, 
-				covar.names  = covar.names, 
-				refit        = refit, 
-				add.used     = add.used, 
-				dom.used     = dom.used, 
-				fgwas.filter = fgwas.filter);
-
 	if(!is.null(r.bls) && !is.na(r.bls))
 	{
 		r <- wrap_BLS_ret( r.bls, r.filter, options );

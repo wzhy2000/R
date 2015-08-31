@@ -454,39 +454,60 @@ bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 
 get_sigsnp_nomulti_correction<-function( f_get_snpmat, snp.obj, r.fgwas, n.snp, n.ind, fgwas.cutoff=0.05, only.sig.snp=FALSE, include.na.pvalue=TRUE )
 {
-	if( n.snp <= n.ind & !only.sig.snp)
+	if( n.snp <= n.ind && !only.sig.snp)
 	{
 		snp.mat <- f_get_snpmat( snp.obj, 1:n.snp );
 		return(list(error=F, snp.mat=snp.mat ));
 	}	
 	
-	n.sig <- length( which( r.fgwas[,7] <= fgwas.cutoff ) );
+	pv <- r.fgwas[,7];
+
+	# in order to keep NA element in the vector , replace NA with Inf.
+	pv [ is.na(pv) ] <- Inf;
+	
+	n.sig <- length( which( pv <= fgwas.cutoff ) );
 	cat("  SNPs with p-value <=", fgwas.cutoff, ":", n.sig, "\n"); 
 	
 	#sorting pv field
-	pv.sort  <- sort.int( r.fgwas[,7], decreasing=F, index.return=T);
-	
-	if( n.sig < n.ind && !only.sig.snp)
+	pv.sort  <- sort.int( pv, decreasing=F, index.return=T);
+
+	sel.p <- c();	
+	if ( only.sig.snp )
 	{
-		cat("  The count of significant SNPs is less than individual count.\n"); 
-		sel.p <- pv.sort$ix[1:n.ind];
-		sel.id <- r.fgwas[ sel.p, 1 ];
+		## Here is (n.snp > n.ind) && (only.sig.snp)
+		if ( length( which( pv.sort$x <= fgwas.cutoff) ) >0)
+		{
+			max.idx <- max( which( pv.sort$x <= fgwas.cutoff) );
+			sel.p <- pv.sort$ix[1:max.idx];
+		}
 	}
 	else
 	{
-		min.idx <- min( which(pv.sort$x > fgwas.cutoff) ) - 1;
-		sel.p <- pv.sort$ix[1:min.idx];
-
-		if( include.na.pvalue )
-			sel.p<- c( sel.p, which(is.na(r.fgwas[,7])) );
-		
-		sel.id <- r.fgwas[ sort(sel.p), 1 ];
+		## Here is (n.snp > n.ind) && (!only.sig.snp)
+		if( n.sig < n.ind )
+		{
+			cat("  The count of significant SNPs is less than individual count.\n"); 
+			sel.p <- pv.sort$ix[1:n.ind];
+		}
+		else
+		{
+			## Assert max.idx > 0
+			max.idx <- max( which( pv.sort$x <= fgwas.cutoff) );
+			sel.p <- pv.sort$ix[1:max.idx];
+		}
 	}
-
-	# debug for crash
-	# save( snp.obj, sel.id, r.fgwas, f_get_snpmat, fgwas.cutoff, file="before-crash.rdata");
+	
+	if( include.na.pvalue )
+		sel.p<- c( sel.p, which(is.na(r.fgwas[,7])) ) ;
+	
+	# if NO SNPs are slected.
+	if( length(sel.p)==0 )
+		return(list(error=F, snp.mat=NULL));
+	
+	sel.id <- r.fgwas[ sort(sel.p), 1 ];
 
 	snp.mat <- f_get_snpmat( snp.obj, sel.id );
+
 	return(list(error=F, snp.mat=snp.mat));
 }
 

@@ -40,15 +40,15 @@ do.blasso<-function( plink.obj, options=list( qc.method="qc2" ) )
 	show(head(newphe));
 	
 	plink.bfile <- plink.obj$genotype$plink.bfile.nobed;
-	if(options$qc.method=="qc2") plink.obj$genotype$qc2
-	if(options$qc.method=="impute") plink.obj$genotype$impute
+	if(options$qc.method=="qc2") plink.bfile <- plink.obj$genotype$qc2
+	if(options$qc.method=="impute") plink.bfile <- plink.obj$genotype$impute
 		
 	file.plink.bed <- paste( plink.bfile, "bed", sep="." );
 	file.plink.bim <- paste( plink.bfile, "bim", sep="." );
 	file.plink.fam <- paste( plink.bfile, "fam", sep="." );
 
 	file.ret.rdata <- "blasso/blasso-ret.rdata";
-
+    
 	ret <- bls.plink( newphe.csv, 
 			file.plink.bed, 
 			file.plink.bim, 
@@ -58,13 +58,15 @@ do.blasso<-function( plink.obj, options=list( qc.method="qc2" ) )
 			refit = TRUE, 
 			add.used = T, 
 			dom.used = T, 
-			fgwas.filter = T,       
-            options=list(nParallel.cpu = 7) )
+			fgwas.filter = T,
+			 force.split=T,
+			 plink.command = plink.obj$plink.path,
+            options=options )
 
 	save(ret, file=file.ret.rdata);
 	summary(ret);
 	plot(ret);
 	
-	plink.obj$blasso <- list(rdata=file.ret.rdata);
+	plink.obj$blasso <- list(phe.csv=newphe.csv, plink.bfile=plink.bfile, rdata=file.ret.rdata, options=options);
 	return( plink.obj );
 }
