@@ -237,11 +237,11 @@ draw_single_curve<-function( snp_name, add=NULL, dom=NULL )
 
 	legend( "topright", 
 			legend = cur.lab,
-	                text.width = strwidth("ABC"),
+			text.width = strwidth("ABC"),
 			text.col = cur.col,
-	                col = cur.col,
+			col = cur.col,
 			lty=1,
-	                xjust = 1, 
-	                yjust = 1,
+			xjust = 1, 
+			yjust = 1,
 			cex=0.8)
 }

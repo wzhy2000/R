@@ -273,7 +273,7 @@ gls.fgwas <- function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names=NULL, o
 			if(length(na.row)>0) gls.mat <- gls.mat[-na.row,,drop=F];
 	
 			r0 <- try( do.call("gls", args = list(reg.f0, gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML") ) );
-		    r1 <- try( do.call("gls", args = list(reg.f1, gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML") ) );
+			r1 <- try( do.call("gls", args = list(reg.f1, gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML") ) );
 			if(any(class(r1)=="try-error") || any(class(r0)=="try-error") )
 			{
 				r.gls[i-range.fr+1,] <- c( i, snp.mat[i,1], snp.mat[i,2], length(na.row), maf, NA, pv.max );
@@ -348,8 +348,8 @@ bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 	if(length(phe.missing)>0)
 		phe.mat <- phe.mat[-phe.missing, , drop=F ];
 
-    str01 <- paste(Y.name, "~", paste(covar.names,collapse= "+") );
-    str00 <- paste(Y.name,"~ 1");
+	str01 <- paste(Y.name, "~", paste(covar.names,collapse= "+") );
+	str00 <- paste(Y.name,"~ 1");
 	reg.str0 <- ifelse( len.x>0, str01, str00 );
 
 	cat("* H0 =", as.character(reg.str0), "\n" );
