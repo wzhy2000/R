@@ -118,26 +118,26 @@ gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu
 	if ( length(simu_dom_pos)>0 ) simu_dom_mat <- as.matrix( cbind( simu_dom_pos, simu_dom_effect) );
 	
 	out <- .C("gls_simulate", 
-			as.character(file.phe.out),			  # char* szPhe_out
-			as.character(file.snp.out), 			  # char* szSnp_out
-			as.integer(simu_grp), 			      # int nSimu_grp
-			as.integer(simu_n), 				      # int nSimu_n
-			as.integer(simu_p), 				      # int nSimu_p
-			as.double(simu_snp_rho), 			  # double fSimu_snp_rho
-			as.double(simu_snp_missing), 		  # double fSimu_snp_missing
-			as.double(simu_rho), 			      # double fSimu_rho
-			as.double(simu_sigma2), 			      # double fSimu_sigma2
-			as.double(as.vector(simu_mu)),		  # double* pfSimu_mu
-			as.integer(NROW(simu_cov_effect)), 	  # int nSimu_covar_len
-			as.double(as.vector(simu_cov_range)),  # double* pfSimu_covar_range
-			as.double(as.matrix(simu_cov_effect)), # double* pfSimu_covar_effect
-			as.integer(simu_sigp),		 	      # int nSimu_sig_p
-			as.integer(simu_sig_add),		  	  # int nSimu_add_len
-			as.double( simu_add_mat ),             # double* pfSimu_add_effect
-			as.integer(simu_sig_dom),			  # int nSimu_dom_len
-			as.double( simu_dom_mat ),             # double* pfSimu_dom_effect
-			as.double(as.vector(simu_z_range)),	  # double* simu_z_range
-			as.integer(as.vector(simu_z_count)),   # int* pnSimu_z_count
+			as.character(file.phe.out)				# char* szPhe_out
+			as.character(file.snp.out),				# char* szSnp_out
+			as.integer(simu_grp),					# int nSimu_grp
+			as.integer(simu_n), 					# int nSimu_n
+			as.integer(simu_p), 					# int nSimu_p
+			as.double(simu_snp_rho),				# double fSimu_snp_rho
+			as.double(simu_snp_missing),			# double fSimu_snp_missing
+			as.double(simu_rho),					# double fSimu_rho
+			as.double(simu_sigma2),					# double fSimu_sigma2
+			as.double(as.vector(simu_mu)),			# double* pfSimu_mu
+			as.integer(NROW(simu_cov_effect)),		# int nSimu_covar_len
+			as.double(as.vector(simu_cov_range)),	# double* pfSimu_covar_range
+			as.double(as.matrix(simu_cov_effect)),	# double* pfSimu_covar_effect
+			as.integer(simu_sigp),		 	      	# int nSimu_sig_p
+			as.integer(simu_sig_add),		  	  	# int nSimu_add_len
+			as.double( simu_add_mat ),             	# double* pfSimu_add_effect
+			as.integer(simu_sig_dom),			  	# int nSimu_dom_len
+			as.double( simu_dom_mat ),             	# double* pfSimu_dom_effect
+			as.double(as.vector(simu_z_range)),	  	# double* simu_z_range
+			as.integer(as.vector(simu_z_count)),   	# int* pnSimu_z_count
 			as.integer(debug),
 			as.integer(err) );
 	
@@ -541,7 +541,7 @@ gls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.prefix, 
 			options$fQval.dom,
 			ifelse( options$debug,3 , 1) );
 
-	options$params <- list( file.phe       = file.phe, 
+	options$params <- list( file.phe = file.phe, 
 				file.plink.tped= file.plink.tped, 
 				file.plink.tfam= file.plink.tfam, 
 				Y.prefix       = Y.prefix, 
