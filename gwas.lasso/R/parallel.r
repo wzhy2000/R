@@ -358,10 +358,10 @@ snpmat_parallel_list<-function( phe.mat,
 	if( op.ncpu>1 && require("snowfall") )
 	{
 		cat("Starting parallel computing, snowfall/snow......\n"); 
-		sfInit(parallel = TRUE, cpus = op.ncpu, type = "SOCK", slaveOutfile="snowfall-parallel.txt")
+		sfInit(parallel = TRUE, cpus = op.ncpu, type = "SOCK" )
 		
 		sfExport("phe.mat", "Y.name", "Z.name", "covar.names", 
-			##"snpmat.list" ,
+				##"snpmat.list" ,
 				"refit",
 				"add.used",
 				"dom.used",
