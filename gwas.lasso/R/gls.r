@@ -118,7 +118,7 @@ gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu
 	if ( length(simu_dom_pos)>0 ) simu_dom_mat <- as.matrix( cbind( simu_dom_pos, simu_dom_effect) );
 	
 	out <- .C("gls_simulate", 
-			as.character(file.phe.out)				# char* szPhe_out
+			as.character(file.phe.out),				# char* szPhe_out
 			as.character(file.snp.out),				# char* szSnp_out
 			as.integer(simu_grp),					# int nSimu_grp
 			as.integer(simu_n), 					# int nSimu_n
@@ -376,13 +376,19 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 		# It is bigdata which need to split it into chromosome unit
 		# The following will split the data and force to do fGWAS filter.
 
+		if( !is.null(options$fgwas.rdata)  && load(options$fgwas.rdata)=="r.filter" )
+		{
+		}
+		else
+		{
 		r.filter <- plink_fgwas_bigdata ( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe, plink.command, 
 										Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
 
 		if( r.filter$error ) stop(r.filter$err.info);
 		if( !is.null( options$fgwas.rdata ) ) 
 			save(r.filter, file=options$fgwas.rdata);
-
+		}
+		
 		fgwas.filter <- TRUE;
 		pd <- list(phe.mat=r.filter$phe.mat, snp.mat=r.filter$snp.mat);
 	}	
