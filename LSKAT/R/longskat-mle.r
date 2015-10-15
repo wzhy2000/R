@@ -51,12 +51,24 @@ show(head(y.time));
 		for(i in 1:nCov)
 			y.delt <- y.delt - y.cov[,i]*par_cov[i];
 			
+			
 		par_t   <- c();
 		if( y.cov.time >0 )
 		{
+			y.time.max <- max( y.time, na.rm=T);	
+			y.time.min <- min( y.time, na.rm=T);	
+
+			y.time <- (y.time - y.time.min)/(y.time.max - y.time.min)*2 - 1;
 			par_t  <-  par[5 + nCov + c(1:y.cov.time)];
-			for(i in 1:y.cov.time)
-				y.delt <- y.delt - (y.time^i) * par_t[i];
+			
+			if(y.cov.time >= 1)
+				y.delt <- y.delt - (y.time) * par_t[1];
+			if(y.cov.time >= 2)
+				y.delt <- y.delt - 0.5 * (3*y.time^2 - 1) * par_t[2];
+			if(y.cov.time >= 3)
+				y.delt <- y.delt - 0.5 * (5*y.time^3 - 3*y.time) * par_t[3];
+			if(y.cov.time >= 4)
+				y.delt <- y.delt - 1/8 * (35*y.time^4 - 30*y.time^2 + 3 ) * par_t[4];
 		}
 		
 		# y.temp <- c(y.delt)
@@ -149,9 +161,9 @@ show(head(y.time));
 		par.init <- par.init*runif( length(par.init), 0.8, 1.2 );
 	}
 #}
-#min.par <- c( 0.9547819,0.001353964, 4.391251, -0.7643996, 29.70828, -1.628676, -0.0157181, 1.041869, 17.94511, 2.521273, -27.39673, 15.84292);
-#min.val <-  37791.93;
-#loop.n <- 5.2;
+#min.par <- c( 0.9632793, 0.0008507287, 4.260085, 0.8689705, 27.82508, -1.522521, -6.556081, 16.20164, 5.955584, -32.51609, 8.446485, 2.068376, -2.723876, -0.9025116, -0.3033274);
+#min.val <- 37391.62;
+#loop.n  <- 10.2;
 	
 	if(debug) cat("  Final =", loop.n, " min.val=", min.val, "par=", min.par, "\n");
 	
@@ -167,9 +179,24 @@ show(head(y.time));
 	par_t <- c();	
 	if( y.cov.time>0 )
 	{
-		par_t  <- min.par[ 5 + nCov +c(1:y.cov.time)];
-		for( i in 1:length(par_t))
-			y.delt <- y.delt - (y.time^i) * par_t[i];	
+		#par_t  <- min.par[ 5 + nCov +c(1:y.cov.time)];
+		#for( i in 1:length(par_t))
+		#	y.delt <- y.delt - (y.time^i) * par_t[i];	
+
+		y.time.max <- max( y.time, na.rm=T);	
+		y.time.min <- min( y.time, na.rm=T);	
+
+		y.time <- (y.time - y.time.min)/(y.time.max - y.time.min)*2 - 1;
+		par_t  <-  min.par[5 + nCov + c(1:y.cov.time)];
+
+		if(y.cov.time >= 1)
+			y.delt <- y.delt - (y.time) * par_t[1];
+		if(y.cov.time >= 2)
+			y.delt <- y.delt - 0.5 * (3*y.time^2 - 1) * par_t[2];
+		if(y.cov.time >= 3)
+			y.delt <- y.delt - 0.5 * (5*y.time^3 - 3*y.time) * par_t[3];
+		if(y.cov.time >= 4)
+			y.delt <- y.delt - 1/8 * (35*y.time^4 - 30*y.time^2 + 3 ) * par_t[4];
 	}
 	
 	pars <- list( mu     = min.par[5], 

@@ -207,12 +207,15 @@ get_Qu_pvalue<-function(Q, W)
 }
 
 
-SKAT_Scale_Genotypes <- function(X1, Z, weights.common=c(1,1), weights.rare=c(1,25), weights=NULL, r.corr1=0, r.corr2=0)
+SKAT_Scale_Genotypes <- function(X1, Z, weights.common=c(1,1), weights.rare=c(1,25), weights=NULL, rare.cutoff=NULL, r.corr.common=0, r.corr.rare=0)
 {
 	#X1=obj.res$X1
 	out_type="C" 
 	n<-dim(Z)[1];
-	rare.cutoff <- 1/sqrt(2*n);
+
+	if ( is.null(rare.cutoff) ) 
+		rare.cutoff <- 1/sqrt(2*n);
+		
 	Z.maf <- colMeans(Z)/2;
 
 	if ( length ( which(Z.maf <= rare.cutoff) )==0 )
@@ -251,22 +254,22 @@ SKAT_Scale_Genotypes <- function(X1, Z, weights.common=c(1,1), weights.rare=c(1,
 	
 	
    	# r.corr
-   	if(r.corr1 == 1){
+   	if(r.corr.rare == 1){
   		Z1<-cbind(rowSums(Z1))
-   	} else if(r.corr1 > 0){
+   	} else if(r.corr.rare > 0){
 
    		p.m<-dim(Z1)[2]	
-		R.M<-diag(rep(1-r.corr1,p.m)) + matrix(rep(r.corr1,p.m*p.m),ncol=p.m)
+		R.M<-diag(rep(1-r.corr.rare,p.m)) + matrix(rep( r.corr.rare, p.m*p.m),ncol=p.m)
 		L<-chol(R.M,pivot=TRUE)
 		Z1<- Z1 %*% t(L) 
    	}
 
-   	if(r.corr2 == 1){
+   	if(r.corr.common == 1){
   		Z2<-cbind(rowSums(Z2))
-   	} else if(r.corr2 > 0){
+   	} else if(r.corr.common > 0){
 
    		p.m<-dim(Z2)[2]	
-		R.M<-diag(rep(1-r.corr2,p.m)) + matrix(rep(r.corr2,p.m*p.m),ncol=p.m)
+		R.M<-diag(rep(1-r.corr.common,p.m)) + matrix(rep(r.corr.common,p.m*p.m),ncol=p.m)
 		L<-chol(R.M,pivot=TRUE)
 		Z2<- Z2 %*% t(L) 
    	}
