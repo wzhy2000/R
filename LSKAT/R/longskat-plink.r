@@ -127,57 +127,57 @@ read_gen_phe_cov<-function(file.plink.bed, file.plink.bim, file.plink.fam, file.
 
 	snp.mat <- read.plink( file.plink.bed,  file.plink.bim, file.plink.fam);
 
-	phe.long <- read.csv(file.phe.long, header=T);
+	phe.long <- read.csv(file.phe.long, header=T, row.names=1);
 	cat("  PHE LONG =", file.phe.long, "\n");
 	cat("* Individuals =", NROW(phe.long), "\n");
-	cat("* Times =", NCOL(phe.long)-1, "\n");
-	cat("* Mean =",  colMeans(phe.long[,-1], na.rm=T), "\n");
-	cat("* SD =",    colSds(phe.long[,-1], na.rm=T),"\n");
-	idx.na <- which( rowSums(is.na(phe.long[,-1]))==NCOL(phe.long)-1);
+	cat("* Times =", NCOL(phe.long), "\n");
+	cat("* Mean =",  colMeans(phe.long, na.rm=T), "\n");
+	cat("* SD =",    colSds(phe.long, na.rm=T),"\n");
+	idx.na <- which( rowSums(is.na(phe.long)) == NCOL(phe.long) );
 	if( length(idx.na)>0) phe.long <- phe.long[ -idx.na, ];
 
 	phe.time <- NULL;
 	if (!is.null(file.phe.time))
 	{
-		phe.time <- read.csv(file.phe.time, header=T);
+		phe.time <- read.csv(file.phe.time, header=T, row.names=1);
 		cat("  PHE TIME =", file.phe.time, "\n");
 		cat("* Individuals =", NROW(phe.time), "\n");
-		cat("* Times =", NCOL(phe.time)-1, "\n");
-		cat("* Mean =",  colMeans(phe.time[,-1], na.rm=T), "\n");
-		cat("* SD =",    colSds(phe.time[,-1], na.rm=T),"\n");
-		idx.na <- which( rowSums(is.na(phe.time[,-1]))==NCOL(phe.time)-1);
+		cat("* Times =", NCOL(phe.time), "\n");
+		cat("* Mean =",  colMeans(phe.time, na.rm=T), "\n");
+		cat("* SD =",    colSds(phe.time, na.rm=T),"\n");
+		idx.na <- which( rowSums(is.na(phe.time))==NCOL(phe.time)-1);
 		if( length(idx.na)>0) phe.time <- phe.time[ -idx.na, ];
 	}
 	
-	phe.cov <- read.csv(file.phe.cov, header=T);
+	phe.cov <- read.csv(file.phe.cov, header=T, row.names=1);
 	cat("  PHE COV =", file.phe.cov, "\n");
 	cat("* Individuals =", NROW(phe.cov), "\n");
-	cat("* Covariate =", NCOL(phe.cov)-1, "\n");
-	cat("* Mean =",  colMeans(phe.cov[,-c(1)], na.rm=T), "\n");
-	cat("* SD =",    colSds(phe.cov[,-c(1)], na.rm=T), "\n");
+	cat("* Covariate =", NCOL(phe.cov), "\n");
+	cat("* Mean =",  colMeans(phe.cov, na.rm=T), "\n");
+	cat("* SD =",    colSds(phe.cov, na.rm=T), "\n");
 	
 	ids.fam<-as.character(snp.mat$fam$member);
 	cat("  GENO FAM =", file.plink.fam, "\n");
 	cat("* Individuals =", NROW(phe.cov), "\n");
 
-	ids.phe <- intersect(as.character(phe.long[,1]), as.character(phe.cov[,1]) );
+	ids.phe <- intersect(rownames(phe.long), rownames(phe.cov) );
 	if(!is.null(phe.time))
-		ids.phe <- intersect(ids.phe, as.character(phe.time[,1]) );
+		ids.phe <- intersect(ids.phe, rownames(phe.time) );
 	
 	ids.set <- intersect(ids.phe, ids.fam);
 	cat("  COMMON Individuals=", length(ids.set), "\n");
 	
-	# eg. c(10:1)[match(c(4, 6,8,2,3), c(10:1))]
+	#eg. c(10:1)[match(c(4, 6,8,2,3), c(10:1))]
 	
-	idx.long <- match( ids.set, as.character(phe.long[,1]) );
+	idx.long <- match( ids.set, rownames(phe.long) );
 	phe.long <- phe.long[idx.long, ];
 	
-	idx.cov <- match( ids.set, as.character(phe.cov[,1]) );
+	idx.cov <- match( ids.set, rownames(phe.cov) );
 	phe.cov <- phe.cov[idx.cov, ];
 
 	if(!is.null(phe.time))
 	{
-		idx.time <- match( ids.set, as.character(phe.time[,1]) );
+		idx.time <- match( ids.set, rownames(phe.time) );
 		phe.time <- phe.time[idx.time, ];
 	}
 
@@ -191,10 +191,10 @@ read_gen_phe_cov<-function(file.plink.bed, file.plink.bim, file.plink.fam, file.
 		cat("* PLINK (", length(ids.fam) - length(ids.set), ") individuals are removed.\n");
 	}
 
-	if( !is.null(phe.time) && !all( phe.long[,1] == phe.time[,1]) )
+	if( !is.null(phe.time) && !all( rownames(phe.long) == rownames(phe.time) ) )
 		stop("! ID MATCH ERROR between PHE.LONG and PHE.TIME. \n");
 
-	if (!( all(phe.long[,1]==phe.cov[,1]) && all(phe.long[,1]==ids.fam) ) )
+	if (!( all( rownames(phe.long)==rownames(phe.cov)) && all( rownames(phe.long)==ids.fam) ) )
 		stop("! ID MATCH ERROR among 3 files( PHE.LONG, PHE.COV, PLINK.FAM). \n");
 
 	return(list(snp.mat=snp.mat, phe.long=phe.long, phe.time=phe.time, phe.cov = phe.cov));

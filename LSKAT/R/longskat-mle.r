@@ -1,32 +1,28 @@
 library(mvtnorm)
 
-# y.log format:  shareid, trait1, ..., traitN
-# y.time format: shareid, time1, ..., timeN
-# y.cov format:  shareid, cov1, ..., covM
+# y.log format:  <shareid> trait1, ..., traitN
+# y.time format: <shareid> time1, ..., timeN
+# y.cov format:  <shareid> cov1, ..., covM
 
 #public
-longskat_est_model<-function( y.log0, y.cov0, y.time0 = NULL, y.cov.time=0, g.maxiter=20, debug=F )
+longskat_est_model<-function( y.log, y.cov, y.time = NULL, y.cov.time=0, g.maxiter=20, debug=F )
 {
-	nrow <- NROW(y.log0);
-	ncol <- NCOL(y.log0)-1;
-	nCov <- NCOL(y.cov0)-1;
+	# check id matched before call here!
 	
-	#check id matched!
-	
-	if(is.data.frame(y.log0)) y.log <- data.matrix(y.log0[,-1,drop=F])
-	if(is.data.frame(y.cov0)) y.cov <- data.matrix(y.cov0[,-1,drop=F])
-	if(is.data.frame(y.time0)) y.time<- data.matrix(y.time0[,-1,drop=F])
+	if(is.data.frame(y.log)) y.log <- data.matrix(y.log)
+	if(is.data.frame(y.cov)) y.cov <- data.matrix(y.cov)
+	if(is.data.frame(y.time)) y.time<- data.matrix(y.time)
 
-	if(is.matrix(y.log0))  y.log <- y.log0[,-1,drop=F];
-	if(is.matrix(y.cov0))  y.cov <- y.cov0[,-1,drop=F];
-	if(is.matrix(y.time0)) y.time<- y.time0[,-1,drop=F];
+	ncol <- NCOL(y.log);
+	nrow <- NROW(y.log);
+	nCov <- NCOL(y.cov);
 	
-	if( is.null(y.time0))
+	if( is.null(y.time))
 		y.time <- t(matrix(rep(c(1:ncol),nrow), nrow=ncol)) ;
 
-show(head(y.log));
-show(head(y.cov));
-show(head(y.time));
+#show(head(y.log));
+#show(head(y.cov));
+#show(head(y.time));
 
 	get_par<-function(par, y, y.time, y.cov)
 	{	

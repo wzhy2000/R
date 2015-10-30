@@ -35,7 +35,7 @@ check_pheno_file<-function( file.phe.long, file.phe.time, file.plink.fam )
 	cat("* PHE.LONG =", file.phe.long , "\n");
 	cat("* PHE.TIME =", file.phe.time , "\n");
 
-	phe.long <- try( read.csv(file.phe.long) );
+	phe.long <- try( read.csv(file.phe.long, header=T, row.names=1) );
 	if (class(phe.long)=="try-error")
 	{
 		cat("! Can not open file(", file.phe.long, ")\n");
@@ -45,7 +45,7 @@ check_pheno_file<-function( file.phe.long, file.phe.time, file.plink.fam )
 	phe.time <- NULL;
 	if(!is.null(file.phe.time))
 	{
-		phe.time <- try( read.csv(file.phe.time) );
+		phe.time <- try( read.csv(file.phe.time, header=T, row.names=1) );
 		if (class(phe.time)=="try-error")
 		{
 			cat("! Can not open file(", file.phe.time, ")\n");
@@ -95,7 +95,7 @@ check_covariate_file<-function( file.phe.cov, file.plink.fam, y.ncov )
 	cat("Checking covariate file......\n");
 	cat("* COV.FILE =", file.phe.cov , "\n");
 	
-	phe.cov <- try( read.csv(file.phe.cov, header=T) );
+	phe.cov <- try( read.csv(file.phe.cov, header=T, row.names=1) );
 	if (class(phe.cov)=="try-error")
 		return(list(bSuccess=F));
 	
