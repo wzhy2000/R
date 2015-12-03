@@ -6,123 +6,105 @@
 
 SKAT_davies <- function(q,lambda,h = rep(1,length(lambda)),delta = rep(0,length(lambda)),sigma=0,lim=10000,acc=0.0001) 
 {
-  r <- length(lambda)
-  if (length(h) != r) stop("lambda and h should have the same length!")
-  if (length(delta) != r) stop("lambda and delta should have the same length!")
+	r <- length(lambda)
+	if (length(h) != r) stop("lambda and h should have the same length!")
+	if (length(delta) != r) stop("lambda and delta should have the same length!")
   
-  out <- c();
-  if ( require(SKAT) )
-	out <- .C("qfc",lambdas=as.double(lambda),noncentral=as.double(delta),df=as.integer(h),r=as.integer(r),sigma=as.double(sigma),q=as.double(q),lim=as.integer(lim),acc=as.double(acc),trace=as.double(rep(0,7)),ifault=as.integer(0),res=as.double(0),PACKAGE="SKAT")
-  else
-  	stop("SkAT package is necessary to install!");
+	out <- c();
+	if ( require(SKAT) )
+		out <- .C("qfc",lambdas = as.double(lambda),
+				noncentral  = as.double(delta),
+				df          = as.integer(h),
+				r           = as.integer(r),
+				sigma       = as.double(sigma),
+				q           = as.double(q),
+				lim         = as.integer(lim),
+				acc         = as.double(acc),
+				trace       = as.double(rep(0,7)),
+				ifault      = as.integer(0),
+				res         = as.double(0),PACKAGE="SKAT")
+	else
+		stop("SkAT package is necessary to install!");
   	
-  out$res <- 1 - out$res
+	out$res <- 1 - out$res
   
-  return(list(trace=out$trace,ifault=out$ifault,Qq=out$res))
-  
+	return(list(trace=out$trace,ifault=out$ifault,Qq=out$res))
 }
 
 SKAT_liu <- function(q, lambda, h = rep(1,length(lambda)), delta = rep(0,length(lambda))) 
 {
-  r <- length(lambda)
-  if (length(h) != r) stop("lambda and h should have the same length!")
-  if (length(delta) != r) stop("lambda and delta should have the same length!")
+	r <- length(lambda)
+	if (length(h) != r) stop("lambda and h should have the same length!")
+	if (length(delta) != r) stop("lambda and delta should have the same length!")
  
-  c1 <- sum(lambda*h) + sum(lambda*delta)
+	c1 <- sum(lambda*h) + sum(lambda*delta)
 
-  c2 <- sum(lambda^2*h) + 2*sum(lambda^2*delta)
+	c2 <- sum(lambda^2*h) + 2*sum(lambda^2*delta)
 
-  c3 <- sum(lambda^3*h) + 3*sum(lambda^3*delta)
+	c3 <- sum(lambda^3*h) + 3*sum(lambda^3*delta)
 
-  c4 <- sum(lambda^4*h) + 4*sum(lambda^4*delta)
+	c4 <- sum(lambda^4*h) + 4*sum(lambda^4*delta)
   
-  s1 <- c3/(c2^(3/2))
+	s1 <- c3/(c2^(3/2))
 
-  s2 <- c4/c2^2
+	s2 <- c4/c2^2
 
-  muQ <- c1
+	muQ <- c1
 
-  sigmaQ <- sqrt(2*c2)
+	sigmaQ <- sqrt(2*c2)
 
-  tstar <- (q-muQ)/sigmaQ
+	tstar <- (q-muQ)/sigmaQ
 
-  if (s1^2>s2) {
+	if (s1^2>s2) {
+		a <- 1/(s1-sqrt(s1^2-s2))
+		delta <- s1*a^3-a^2
+		l <- a^2-2*delta
+	} else {
+		a <- 1/s1
+		delta <- 0
+		l <- c2^3/c3^2
+	}
 
-    a <- 1/(s1-sqrt(s1^2-s2))
-
-    delta <- s1*a^3-a^2
-
-    l <- a^2-2*delta
-
-  } else {
-
-    a <- 1/s1
-    
-    delta <- 0
-
-    l <- c2^3/c3^2
-
-  }
-
-  muX <- l+delta
-
-  sigmaX <- sqrt(2)*a
-  
-  Qq <- pchisq(tstar*sigmaX+muX,df=l,ncp=delta,lower.tail=FALSE)
-
-  return(Qq)
-
+	muX <- l+delta
+	sigmaX <- sqrt(2)*a
+	Qq <- pchisq(tstar*sigmaX+muX,df=l,ncp=delta,lower.tail=FALSE)
+	return(Qq)
 }
 
 
 SKAT_liu.MOD <- function(q, lambda, h = rep(1,length(lambda)), delta = rep(0,length(lambda))) 
 {
-  r <- length(lambda)
-  if (length(h) != r) stop("lambda and h should have the same length!")
-  if (length(delta) != r) stop("lambda and delta should have the same length!")
+  	r <- length(lambda)
+  	if (length(h) != r) stop("lambda and h should have the same length!")
+  	if (length(delta) != r) stop("lambda and delta should have the same length!")
  
-  c1 <- sum(lambda*h) + sum(lambda*delta)
-
-  c2 <- sum(lambda^2*h) + 2*sum(lambda^2*delta)
-
-  c3 <- sum(lambda^3*h) + 3*sum(lambda^3*delta)
-
-  c4 <- sum(lambda^4*h) + 4*sum(lambda^4*delta)
+  	c1 <- sum(lambda*h) + sum(lambda*delta)
+  	c2 <- sum(lambda^2*h) + 2*sum(lambda^2*delta)
+  	c3 <- sum(lambda^3*h) + 3*sum(lambda^3*delta)
+  	c4 <- sum(lambda^4*h) + 4*sum(lambda^4*delta)
   
-  s1 <- c3/(c2^(3/2))
+  	s1 <- c3/(c2^(3/2))
+  	s2 <- c4/c2^2
 
-  s2 <- c4/c2^2
+  	muQ <- c1
+  	sigmaQ <- sqrt(2*c2)
+  	tstar <- (q-muQ)/sigmaQ
 
-  muQ <- c1
+  	if (s1^2>s2) {
+		a <- 1/(s1-sqrt(s1^2-s2))
+	   	delta <- s1*a^3-a^2
+		l <- a^2-2*delta
+	} else {
+		delta <- 0
+		l = 1/s2
+		a = sqrt(l)
+	}
 
-  sigmaQ <- sqrt(2*c2)
-
-  tstar <- (q-muQ)/sigmaQ
-
-  if (s1^2>s2) {
-
-    a <- 1/(s1-sqrt(s1^2-s2))
-
-    delta <- s1*a^3-a^2
-
-    l <- a^2-2*delta
-
-  } else {
-
-    delta <- 0
-    l = 1/s2
-    a = sqrt(l)
-
-  }
-
-  muX <- l+delta
-
-  sigmaX <- sqrt(2)*a
-  
-  Qq <- pchisq(tstar*sigmaX+muX,df=l,ncp=delta,lower.tail=FALSE)
-
-  return(Qq)
-
+	muX <- l+delta
+	sigmaX <- sqrt(2)*a
+	Qq <- pchisq(tstar*sigmaX+muX,df=l,ncp=delta,lower.tail=FALSE)
+	
+	return(Qq)
 }
 
 Get_PValue.Lambda<-function(lambda,Q)
@@ -166,12 +148,11 @@ Get_PValue.Lambda<-function(lambda,Q)
 	}
 
 	return(list(p.value=p.val, p.val.liu=p.val.liu, is_converge=is_converge, pval.zero.msg=p.val.msg))
-
 }
 
-Get_Lambda<-function(K){
-
-	out.s<-try(eigen(K,symmetric=TRUE, only.values = TRUE))
+Get_Lambda<-function(K)
+{
+	out.s <- try(eigen(K,symmetric=TRUE, only.values = TRUE))
 	#print(out.s$values)
 	
 	if (class(out.s)=="try-error") { show(K); browser(); }
@@ -188,6 +169,7 @@ Get_Lambda<-function(K){
 	if(length(IDX2) == 0){
 		stop("No Eigenvalue is bigger than 0!!")
 	}
+	
 	lambda<-lambda1[IDX2]
 	return(lambda)
 }
@@ -206,37 +188,51 @@ get_Qu_pvalue<-function(Q, W)
 	return(re)
 }
 
-
-SKAT_Scale_Genotypes <- function(X1, Z, weights.common=c(1,1), weights.rare=c(1,25), weights=NULL, rare.cutoff=NULL, r.corr.common=0, r.corr.rare=0)
+SKAT_Scale_Genotypes <- function(X1, Z, weights.common=c(1,1), weights.rare=c(1,25), weights=NULL, rare.cutoff=NULL, test.type="Joint", r.corr.common=0, r.corr.rare=0)
 {
-	#X1=obj.res$X1
-	out_type="C" 
-	n<-dim(Z)[1];
-
+	n <- NROW(Z);
 	if ( is.null(rare.cutoff) ) 
 		rare.cutoff <- 1/sqrt(2*n);
 		
 	Z.maf <- colMeans(Z)/2;
 
-	if ( length ( which(Z.maf <= rare.cutoff) )==0 )
+	## NO common SNP, but Common.Only
+	if ( length ( which(Z.maf > rare.cutoff) )==0 && test.type == "Common.Only")
+		return(list(new=NULL, maf=NULL, rare=0))
+
+	## NO rare SNP, but Rare.Only
+	if ( length ( which(Z.maf <= rare.cutoff) )==0 && test.type == "Rare.Only")
+		return(list(new=NULL, maf=NULL, rare=0))
+
+	## only have common SNPs
+	if ( length ( which(Z.maf <= rare.cutoff) )==0 || test.type == "Common.Only")
 	{
-		wr <- get_weights(Z.maf, dim(Z)[1], weights.common, weights.rare);
-		Z <- t(t(Z) * wr )
+		Z <- Z[, Z.maf > rare.cutoff, drop=F];
+		Z.maf <- colMeans(Z)/2;
+
+		wr <- get_weights(Z.maf, NROW(Z), weights.common, weights.rare, rare.cutoff);
+		Z <- t( t(Z) * wr )
 		return(list(new=Z, maf=Z.maf, rare=0))
 	}
-	if ( length ( which(Z.maf > rare.cutoff) )==0 )
+
+
+	## only have RARE SNPs
+	if ( length ( which(Z.maf > rare.cutoff) )==0 || test.type == "Rare.Only")
 	{
-		wr <- get_weights(Z.maf, dim(Z)[1], weights.common, weights.rare);
+		Z <- Z[, Z.maf <= rare.cutoff, drop=F];
+		Z.maf <- colMeans(Z)/2;
+
+		wr <- get_weights(Z.maf, NROW(Z), weights.common, weights.rare,rare.cutoff);
 		Z <- t(t(Z) * wr );		
-		return(list(new=Z, maf=Z.maf, rare=dim(Z)[2]))
+		return(list(new=Z, maf=Z.maf, rare=NCOL(Z)))
 	}
 
 	Z1 <- Z[ ,which(Z.maf <= rare.cutoff),drop=F]
 	Z2 <- Z[ ,which(Z.maf > rare.cutoff),drop=F]
 	
 	pi_1 = NULL
-	p.m1<-dim(Z1)[2]
-	p.m2<-dim(Z2)[2]	
+	p.m1 <- NCOL(Z1)
+	p.m2 <- NCOL(Z2)	
 
 
 	MAF1<- colMeans(Z1)/2

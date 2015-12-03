@@ -181,67 +181,74 @@ simu.long.phe.power<-function( n.sample, snp.mat, par, f.simu )
 	return(list(y=y, y.cov=y.cov));
 }
 
-#par1 : rho
-#par2 : sigma
+# time, rho, sig_a, sig_b, sig_e
 f.mn.ar1<-function( sample, par)
 {
 	ncol <- par$times;
-	AR.1 <- array(0,dim=c(ncol,ncol));
+
+	AR1 <- array(0,dim=c(ncol,ncol));
 	for(i in 1:ncol)
 	for(j in 1:ncol)
-		AR.1[i,j] <- par$par1^abs(i-j);
+		AR1[i,j] <- par$rho^abs(i-j);
 		
-	sigma.mn1 <- par$sig_a^2 + par$par2^2*AR.1;
-	sigma.mn2 <- diag(par$sig_e^2, ncol) 
-	r <- rmvnorm( sample,  rep(0, ncol), sigma.mn1 + sigma.mn2 )  ;
+	sigma.a <- par$sig_a^2
+	sigma.b <- par$sig_b^2*AR1;
+	sigma.e <- diag(par$sig_e^2, ncol);
 	
-	sigma <- sigma.mn1 + sigma.mn2
-cat("MN.AR1---", min(r), max(r), mean(r), min(sigma), max(sigma),mean(sigma), "\n");	
+	r <- rnorm( sample,  0, par$sig_a ) %*% array(1, dim=c(1,ncol))+    
+		 rmvnorm( sample,  rep(0, ncol), sigma.b ) +  
+		 array(rnorm( sample*ncol,  0, par$sig_e ), dim=c(sample, ncol) ) ;
+	
+	sigma <- sigma.a + sigma.b + sigma.e;
+#cat("MN.AR1---", min(r), max(r), mean(r), min(sigma), max(sigma),mean(sigma), "\n");	
 	
 	return(r);
 }
 
-
-#par1 : phi
-#par2 : v
 f.mn.sad<-function( sample, par )
 {
-	phi <- par$par1;
-	v   <- par$par2;
-	
 	ncol <- par$times;
-	sad.1 <- array(0,dim=c(ncol,ncol));
-	for(i in 1:ncol)
-	for(j in i:ncol)
-	{
-		sad.1[i,j] <- (1 - phi^(2*(j-i)))/(1-phi^2)*phi^abs(j-i);
-		sad.1[j,i] <- sad.1[i,j];
-	}
-	
-	sigma.mn1 <- par$sig_a^2 + sad.1*v^2;
-	sigma.mn2 <- diag(par$sig_e^2, ncol); 
-	r <- rmvnorm( sample,  rep(0, ncol), sigma.mn1 + sigma.mn2 );
 
-	sigma <- sigma.mn1 + sigma.mn2
+	phi  <- par$rho;
+	sad1 <- array(1, dim=c(ncol,ncol));
+	for(i in 1:ncol)
+		for(j in i:ncol)
+		{
+			sad1[i,j] <- phi^(j-i) * (1-phi^(2*i))/(1-phi^2)				
+			sad1[j,i] <- phi^(j-i) * (1-phi^(2*i))/(1-phi^2)				
+		}
+
+
+	sigma.a <- par$sig_a^2
+	sigma.b <- sad1* par$sig_b^2;
+	sigma.e <- diag(par$sig_e^2, ncol);
+
+	r <- rnorm( sample,  0, par$sig_a ) %*% array(1, dim=c(1,ncol))+    
+		 rmvnorm( sample,  rep(0, ncol), sigma.b ) +  
+		 array(rnorm( sample*ncol,  0, par$sig_e ), dim=c(sample, ncol) ) ;
+	
+	sigma <- sigma.a + sigma.b + sigma.e;
 cat("MN.SAD---",min(r), max(r), mean(r), min(sigma), max(sigma),mean(sigma), "\n");	
 
 	return(r);
 }
 
-#par1 : rho
-#par2 : sigma
 f.mn.cm<-function( sample, par )
 {
 	ncol <- par$times;
-	AR.1 <- array(par$par1,dim=c(ncol,ncol));
+	CM1 <- array(par$rho,dim=c(ncol,ncol));
 	for(i in 1:ncol)
-		AR.1[i,i] <- 1;
+		CM1[i,i] <- 1;
 		
-	sigma.mn1 <- par$sig_a^2 + par$par2^2*AR.1;
-	sigma.mn2 <- diag(par$sig_e^2, ncol);
-	r <- rmvnorm( sample,  rep(0, ncol), sigma.mn1 + sigma.mn2 );
+	sigma.a <- par$sig_a^2
+	sigma.b <- par$sig_b^2 * CM1;
+	sigma.e <- diag(par$sig_e^2, ncol);
 
-	sigma <- sigma.mn1 + sigma.mn2
+	r <- rnorm( sample,  0, par$sig_a ) %*% array(1, dim=c(1,ncol))+    
+		 rmvnorm( sample,  rep(0, ncol), sigma.b ) +  
+		 array(rnorm( sample*ncol,  0, par$sig_e ), dim=c(sample, ncol) ) ;
+	
+	sigma <- sigma.a + sigma.b + sigma.e;
 cat("MN.CM---", min(r), max(r), mean(r), min(sigma), max(sigma),mean(sigma), "\n");	
 
 	return(r);
@@ -250,16 +257,20 @@ cat("MN.CM---", min(r), max(r), mean(r), min(sigma), max(sigma),mean(sigma), "\n
 f.mt.ar1<-function( sample, par )
 {
 	ncol <- par$times;
-	AR.1 <- array(0,dim=c(ncol,ncol));
+	AR1 <- array(0,dim=c(ncol,ncol));
 	for(i in 1:ncol)
 	for(j in 1:ncol)
-		AR.1[i,j] <- par$par1^abs(i-j);
+		AR1[i,j] <- par$rho^abs(i-j);
 		
-	sigma.mn <- par$sig_a^2 + par$par2^2*AR.1;
-	sigma.t  <- diag(par$sig_e^2, ncol); 
-	r <- rmvnorm( sample,  rep(0, ncol), sigma.mn ) + rmvt( sample,  delt=rep(0, ncol), sigma=sigma.t, df=10 );
+	sigma.a <- par$sig_a^2
+	sigma.b <- par$sig_b^2*AR1;
+	sigma.e <- diag(par$sig_e^2, ncol);
 	
-	sigma <- sigma.mn  + sigma.t
+	r <- rnorm( sample,  0, par$sig_a ) %*% array(1, dim=c(1,ncol))+    
+		 rmvnorm( sample,  rep(0, ncol), sigma.b ) +  
+		 array(rt( sample*ncol,  df=10 ), dim=c(sample, ncol) ) ;
+	
+	sigma <- sigma.a + sigma.b + sigma.e;
 cat("MT.AR1---", min(r), max(r), mean(r), min(sigma), max(sigma),mean(sigma), "\n");	
 
 	return(r);
@@ -271,44 +282,45 @@ f.sn.ar1<-function( sample, par )
 	library(sn);
 	
 	ncol <- par$times;
-	AR.1 <- array(0,dim=c(ncol,ncol));
+	AR1 <- array(0,dim=c(ncol,ncol));
 	for(i in 1:ncol)
 	for(j in 1:ncol)
-		AR.1[i,j] <- par$par1^abs(i-j);
+		AR1[i,j] <- par$rho^abs(i-j);
 		
-	sigma.mn <- par$sig_a^2 + par$par2^2*AR.1;
-	sigma.sn <- diag(par$sig_e^2, ncol);
-	r <- rmvnorm( sample,  rep(0, ncol), sigma.mn ) + rmsn( sample,  xi=rep(0, ncol), sigma.sn, alpha = runif(ncol)*3 );
-
-	sigma <- sigma.mn  + sigma.sn
+	sigma.a <- par$sig_a^2
+	sigma.b <- par$sig_b^2*AR1;
+	sigma.e <- diag(par$sig_e^2, ncol);
+	
+	r <- rnorm( sample,  0, par$sig_a ) %*% array(1, dim=c(1,ncol))+    
+		 rmvnorm( sample,  rep(0, ncol), sigma.b ) +  
+		 array(rsn( sample*ncol, omega=par$sig_e, alpha = 10 ), dim=c(sample, ncol) ) ;
+	
+	sigma <- sigma.a + sigma.b + sigma.e;
 cat("SN.AR1---", min(r), max(r), mean(r), min(sigma), max(sigma),mean(sigma), "\n");	
 	return(r);
 }
 
-#par1 : rho1
-#par2 : rho2
-#par3 : sigma1
-#par4 : sigma2
-#par5 : ratio
+#parlist : times, rho, sig_a, sig_b, sige_e, par1(sd1), par2(sd2), par3(ratio) 
+
 f.mmn.ar1<-function( sample, par )
 {
 	ncol <- par$times;
 
-	AR1.1 <- array(0,dim=c(ncol,ncol));
+	AR1 <- array(0,dim=c(ncol,ncol));
 	for(i in 1:ncol)
 	for(j in 1:ncol)
-		AR1.1[i,j] <- par$par1^abs(i-j);
-		
-	AR1.2 <- array(0,dim=c(ncol,ncol));
-	for(i in 1:ncol)
-	for(j in 1:ncol)
-		AR1.2[i,j] <- par$par2^abs(i-j);
+		AR1[i,j] <- par$rho^abs(i-j);
 
-	sigma.mn  <- par$sig_a^2 + AR1.1*par$par3^2*par$par5 + AR1.2*par$par4^2*(1-par$par5);
-	sigma.mmn <- diag(par$sig_e^2, ncol); 
-	r <-  rmvnorm( sample,  rep(0, ncol), sigma.mn ) + rmvnorm( sample,  rep(0, ncol), sigma.mmn );
+	sigma.a <- par$sig_a^2
+	sigma.b <- par$sig_b^2*AR1;
+	sigma.e <- diag(par$sig_e^2, ncol);
 	
-	sigma <- sigma.mmn  + sigma.mn
+	r <- rnorm( sample,  0, par$sig_a ) %*% array(1, dim=c(1,ncol))+    
+		 rmvnorm( sample,  rep(0, ncol), sigma.b ) +  
+		 array( rnorm( sample*ncol, sd = par$par1 )*par$par3 + 
+		 	rnorm( sample*ncol, sd = par$par2 )*(1-par$par3), dim=c(sample, ncol) ) ;
+
+	sigma <- sigma.a + sigma.b + sigma.e;
 cat("MMN.AR1---", min(r), max(r), min(sigma), max(sigma),"\n");		
 	
 	return(r);
