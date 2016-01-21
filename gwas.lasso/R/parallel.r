@@ -77,18 +77,18 @@ snpmat_parallel<-function( n.snp,
 			f_subset_op,
 			snp.mat,
 			phe.mat,
-  		   	Y.name, 
-  		   	Z.name,
-  		   	covar.names, 
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	op.piecewise.ratio,
-  		   	op.nMcmcIter,
-		   	op.fBurnInRound,
-		   	op.fRhoTuning,
-		   	op.fQval.add,
-		   	op.fQval.dom,
+			Y.name, 
+			Z.name,
+			covar.names, 
+			refit,
+			add.used,
+			dom.used,
+			op.piecewise.ratio,
+			op.nMcmcIter,
+			op.fBurnInRound,
+			op.fRhoTuning,
+			op.fQval.add,
+			op.fQval.dom,
 			op.debug,
 			op.cpu,
 			lasso.method)
@@ -323,12 +323,16 @@ snpmat_parallel_list<-function( phe.mat,
 				lasso.method)
 				
 {
-	cpu.fun<-function( sect )
+	cpu.fun<-function( snpmat )
 	{
+		#sfCat( paste("Start sect:", sect, "\n"))
+		#sfCat( paste("snpmat[", NROW(snpmat), NCOL(snpmat), "]", "\n") );
+
 		library(gwas.lasso);
 		
 		r.xls.i <- snpmat_call(
-				as.matrix( snpmat.list[[ sect ]]),
+				#as.matrix( snpmat.list[[ sect ]]),
+				as.matrix( snpmat ),
 				phe.mat,
 				Y.name, 
 				Z.name,
@@ -343,6 +347,8 @@ snpmat_parallel_list<-function( phe.mat,
 				op.fQval.dom,
 				op.debug,
 				lasso.method);
+		
+		sfCat( paste("Stop sect:", sect, "\n") );
 
 		return(r.xls.i);
 	}
@@ -352,10 +358,10 @@ snpmat_parallel_list<-function( phe.mat,
 	if( op.ncpu>1 && require("snowfall") )
 	{
 		cat("Starting parallel computing, snowfall/snow......\n"); 
-		sfInit(parallel = TRUE, cpus = op.ncpu, type = "SOCK")
+		sfInit(parallel = TRUE, cpus = op.ncpu, type = "SOCK" )
 		
 		sfExport("phe.mat", "Y.name", "Z.name", "covar.names", 
-				"snpmat.list" ,
+				##"snpmat.list" ,
 				"refit",
 				"add.used",
 				"dom.used",
@@ -367,7 +373,8 @@ snpmat_parallel_list<-function( phe.mat,
 				"op.debug",
 				"lasso.method");
 
-		r.cluster <- sfClusterApplyLB( 1:length(snpmat.list), cpu.fun);
+		#r.cluster <- sfClusterApplyLB( 1:length(snpmat.list), cpu.fun);
+		r.cluster <- sfLapply( snpmat.list, cpu.fun);
 
 		sfStop();
 
@@ -377,7 +384,7 @@ snpmat_parallel_list<-function( phe.mat,
 	{
 		cat("Starting piecewise analysis......\n");
 		for(i in 1:length(snpmat.list))
-			r.cluster[[i]] <- cpu.fun( i );
+			r.cluster[[i]] <- cpu.fun( snpmat.list[[i]] );
 	}
 	
 	return( r.cluster );
@@ -386,16 +393,16 @@ snpmat_parallel_list<-function( phe.mat,
 snpmat_call<-function(  snp.mat,
 			phe.mat,
 			Y.name, 
-  		   	Z.name,
-  		   	covar.names, 
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	op.nMcmcIter,
-		   	op.fBurnInRound,
-		   	op.fRhoTuning,
-	           	op.fQval.add,
-	           	op.fQval.dom,
+			Z.name,
+			covar.names, 
+			refit,
+			add.used,
+			dom.used,
+			op.nMcmcIter,
+			op.fBurnInRound,
+			op.fRhoTuning,
+			op.fQval.add,
+			op.fQval.dom,
 			op.debug,
 			lasso.method)
 {			
@@ -420,18 +427,18 @@ snpmat_call<-function(  snp.mat,
 	{
 		r <- .Call("gls_snpmat", 
 			as.matrix( phe.mat ),
-  		   	as.matrix( snp.mat*1.0  ),
-  		   	Y.name, 
-  		   	Z.name, 
-	   		paste(covar.names, collapse=","), 
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	op.nMcmcIter,
-		   	op.fBurnInRound,
-		   	op.fRhoTuning,
-	           	op.fQval.add,
-	           	op.fQval.dom,
+			as.matrix( snp.mat*1.0  ),
+			Y.name, 
+			Z.name, 
+			paste(covar.names, collapse=","), 
+			refit,
+			add.used,
+			dom.used,
+			op.nMcmcIter,
+			op.fBurnInRound,
+			op.fRhoTuning,
+			op.fQval.add,
+			op.fQval.dom,
 			ifelse(op.debug, 3, 1));
 	}
 	

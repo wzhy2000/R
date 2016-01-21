@@ -184,11 +184,11 @@ convert_simpe_to_plink <- function( snp.mat, snp.file.base )
 	class(snps) <- "SnpMatrix";
 
 	r <- write.plink( file.base=snp.file.base, snp.major = F, snps=t(snps), 
-	    	id=sub.name, 
-	    	father=rep(0,dim.snps[2]), 
-	    	mother=rep(0,dim.snps[2]), 
-	    	sex=rep(0,dim.snps[2]), 
-	    	phenotype=rep(-9,dim.snps[2]), 
+			id=sub.name, 
+			father=rep(0,dim.snps[2]), 
+			mother=rep(0,dim.snps[2]), 
+			sex=rep(0,dim.snps[2]), 
+			phenotype=rep(-9,dim.snps[2]), 
 			chromosome=chromosome, 
 			genetic.distance=position, 
 			position= position, 
@@ -199,6 +199,6 @@ convert_simpe_to_plink <- function( snp.mat, snp.file.base )
 	cat("Genotype files have been converted into PLINK binary format(bed/bim/fam)\n");
 
 	return(list(file.plink.bed = paste(snp.file.base, ".bed", sep=""),
-   	    	file.plink.bim = paste(snp.file.base, ".bim", sep=""),
-   	    	file.plink.fam = paste(snp.file.base, ".fam", sep="")));
+			file.plink.bim = paste(snp.file.base, ".bim", sep=""),
+			file.plink.fam = paste(snp.file.base, ".fam", sep="")));
 }

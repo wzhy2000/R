@@ -273,7 +273,7 @@ gls.fgwas <- function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names=NULL, o
 			if(length(na.row)>0) gls.mat <- gls.mat[-na.row,,drop=F];
 	
 			r0 <- try( do.call("gls", args = list(reg.f0, gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML") ) );
-		    r1 <- try( do.call("gls", args = list(reg.f1, gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML") ) );
+			r1 <- try( do.call("gls", args = list(reg.f1, gls.mat, correlation = corAR1(form = ~ Z | ID ), method="ML") ) );
 			if(any(class(r1)=="try-error") || any(class(r0)=="try-error") )
 			{
 				r.gls[i-range.fr+1,] <- c( i, snp.mat[i,1], snp.mat[i,2], length(na.row), maf, NA, pv.max );
@@ -348,8 +348,8 @@ bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 	if(length(phe.missing)>0)
 		phe.mat <- phe.mat[-phe.missing, , drop=F ];
 
-    str01 <- paste(Y.name, "~", paste(covar.names,collapse= "+") );
-    str00 <- paste(Y.name,"~ 1");
+	str01 <- paste(Y.name, "~", paste(covar.names,collapse= "+") );
+	str00 <- paste(Y.name,"~ 1");
 	reg.str0 <- ifelse( len.x>0, str01, str00 );
 
 	cat("* H0 =", as.character(reg.str0), "\n" );
@@ -454,39 +454,60 @@ bls.fgwas <- function( phe.mat, snp.mat, Y.name, covar.names=NULL, op.cpu=0)
 
 get_sigsnp_nomulti_correction<-function( f_get_snpmat, snp.obj, r.fgwas, n.snp, n.ind, fgwas.cutoff=0.05, only.sig.snp=FALSE, include.na.pvalue=TRUE )
 {
-	if( n.snp <= n.ind & !only.sig.snp)
+	if( n.snp <= n.ind && !only.sig.snp)
 	{
 		snp.mat <- f_get_snpmat( snp.obj, 1:n.snp );
 		return(list(error=F, snp.mat=snp.mat ));
 	}	
 	
-	n.sig <- length( which( r.fgwas[,7] <= fgwas.cutoff ) );
+	pv <- r.fgwas[,7];
+
+	# in order to keep NA element in the vector , replace NA with Inf.
+	pv [ is.na(pv) ] <- Inf;
+	
+	n.sig <- length( which( pv <= fgwas.cutoff ) );
 	cat("  SNPs with p-value <=", fgwas.cutoff, ":", n.sig, "\n"); 
 	
 	#sorting pv field
-	pv.sort  <- sort.int( r.fgwas[,7], decreasing=F, index.return=T);
-	
-	if( n.sig < n.ind && !only.sig.snp)
+	pv.sort  <- sort.int( pv, decreasing=F, index.return=T);
+
+	sel.p <- c();	
+	if ( only.sig.snp )
 	{
-		cat("  The count of significant SNPs is less than individual count.\n"); 
-		sel.p <- pv.sort$ix[1:n.ind];
-		sel.id <- r.fgwas[ sel.p, 1 ];
+		## Here is (n.snp > n.ind) && (only.sig.snp)
+		if ( length( which( pv.sort$x <= fgwas.cutoff) ) >0)
+		{
+			max.idx <- max( which( pv.sort$x <= fgwas.cutoff) );
+			sel.p <- pv.sort$ix[1:max.idx];
+		}
 	}
 	else
 	{
-		min.idx <- min( which(pv.sort$x > fgwas.cutoff) ) - 1;
-		sel.p <- pv.sort$ix[1:min.idx];
-
-		if( include.na.pvalue )
-			sel.p<- c( sel.p, which(is.na(r.fgwas[,7])) );
-		
-		sel.id <- r.fgwas[ sort(sel.p), 1 ];
+		## Here is (n.snp > n.ind) && (!only.sig.snp)
+		if( n.sig < n.ind )
+		{
+			cat("  The count of significant SNPs is less than individual count.\n"); 
+			sel.p <- pv.sort$ix[1:n.ind];
+		}
+		else
+		{
+			## Assert max.idx > 0
+			max.idx <- max( which( pv.sort$x <= fgwas.cutoff) );
+			sel.p <- pv.sort$ix[1:max.idx];
+		}
 	}
-
-	# debug for crash
-	# save( snp.obj, sel.id, r.fgwas, f_get_snpmat, fgwas.cutoff, file="before-crash.rdata");
+	
+	if( include.na.pvalue )
+		sel.p<- c( sel.p, which(is.na(r.fgwas[,7])) ) ;
+	
+	# if NO SNPs are slected.
+	if( length(sel.p)==0 )
+		return(list(error=F, snp.mat=NULL));
+	
+	sel.id <- r.fgwas[ sort(sel.p), 1 ];
 
 	snp.mat <- f_get_snpmat( snp.obj, sel.id );
+
 	return(list(error=F, snp.mat=snp.mat));
 }
 

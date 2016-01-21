@@ -1,4 +1,4 @@
-do.LSKAT <- function(plink.obj, options=list(qc.method="qc2") )
+do.LSKAT <- function(plink.obj, options=list(qc.method="qc2", file.rdata=NULL) )
 {
 	library(LSKAT);
 	cat("[ LSKAT ...]\n");
@@ -20,15 +20,18 @@ do.LSKAT <- function(plink.obj, options=list(qc.method="qc2") )
 	file.gene.set  <- plink.obj$gene$file.gene.hg19;
 	
 	plink.bfile <- plink.obj$genotype$plink.bfile.nobed;
-	if(options$qc.method=="qc2") plink.obj$genotype$qc2
-	if(options$qc.method=="impute") plink.obj$genotype$impute
+	if(options$qc.method=="qc2") plink.bfile <- plink.obj$genotype$qc2
+	if(options$qc.method=="impute") plink.bfile <- plink.obj$genotype$impute
 		
 	file.plink.bed <- paste( plink.bfile, "bed", sep="." );
 	file.plink.bim <- paste( plink.bfile, "bim", sep="." );
 	file.plink.fam <- paste( plink.bfile, "fam", sep="." );
-
-	file.ret.rdata <- "lskat/lskat-ret.rdata"
-
+	
+	if(is.null(options$file.rdata))
+		file.ret.rdata <- "lskat/lskat-ret.rdata"
+	else
+		file.ret.rdata <- options$file.rdata;
+	
 	options0=list(y.cov.count= NA, y.cov.time= 0, g.maxiter = 10, weights.common=c(0.5,0.5), weights.rare=c(1,25), run.cpp=F, debug=T, n.cpu=7);
 	if(!is.null( options ) )
 		options0[names(options) ] <- options

@@ -10,8 +10,8 @@ do.SKAT<-function( plink.obj, options=list(qc.method="qc2") )
 	dir.create( file.path(mainDir, subDir), showWarnings = FALSE );
 
 	plink.bfile <- plink.obj$genotype$plink.bfile.nobed;
-	if(options$qc.method=="qc2") plink.obj$genotype$qc2
-	if(options$qc.method=="impute") plink.obj$genotype$impute
+	if(options$qc.method=="qc2") plink.bfile <- plink.obj$genotype$qc2
+	if(options$qc.method=="impute") plink.bfile <- plink.obj$genotype$impute
 		
 	file.plink.bed <- paste( plink.bfile, "bed", sep="." );
 	file.plink.bim <- paste( plink.bfile, "bim", sep="." );
@@ -52,7 +52,10 @@ do.SKAT<-function( plink.obj, options=list(qc.method="qc2") )
 	# show first 6 rows
 	show(head( FAM_Cov ));
 
+	show(head( y0 ));
+
 	obj <- SKAT_Null_Model(y0 ~., data=cbind(y0=y0, FAM_Cov[,-1, drop=F]), out_type="C");
+	show(summary(obj));
 
 	SKAT.file.SSD       <- "skat/skat-gen-hg19.SSD"
 	SKAT.file.Info      <- "skat/skat-gen-hg19.SSD.info"
@@ -60,19 +63,23 @@ do.SKAT<-function( plink.obj, options=list(qc.method="qc2") )
 
 	Generate_SSD_SetID( file.plink.bed, file.plink.bim, file.plink.fam, file.gene.set, SKAT.file.SSD, SKAT.file.Info)
 
-	FAM <- Read_Plink_FAM( file.plink.fam, Is.binary=FALSE)
-
-	SSD.INFO<-Open_SSD( SKAT.file.SSD, SKAT.file.Info)
+	SSD.INFO <- Open_SSD( SKAT.file.SSD, SKAT.file.Info)
 	
-	cat("sample=", SSD.INFO$nSample, "nSets=", SSD.INFO$nSets);
+	cat("sample=", SSD.INFO$nSample, "nSets=", SSD.INFO$nSets, "\n");
+	
+	# the original weighted linear kernel SKAT
+	ret.skat <- SKAT_CommonRare.SSD.All(SSD.INFO, obj, r.corr.rare=0, r.corr.common=0, CommonRare_Cutoff=options$CommonRare_Cutoff);
+	summary(ret.skat);
 
-	summary(obj);
+	## weighted burden test
+	ret.burden <- SKAT_CommonRare.SSD.All(SSD.INFO, obj, r.corr.rare=1, r.corr.common=1, CommonRare_Cutoff=options$CommonRare_Cutoff);
+	summary(ret.burden);
 
-	out2 <- SKAT_CommonRare.SSD.All(SSD.INFO, obj);
+	## combination
+	ret.comb <- SKAT_CommonRare.SSD.All(SSD.INFO, obj, r.corr.rare=1/2, r.corr.common=1/2, CommonRare_Cutoff=options$CommonRare_Cutoff);
+	summary(ret.comb);
 
-	summary(out2);
-
-	save( out2, file=file.ret.rdata );
+	save( ret.skat, ret.burden, ret.comb, file=file.ret.rdata );
 	
 	Close_SSD();
 	
@@ -99,7 +106,7 @@ draw_skat<-function( plink.obj )
 	colnames(rlskat)<-c("id", "name", "chr", "min_pos", "snp", "rare", "Q", "pv");
 
 	load(rdata.skat);
-	rskat <- out2$results[,c(1,2)];
+	rskat <- ret.skat$results[,c(1,2)];
 	colnames(rskat)<-c("name", "pv");
 
 	rlskat <- sqldf("select rlskat.id, rlskat.name, rlskat.chr, rlskat.min_pos, rlskat.snp, rlskat.rare, rlskat.Q, rskat.pv from rlskat left join rskat on rskat.name=rlskat.name");    

@@ -14,25 +14,25 @@
 #simu_d_effect[3] = 5, 1.265, -1.225, 2.710, -1.96
 
 gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu_p=1000, 
-         	simu_snp_rho   = 0.1, 
-         	simu_snp_missing= 0.002, 
-          	simu_rho       = 0.4, 
-        	simu_sigma2    = 16,
-		 	simu_mu        = c( 13.395, -3.08, 1.875, -3.195 ),
-		 	simu_cov_range = c( -1, 1 ),
-		 	simu_cov_effect= array(c(0,0,0,0), dim=c(1,4)), 
-		 	simu_add_pos   = c( 1,2,3 ), 
-		 	simu_add_effect= array(c( 1.04, 0.885, -2.055, 0.545, 
-                                   1.17, -0.20, 0.74, -4.715,
-                                   1.40, -2.25, 1.00,  0.00), dim=c(3,4)),
-		 	simu_dom_pos   = c( 3,4,5 ), 
-		 	simu_dom_effect= array(c( 1.49, -2.135, 4.82, 1.425, 
-                                   1.045, 1.320, 1.905,  1.535,
-                                   1.265, -1.225, 2.710, -1.96), dim=c(3,4)),
-		 	simu_z_range   = c( 20, 80 ), 
-		 	simu_z_count   = c(  5, 12 ), 
-		 	plink.format	=FALSE,
-		 	debug          = FALSE )
+			simu_snp_rho   = 0.1, 
+			simu_snp_missing= 0.002, 
+			simu_rho       = 0.4, 
+			simu_sigma2    = 16,
+			simu_mu        = c( 13.395, -3.08, 1.875, -3.195 ),
+			simu_cov_range = c( -1, 1 ),
+			simu_cov_effect= array(c(0,0,0,0), dim=c(1,4)), 
+			simu_add_pos   = c( 1,2,3 ), 
+			simu_add_effect= array(c( 1.04, 0.885, -2.055, 0.545, 
+									1.17, -0.20, 0.74, -4.715,
+									1.40, -2.25, 1.00,  0.00), dim=c(3,4)),
+			simu_dom_pos   = c( 3,4,5 ), 
+			simu_dom_effect= array(c( 1.49, -2.135, 4.82, 1.425, 
+									1.045, 1.320, 1.905,  1.535,
+									1.265, -1.225, 2.710, -1.96), dim=c(3,4)),
+			simu_z_range   = c( 20, 80 ), 
+			simu_z_count   = c(  5, 12 ), 
+			plink.format	=FALSE,
+			debug          = FALSE )
 {
 	if( !missing(simu_grp) && length(simu_grp) > 1)
 		stop("The parameter of simu_grp is not a single valid value.");
@@ -118,28 +118,28 @@ gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu
 	if ( length(simu_dom_pos)>0 ) simu_dom_mat <- as.matrix( cbind( simu_dom_pos, simu_dom_effect) );
 	
 	out <- .C("gls_simulate", 
-		   as.character(file.phe.out),			  # char* szPhe_out
-  		   as.character(file.snp.out), 			  # char* szSnp_out
-  		   as.integer(simu_grp), 			      # int nSimu_grp
-  		   as.integer(simu_n), 				      # int nSimu_n
-  		   as.integer(simu_p), 				      # int nSimu_p
-  		   as.double(simu_snp_rho), 			  # double fSimu_snp_rho
-  		   as.double(simu_snp_missing), 		  # double fSimu_snp_missing
-  		   as.double(simu_rho), 			      # double fSimu_rho
-  		   as.double(simu_sigma2), 			      # double fSimu_sigma2
-		   as.double(as.vector(simu_mu)),		  # double* pfSimu_mu
-		   as.integer(NROW(simu_cov_effect)), 	  # int nSimu_covar_len
-		   as.double(as.vector(simu_cov_range)),  # double* pfSimu_covar_range
-		   as.double(as.matrix(simu_cov_effect)), # double* pfSimu_covar_effect
-		   as.integer(simu_sigp),		 	      # int nSimu_sig_p
-		   as.integer(simu_sig_add),		  	  # int nSimu_add_len
-		   as.double( simu_add_mat ),             # double* pfSimu_add_effect
-		   as.integer(simu_sig_dom),			  # int nSimu_dom_len
-		   as.double( simu_dom_mat ),             # double* pfSimu_dom_effect
-		   as.double(as.vector(simu_z_range)),	  # double* simu_z_range
-		   as.integer(as.vector(simu_z_count)),   # int* pnSimu_z_count
-		   as.integer(debug),
-		   as.integer(err) );
+			as.character(file.phe.out),				# char* szPhe_out
+			as.character(file.snp.out),				# char* szSnp_out
+			as.integer(simu_grp),					# int nSimu_grp
+			as.integer(simu_n), 					# int nSimu_n
+			as.integer(simu_p), 					# int nSimu_p
+			as.double(simu_snp_rho),				# double fSimu_snp_rho
+			as.double(simu_snp_missing),			# double fSimu_snp_missing
+			as.double(simu_rho),					# double fSimu_rho
+			as.double(simu_sigma2),					# double fSimu_sigma2
+			as.double(as.vector(simu_mu)),			# double* pfSimu_mu
+			as.integer(NROW(simu_cov_effect)),		# int nSimu_covar_len
+			as.double(as.vector(simu_cov_range)),	# double* pfSimu_covar_range
+			as.double(as.matrix(simu_cov_effect)),	# double* pfSimu_covar_effect
+			as.integer(simu_sigp),		 	      	# int nSimu_sig_p
+			as.integer(simu_sig_add),		  	  	# int nSimu_add_len
+			as.double( simu_add_mat ),             	# double* pfSimu_add_effect
+			as.integer(simu_sig_dom),			  	# int nSimu_dom_len
+			as.double( simu_dom_mat ),             	# double* pfSimu_dom_effect
+			as.double(as.vector(simu_z_range)),	  	# double* simu_z_range
+			as.integer(as.vector(simu_z_count)),   	# int* pnSimu_z_count
+			as.integer(debug),
+			as.integer(err) );
 	
 	if( plink.format )
 	{
@@ -150,14 +150,14 @@ gls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n=500, simu
 		return(list(err=err,  
 			file.simple.phe = file.phe.out,
 			file.plink.bed = r$file.plink.bed,
-   	    	file.plink.bim = r$file.plink.bim,
-   	    	file.plink.fam = r$file.plink.fam));
+			file.plink.bim = r$file.plink.bim,
+			file.plink.fam = r$file.plink.fam));
 
 	}
 	
 	return(list(err=err,  
 		file.simple.phe = file.phe.out,
-       	file.simple.snp = file.snp.out));
+		file.simple.snp = file.snp.out));
 }
 
 gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL )  
@@ -166,7 +166,7 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 	cat( "Checking the parameters ......\n");
 
 	if ( missing(file.phe) || missing(file.snp) || missing(Y.prefix) || missing(Z.prefix) || missing(covar.names) )
-             stop("! file.phe, file.snp, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
+		stop("! file.phe, file.snp, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
 
 	if ( !(is.character(Y.prefix) && length(Y.prefix)==1 ) )
 		stop("! The parameter of Y.prefix should be assigned with a prefix of outcome column in the phenotypic data.");
@@ -193,12 +193,23 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 	else	
 	{
 		options0 <- get_default_options();
-        options0[names(options)] <- options;
-        options <- options0;
-    }
+		options0[names(options)] <- options;
+		options <- options0;
+	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
+	
+	options$params <- list( 
+				file.phe       = file.phe, 
+				file.snp       = file.snp, 
+				Y.prefix       = Y.prefix, 
+				Z.prefix       = Z.prefix, 
+				covar.names    = covar.names, 
+				refit          = refit, 
+				add.used       = add.used, 
+				dom.used       = dom.used, 
+				fgwas.filter   = fgwas.filter);	
 	
 	r.gls <- list();
 	r.filter <- list();
@@ -212,7 +223,7 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 				file.snp, 
 				Y.prefix, 
 				Z.prefix, 
-  		   		paste(covar.names, collapse=","), 
+				paste(covar.names, collapse=","), 
 				refit,
 				add.used,
 				dom.used,
@@ -235,8 +246,9 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 		if(fgwas.filter)
 		{
 			r.filter <- snpmat_fgwas_filter( simple$phe.mat, simple$snp.mat, Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
-			if( r.filter$error )
-				stop(r.filter$err.info);
+
+			if( r.filter$error ) stop(r.filter$err.info);
+			if( is.null(r.filter$snp.mat) ) return ( wrap_fgwas_ret( r.filter, options) );
 		
 			r.gls <- snpmat_parallel(
 				NROW( r.filter$snp.mat ),
@@ -284,17 +296,7 @@ gls.simple<-function(file.phe, file.snp, Y.prefix, Z.prefix, covar.names, refit=
 		}
 	}
 	
-	options$params <- list( 
-				file.phe       = file.phe, 
-				file.snp       = file.snp, 
-				Y.prefix       = Y.prefix, 
-				Z.prefix       = Z.prefix, 
-				covar.names    = covar.names, 
-				refit          = refit, 
-				add.used       = add.used, 
-				dom.used       = dom.used, 
-				fgwas.filter   = fgwas.filter);
-	
+
 	if(!is.null(r.gls) && !is.na(r.gls))
 	{
 		r <- wrap_GLS_ret(r.gls, r.filter, options);
@@ -313,8 +315,8 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	cat( "Checking the parameters ......\n");
 
 	if ( missing(file.phe) || missing(file.plink.bed) || missing(file.plink.bim) || missing(file.plink.fam) || 
-             missing(Y.prefix) || missing(Z.prefix) || missing(covar.names) )
-             stop("! file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
+		missing(Y.prefix) || missing(Z.prefix) || missing(covar.names) )
+		stop("! file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
 
 	if ( !(is.character(Y.prefix) && length(Y.prefix)==1 ) )
 		stop("! The parameter of Y.prefix should be assigned with a prefix of outcome column in the phenotypic data.");
@@ -347,28 +349,48 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	else	
 	{
 		options0 <- get_default_options();
-        options0[names(options)] <- options;
-        options <- options0;
-    }
+		options0[names(options)] <- options;
+		options <- options0;
+	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
 
+	options$params <- list( file.phe       = file.phe, 
+				file.plink.bed = file.plink.bed, 
+				file.plink.bim = file.plink.bim, 
+				file.plink.fam = file.plink.fam,				
+				Y.prefix       = Y.prefix, 
+				Z.prefix       = Z.prefix, 
+				covar.names    = covar.names, 
+				refit          = refit, 
+				add.used       = add.used, 
+				dom.used       = dom.used, 
+				fgwas.filter   = fgwas.filter);
+	
 	pd <- list();
 	r.filter <- list();
 	
 	if( force.split || !try_load_plink( file.plink.bed,  file.plink.bim, file.plink.fam ) )
 	{
 		# It is bigdata which need to split it into chromosome unit
-	    # The following will split the data and force to do fGWAS filter.
+		# The following will split the data and force to do fGWAS filter.
 
-	    r.filter <- plink_fgwas_bigdata ( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe, plink.command, 
-	    						          Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
-		if( r.filter$error )
-			stop(r.filter$err.info);
+		if( !is.null(options$fgwas.rdata)  && load(options$fgwas.rdata)=="r.filter" )
+		{
+		}
+		else
+		{
+		r.filter <- plink_fgwas_bigdata ( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe, plink.command, 
+										Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
 
-	    fgwas.filter <- TRUE;
-	    pd <- list(phe.mat=r.filter$phe.mat, snp.mat=r.filter$snp.mat);
+		if( r.filter$error ) stop(r.filter$err.info);
+		if( !is.null( options$fgwas.rdata ) ) 
+			save(r.filter, file=options$fgwas.rdata);
+		}
+		
+		fgwas.filter <- TRUE;
+		pd <- list(phe.mat=r.filter$phe.mat, snp.mat=r.filter$snp.mat);
 	}	
 	else
 	{
@@ -380,8 +402,10 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 		{
 			# call FGWAS.R to do FILTER and the gls__snpmat
 			r.filter <- plink_fgwas_filter( pd, Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
-			if( r.filter$error )
-				stop(r.filter$err.info);
+
+			if( r.filter$error ) stop(r.filter$err.info);
+			if( !is.null( options$fgwas.rdata ) ) 
+				save(r.filter, file=options$fgwas.rdata);
 		}				
 	}
 	
@@ -389,6 +413,8 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 
 	if( fgwas.filter)
 	{
+		if( is.null(r.filter$snp.mat) ) return ( wrap_fgwas_ret( r.filter, options) );
+
 		subset_op <- function(snpmat, sub.idx)
 		{
 			return( snpmat[sub.idx,,drop=F] );
@@ -399,18 +425,18 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 			subset_op,
 			r.filter$snp.mat,
 			pd$phe.mat,
-  		   	Y.prefix, 
-  		   	Z.prefix,
-  		   	covar.names,
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	options$nPiecewise.ratio,
-  		   	options$nMcmcIter,
-		   	options$fBurnInRound,
-		   	options$fRhoTuning,
-	        options$fQval.add,
-	        options$fQval.dom,
+			Y.prefix, 
+			Z.prefix,
+			covar.names,
+			refit,
+			add.used,
+			dom.used,
+			options$nPiecewise.ratio,
+			options$nMcmcIter,
+			options$fBurnInRound,
+			options$fRhoTuning,
+			options$fQval.add,
+			options$fQval.dom,
 			options$debug,
 			options$nParallel.cpu,
 			"GLS");
@@ -430,34 +456,22 @@ gls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 			subset_op,
 			pd$snp.mat,
 			pd$phe.mat,
-  		   	Y.prefix, 
-  		   	Z.prefix,
-  		  	covar.names,
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	options$nPiecewise.ratio,
-  		   	options$nMcmcIter,
-		   	options$fBurnInRound,
-		   	options$fRhoTuning,
-	        options$fQval.add,
-	        options$fQval.dom,
+			Y.prefix, 
+			Z.prefix,
+			covar.names,
+			refit,
+			add.used,
+			dom.used,
+			options$nPiecewise.ratio,
+			options$nMcmcIter,
+			options$fBurnInRound,
+			options$fRhoTuning,
+			options$fQval.add,
+			options$fQval.dom,
 			options$debug,
 			options$nParallel.cpu,
 			"GLS");
 	}
-	
-	options$params <- list( file.phe       = file.phe, 
-				file.plink.bed = file.plink.bed, 
-				file.plink.bim = file.plink.bim, 
-				file.plink.fam = file.plink.fam,				
-				Y.prefix       = Y.prefix, 
-				Z.prefix       = Z.prefix, 
-				covar.names    = covar.names, 
-				refit          = refit, 
-				add.used       = add.used, 
-				dom.used       = dom.used, 
-				fgwas.filter   = fgwas.filter);
 	
 	if(!is.null(r.gls) && !is.na(r.gls))
 	{
@@ -477,8 +491,8 @@ gls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.prefix, 
 	cat( "Checking the parameters ......\n");
 
 	if ( missing(file.phe) || missing(file.plink.tped) || missing(file.plink.tfam) ||
-             missing(Y.prefix) || missing(Z.prefix) || missing(covar.names) )
-             stop("! file.phe, file.plink.tped, file.plink.tfam, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
+		missing(Y.prefix) || missing(Z.prefix) || missing(covar.names) )
+		stop("! file.phe, file.plink.tped, file.plink.tfam, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
 
 	if ( !(is.character(Y.prefix) && length(Y.prefix)==1 ) )
 		stop("! The parameter of Y.prefix should be assigned with a prefix of outcome column in the phenotypic data.");
@@ -506,9 +520,9 @@ gls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.prefix, 
 	else	
 	{
 		options0 <- get_default_options();
-        	options0[names(options)] <- options;
-        	options <- options0;
-    	}
+		options0[names(options)] <- options;
+		options <- options0;
+	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
@@ -518,22 +532,22 @@ gls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.prefix, 
 	r.filter <- list();
 	r.gls <- .Call("gls_plink_tped", 
 			file.phe,
-	   		file.plink.tped, 
-		   	file.plink.tfam, 
- 		   	Y.prefix, 
-  		   	Z.prefix, 
-	   		paste(covar.names, collapse=","), 
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	options$nMcmcIter,
-		   	options$fBurnInRound,
-		   	options$fRhoTuning,
-	        options$fQval.add,
-	        options$fQval.dom,
+			file.plink.tped, 
+			file.plink.tfam, 
+			Y.prefix, 
+			Z.prefix, 
+			paste(covar.names, collapse=","), 
+			refit,
+			add.used,
+			dom.used,
+			options$nMcmcIter,
+			options$fBurnInRound,
+			options$fRhoTuning,
+			options$fQval.add,
+			options$fQval.dom,
 			ifelse( options$debug,3 , 1) );
 
-	options$params <- list( file.phe       = file.phe, 
+	options$params <- list( file.phe = file.phe, 
 				file.plink.tped= file.plink.tped, 
 				file.plink.tfam= file.plink.tfam, 
 				Y.prefix       = Y.prefix, 
@@ -564,7 +578,7 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
 	cat( "Checking the parameters ......\n");
 
 	if ( missing(phe.mat) || missing(snp.mat) || missing(Y.prefix) || missing(Z.prefix) || missing(covar.names) )
-             stop("! phe.mat, snp.mat, file.plink.tfam, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
+		stop("! phe.mat, snp.mat, file.plink.tfam, Y.prefix, Z.prefix and covar.names must be assigned with the valid values.");
 
 	if ( !(is.character(Y.prefix) && length(Y.prefix)==1 ) )
 		stop("! The parameter of Y.prefix should be assigned with a prefix of outcome column in the phenotypic data.");
@@ -591,23 +605,30 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
 	else	
 	{
 		options0 <- get_default_options();
-        	options0[names(options)] <- options;
-        	options <- options0;
-    }
+		options0[names(options)] <- options;
+		options <- options0;
+	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
 
+	options$params <- list( Y.prefix       = Y.prefix, 
+				Z.prefix       = Z.prefix, 
+				covar.names    = covar.names, 
+				refit          = refit, 
+				add.used       = add.used, 
+				dom.used       = dom.used, 
+				fgwas.filter   = fgwas.filter);
+	
 	if( class(phe.mat)=="data.frame" )
- 	{
- 		cat("Phenotypic data frame is converted to the matrix class.\n");  
- 		phe.colnames <- colnames(phe.mat); 
- 		phe.rownames <- rownames(phe.mat); 
- 		phe.mat <- matrix(as.numeric(as.matrix(phe.mat, rownames.force=NA)), ncol=NCOL(phe.mat))
- 		colnames(phe.mat) <- phe.colnames;
- 		rownames(phe.mat) <- phe.rownames;
+	{
+		cat("Phenotypic data frame is converted to the matrix class.\n");  
+		phe.colnames <- colnames(phe.mat); 
+		phe.rownames <- rownames(phe.mat); 
+		phe.mat <- matrix(as.numeric(as.matrix(phe.mat, rownames.force=NA)), ncol=NCOL(phe.mat))
+		colnames(phe.mat) <- phe.colnames;
+		rownames(phe.mat) <- phe.rownames;
 	}
-
 
 	r.gls <- list();
 	r.filter <- list();
@@ -620,16 +641,16 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
 			as.matrix( phe.mat ),
 			as.matrix( snp.mat*1.0 ),
 			Y.prefix, 
-  		   	Z.prefix, 
-  		   	paste(covar.names, collapse=","), 
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	options$nMcmcIter,
-		   	options$fBurnInRound,
-		   	options$fRhoTuning,
-	        options$fQval.add,
-	        options$fQval.dom,
+			Z.prefix, 
+			paste(covar.names, collapse=","), 
+			refit,
+			add.used,
+			dom.used,
+			options$nMcmcIter,
+			options$fBurnInRound,
+			options$fRhoTuning,
+			options$fQval.add,
+			options$fQval.dom,
 			ifelse( options$debug, 3, 1) );
 	}
 	else
@@ -642,8 +663,9 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
 		if(fgwas.filter)
 		{
 			r.filter <- snpmat_fgwas_filter( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "GLS");
-			if( r.filter$error )
-				stop(r.filter$err.info);
+
+			if( r.filter$error ) stop(r.filter$err.info);
+			if( is.null(r.filter$snp.mat) ) return ( wrap_fgwas_ret( r.filter, options) );
 		
 			r.gls <- snpmat_parallel(
 				NROW(r.filter$snp.mat),
@@ -691,14 +713,6 @@ gls.snpmat<-function( phe.mat, snp.mat, Y.prefix, Z.prefix, covar.names, refit=T
 		}
 	}
 
-	options$params <- list( Y.prefix       = Y.prefix, 
-				Z.prefix       = Z.prefix, 
-				covar.names    = covar.names, 
-				refit          = refit, 
-				add.used       = add.used, 
-				dom.used       = dom.used, 
-				fgwas.filter   = fgwas.filter);
-	
 	if(!is.null(r.gls) && !is.na(r.gls))
 	{
 		r <- wrap_GLS_ret(r.gls, r.filter, options);
@@ -809,7 +823,7 @@ merge_add_dom<-function( re_add, re_dom )
 
 summary.GLS.ret<-function(object, ...)
 {
- 	r.gls <- object;
+	r.gls <- object;
 	r.sum.ret <- list();
 
 	if(!is.null( r.gls$refit_cov ) && NROW( r.gls$refit_cov )>0 )
@@ -872,7 +886,7 @@ summary.GLS.ret<-function(object, ...)
 
 print.sum.GLS.ret<-function(x, ...)
 {
- 	r.sum.ret <- x;
+	r.sum.ret <- x;
 
 	if(!is.null(r.sum.ret$fgwas_sig))
 	{
@@ -915,6 +929,18 @@ print.sum.GLS.ret<-function(x, ...)
 		cat("--- Refit Result:", NROW(r.sum.ret$refit), "SNPs\n");
 		show(r.sum.ret$refit);
 	}
+}
+
+wrap_fgwas_ret<-function( r.filter, options )
+{
+	cat( "Wrapping the results ......\n");
+	
+	r.gls <- list();
+	if(!is.null(r.filter)) r.gls$fgwas <- r.filter$r;
+	r.gls$options <- options;
+	class(r.gls) <- "GLS.ret";
+
+	return(r.gls);
 }
 
 wrap_GLS_ret<-function(r.gls, r.filter, options )

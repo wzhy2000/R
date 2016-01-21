@@ -86,14 +86,14 @@ bls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n= 500, sim
 	err <- 0;
 	out <- .C("bls_simulate", 
 		   as.character(file.phe.out),		     # char* szPhe_out
-  		   as.character(file.snp.out), 		     # char* szSnp_out
-  		   as.integer(simu_grp), 		         # int nSimu_grp
-  		   as.integer(simu_n), 			         # int nSimu_n
-  		   as.integer(simu_p), 			         # int nSimu_p
-  		   as.double(simu_snp_rho), 	         # double fSimu_snp_rho
-  		   as.double(simu_snp_missing), 	     # double fSimu_snp_missing
-  		   as.double(simu_rho), 		         # double fSimu_rho
-  		   as.double(simu_sigma2), 		         # double fSimu_sigma2
+		   as.character(file.snp.out), 		     # char* szSnp_out
+		   as.integer(simu_grp), 		         # int nSimu_grp
+		   as.integer(simu_n), 			         # int nSimu_n
+		   as.integer(simu_p), 			         # int nSimu_p
+		   as.double(simu_snp_rho), 	         # double fSimu_snp_rho
+		   as.double(simu_snp_missing), 	     # double fSimu_snp_missing
+		   as.double(simu_rho), 		         # double fSimu_rho
+		   as.double(simu_sigma2), 		         # double fSimu_sigma2
 		   as.double(simu_mu),			         # double fSimu_mu
 		   as.integer(simu_cov_count),
 		   as.double(as.vector(simu_cov_effect)),# double* pfSimu_cov_coeff
@@ -118,14 +118,14 @@ bls.simulate<-function( file.phe.out, file.snp.out, simu_grp=1, simu_n= 500, sim
 		return(list(err=err,  
 			file.simple.phe = file.phe.out,
 			file.plink.bed = r$file.plink.bed,
-   	    	file.plink.bim = r$file.plink.bim,
-   	    	file.plink.fam = r$file.plink.fam));
+			file.plink.bim = r$file.plink.bim,
+			file.plink.fam = r$file.plink.fam));
 
 	}
 	
 	return(list(err=err,  
 		file.simple.phe = file.phe.out,
-       	file.simple.snp = file.snp.out));
+		file.simple.snp = file.snp.out));
 }
 
 bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.used=TRUE, dom.used=TRUE, fgwas.filter=FALSE, options=NULL)
@@ -134,7 +134,7 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 	cat( "Checking the parameters ......\n");
 
 	if ( missing(file.phe) || missing(file.snp) || missing(Y.name) || missing(covar.names) )
-             stop("! file.phe, file.snp, Y.name and covar.names must be assigned with the valid values.");
+		stop("! file.phe, file.snp, Y.name and covar.names must be assigned with the valid values.");
 
 	if ( !(is.character(Y.name) && length(Y.name)==1 ) )
 		stop("! The parameter of Y.name should be assigned with a outcome column in the phenotypic data.");
@@ -159,12 +159,22 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 	else	
 	{
 		options0 <- get_default_options();
-        	options0[names(options)] <- options;
-        	options <- options0;
-    	}
+		options0[names(options)] <- options;
+		options <- options0;
+	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
+	
+	options$params <- list( file.phe     = file.phe, 
+				file.snp     = file.snp, 
+				Y.name       = Y.name, 
+				covar.names  = covar.names, 
+				refit        = refit, 
+				add.used     = add.used, 
+				dom.used     = dom.used, 
+				fgwas.filter = fgwas.filter);
+
 	
 	r.bls <- list();
 	r.filter <- list();
@@ -174,17 +184,17 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 		cat( "Genetic Effect Analysis by BLASSO method......\n");
 		r.bls <- .Call("bls_simple", 
 			file.phe,
-  		   	file.snp, 
-  		   	Y.name, 
-  		   	paste(covar.names, collapse=","), 
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	options$nMcmcIter,
-		   	options$fBurnInRound,
-		   	options$fRhoTuning,
-	        options$fQval.add,
-	        options$fQval.dom,
+			file.snp, 
+			Y.name, 
+			paste(covar.names, collapse=","), 
+			refit,
+			add.used,
+			dom.used,
+			options$nMcmcIter,
+			options$fBurnInRound,
+			options$fRhoTuning,
+			options$fQval.add,
+			options$fQval.dom,
 			ifelse( options$debug, 3, 1) );
 	}
 	else
@@ -199,8 +209,9 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 		if(fgwas.filter)
 		{
 			r.filter <- snpmat_fgwas_filter( simple$phe.mat, simple$snp.mat, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS");
-			if( r.filter$error )
-				stop(r.filter$err.info);
+			
+			if( r.filter$error ) stop(r.filter$err.info);
+			if( is.null(r.filter$snp.mat)) return( wrap_fgwas_ret( r.filter, options) ); 
 		
 			r.bls <- snpmat_parallel(
 				NROW( r.filter$snp.mat ),
@@ -248,15 +259,6 @@ bls.simple<-function(file.phe, file.snp, Y.name, covar.names, refit=TRUE, add.us
 		}
 	}
 	
-	options$params <- list( file.phe     = file.phe, 
-				file.snp     = file.snp, 
-				Y.name       = Y.name, 
-				covar.names  = covar.names, 
-				refit        = refit, 
-				add.used     = add.used, 
-				dom.used     = dom.used, 
-				fgwas.filter = fgwas.filter);
-
 	if(!is.null(r.bls) && !is.na(r.bls))
 	{
 		r <- wrap_BLS_ret( r.bls, r.filter, options );
@@ -275,8 +277,8 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	cat( "Checking the parameters ......\n");
 
 	if ( missing(file.phe) || missing(file.plink.bed) || missing(file.plink.bim) || missing(file.plink.fam) || 
-	     missing(Y.name) || missing(covar.names) )
-             stop("! file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.name and covar.names must be assigned with the valid values.");
+		missing(Y.name) || missing(covar.names) )
+		stop("! file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y.name and covar.names must be assigned with the valid values.");
 
 	if ( !(is.character(Y.name) && length(Y.name)==1 ) )
 		stop("! The parameter of Y.name should be assigned with a outcome column in the phenotypic data.");
@@ -307,29 +309,39 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 	else	
 	{
 		options0 <- get_default_options();
-        options0[names(options)] <- options;
-        options <- options0;
+		options0[names(options)] <- options;
+		options <- options0;
 	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
 
+	options$params <- list( file.phe     = file.phe, 
+				file.plink.bed = file.plink.bed, 
+				file.plink.bim = file.plink.bim, 
+				file.plink.fam = file.plink.fam,
+				Y.name       = Y.name, 
+				covar.names  = covar.names, 
+				refit        = refit, 
+				add.used     = add.used, 
+				dom.used     = dom.used, 
+				fgwas.filter = fgwas.filter);
+	
 	pd <- list();
 	r.filter <- list();
 	
 	if( force.split || !try_load_plink( file.plink.bed,  file.plink.bim, file.plink.fam ) )
 	{
 		# It is bigdata which need to split it into chromosome unit
-	    # The following will split the data and force to do fGWAS filter.
+		# The following will split the data and force to do fGWAS filter.
 
-	    r.filter <- plink_fgwas_bigdata ( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe, plink.command, 
-	    						          Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS");
-		if( r.filter$error )
-			stop(r.filter$err.info);
+		r.filter <- plink_fgwas_bigdata ( file.plink.bed,  file.plink.bim, file.plink.fam, file.phe, plink.command, 
+										Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS");
+		if( r.filter$error ) stop(r.filter$err.info);
 
-	    fgwas.filter <- TRUE;
+		fgwas.filter <- TRUE;
 
-	    pd <- list(phe.mat=r.filter$phe.mat, snp.mat=r.filter$snp.mat);
+		pd <- list(phe.mat=r.filter$phe.mat, snp.mat=r.filter$snp.mat);
 	}	
 	else
 	{
@@ -341,8 +353,8 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 		{
 			# call FGWAS.R to do FILTER and the bls_snpmat
 			r.filter <- plink_fgwas_filter( pd, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS")
-			if( r.filter$error )
-				stop(r.filter$err.info);
+
+			if( r.filter$error ) stop(r.filter$err.info);
 		}				
 	}
 	
@@ -350,6 +362,8 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 
 	if( fgwas.filter )
 	{
+		if( is.null(r.filter$snp.mat)) return( wrap_fgwas_ret( r.filter, options) ); 
+	
 		subset_op <- function(snpmat, sub.idx)
 		{
 			return( snpmat[sub.idx,,drop=F] );
@@ -360,18 +374,18 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 			subset_op,
 			r.filter$snp.mat,
 			pd$phe.mat,
-  		   	Y.name, 
-  		   	NULL,
-  		   	covar.names,
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	options$nPiecewise.ratio,
-  		   	options$nMcmcIter,
-		   	options$fBurnInRound,
-		   	options$fRhoTuning,
-		   	options$fQval.add,
-		   	options$fQval.dom,
+			Y.name, 
+			NULL,
+			covar.names,
+			refit,
+			add.used,
+			dom.used,
+			options$nPiecewise.ratio,
+			options$nMcmcIter,
+			options$fBurnInRound,
+			options$fRhoTuning,
+			options$fQval.add,
+			options$fQval.dom,
 			options$debug,
 			options$nParallel.cpu,
 			"BLS");
@@ -391,33 +405,22 @@ bls.plink<-function( file.phe, file.plink.bed, file.plink.bim, file.plink.fam, Y
 			subset_op,
 			pd$snp.mat,
 			pd$phe.mat,
-  		   	Y.name, 
-  		   	NULL,
-  		  	covar.names,
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	options$nPiecewise.ratio,
-  		   	options$nMcmcIter,
-		   	options$fBurnInRound,
-		   	options$fRhoTuning,
-		   	options$fQval.add,
-		   	options$fQval.dom,
+			Y.name, 
+			NULL,
+			covar.names,
+			refit,
+			add.used,
+			dom.used,
+			options$nPiecewise.ratio,
+			options$nMcmcIter,
+			options$fBurnInRound,
+			options$fRhoTuning,
+			options$fQval.add,
+			options$fQval.dom,
 			options$debug,
 			options$nParallel.cpu,
 			"BLS");
 	}
-	
-	options$params <- list( file.phe     = file.phe, 
-				file.plink.bed = file.plink.bed, 
-				file.plink.bim = file.plink.bim, 
-				file.plink.fam = file.plink.fam,
-				Y.name       = Y.name, 
-				covar.names  = covar.names, 
-				refit        = refit, 
-				add.used     = add.used, 
-				dom.used     = dom.used, 
-				fgwas.filter = fgwas.filter);
 	
 	if(!is.null(r.bls) && !is.na(r.bls))
 	{
@@ -437,8 +440,8 @@ bls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.name, co
 	cat( "Checking the parameters ......\n");
 
 	if ( missing(file.phe) || missing(file.plink.tped) || missing(file.plink.tfam) ||
-	     missing(Y.name) || missing(covar.names) )
-             stop("! file.phe, file.plink.tped, file.plink.tfam, Y.name and covar.names must be assigned with the valid values.");
+		missing(Y.name) || missing(covar.names) )
+		stop("! file.phe, file.plink.tped, file.plink.tfam, Y.name and covar.names must be assigned with the valid values.");
 
 	if ( !(is.character(Y.name) && length(Y.name)==1 ) )
 		stop("! The parameter of Y.name should be assigned with a outcome column in the phenotypic data.");
@@ -462,9 +465,9 @@ bls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.name, co
 	else	
 	{
 		options0 <- get_default_options();
-        	options0[names(options)] <- options;
-        	options <- options0;
-    	}
+		options0[names(options)] <- options;
+		options <- options0;
+	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
@@ -476,7 +479,7 @@ bls.plink.tped<-function( file.phe, file.plink.tped, file.plink.tfam, Y.name, co
 			file.plink.tped, 
 			file.plink.tfam, 
 			Y.name, 
-	  		paste(covar.names, collapse=","), 
+			paste(covar.names, collapse=","), 
 			refit,
 			add.used,
 			dom.used,
@@ -516,7 +519,7 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 	cat( "Checking the parameters ......\n");
 
 	if ( missing(phe.mat) || missing(snp.mat) || missing(Y.name) || missing(covar.names) )
-             stop("! phe.mat, snp.mat, Y.name and covar.names must be assigned with the valid values.");
+		stop("! phe.mat, snp.mat, Y.name and covar.names must be assigned with the valid values.");
 
 	if ( !(is.character(Y.name) && length(Y.name)==1 ) )
 		stop("! The parameter of Y.name should be assigned with a outcome column in the phenotypic data.");
@@ -541,21 +544,28 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 	else	
 	{
 		options0 <- get_default_options();
-        	options0[names(options)] <- options;
-        	options <- options0;
-    }
+		options0[names(options)] <- options;
+		options <- options0;
+	}
 	
 	cat( "Checking the optional items......\n");
 	show_options( options);
 
+	options$params <- list( Y.name       = Y.name, 
+				covar.names  = covar.names, 
+				refit        = refit, 
+				add.used     = add.used, 
+				dom.used     = dom.used, 
+				fgwas.filter = fgwas.filter);
+
 	if( class(phe.mat)=="data.frame" )
- 	{
- 		cat("Phenotypic data frame is converted to the matrix class.\n");  
- 		phe.colnames <- colnames(phe.mat); 
- 		phe.rownames <- rownames(phe.mat); 
- 		phe.mat <- matrix(as.numeric(as.matrix(phe.mat, rownames.force=NA)), ncol=NCOL(phe.mat))
- 		colnames(phe.mat) <- phe.colnames;
- 	 	rownames(phe.mat) <- phe.rownames;
+	{
+		cat("Phenotypic data frame is converted to the matrix class.\n");  
+		phe.colnames <- colnames(phe.mat); 
+		phe.rownames <- rownames(phe.mat); 
+		phe.mat <- matrix(as.numeric(as.matrix(phe.mat, rownames.force=NA)), ncol=NCOL(phe.mat))
+		colnames(phe.mat) <- phe.colnames;
+	 	rownames(phe.mat) <- phe.rownames;
 	}
 	
 	r.bls <- list();
@@ -569,15 +579,15 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 			as.matrix( phe.mat ),
 			as.matrix( snp.mat*1.0 ),
 			Y.name, 
-  		   	paste(covar.names, collapse=","), 
-  		   	refit,
-  		   	add.used,
-  		   	dom.used,
-  		   	options$nMcmcIter,
-		   	options$fBurnInRound,
-		   	options$fRhoTuning,
-	        options$fQval.add,
-	        options$fQval.dom,
+			paste(covar.names, collapse=","), 
+			refit,
+			add.used,
+			dom.used,
+			options$nMcmcIter,
+			options$fBurnInRound,
+			options$fRhoTuning,
+			options$fQval.add,
+			options$fQval.dom,
 			ifelse( options$debug, 3, 1) );
 	}
 	else
@@ -590,8 +600,9 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 		if(fgwas.filter)
 		{
 			r.filter <- snpmat_fgwas_filter( phe.mat, snp.mat, Y.name, NULL, covar.names, options$nParallel.cpu, options$fgwas.cutoff, "BLS")
-			if( r.filter$error )
-				stop(r.filter$err.info);
+
+			if( r.filter$error ) stop(r.filter$err.info);
+			if( is.null(r.filter$snp.mat)) return( wrap_fgwas_ret( r.filter, options) ); 
 		
 			r.bls <- snpmat_parallel(
 				NROW(r.filter$snp.mat),
@@ -639,13 +650,6 @@ bls.snpmat<-function(phe.mat, snp.mat, Y.name, covar.names, refit=TRUE, add.used
 		}
 	}
 	
-	options$params <- list( Y.name       = Y.name, 
-				covar.names  = covar.names, 
-				refit        = refit, 
-				add.used     = add.used, 
-				dom.used     = dom.used, 
-				fgwas.filter = fgwas.filter);
-
 	if(!is.null(r.bls) && !is.na(r.bls))
 	{
 		r <- wrap_BLS_ret( r.bls, r.filter, options );
@@ -871,15 +875,15 @@ wrap_BLS_ret<-function(r.bls, r.filter, options)
 get_default_options<-function()
 {
 	options=list(
-               nParallel.cpu = 0,    
-               nPiecewise.ratio = 2,    
-               nMcmcIter = 2000,    
-               fBurnInRound = 0.3,   
-               fRhoTuning = 0.095,  
-               fQval.add  = 0.05,   
-               fQval.dom  = 0.09,  
-               fgwas.cutoff = 0.05,
-               debug      = F ) 
+				nParallel.cpu = 0,    
+				nPiecewise.ratio = 2,    
+				nMcmcIter = 2000,    
+				fBurnInRound = 0.3,   
+				fRhoTuning = 0.095,  
+				fQval.add  = 0.05,   
+				fQval.dom  = 0.09,  
+				fgwas.cutoff = 0.05,
+				debug      = F ) 
 
 	return(options);	
 }
