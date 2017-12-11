@@ -1,15 +1,91 @@
 library(mvtnorm);
 
-est_gen_Q.R<-function(Y.delt, Y.time, maf, Z, X, par_null, y.cov.time)
+#public:
+longskat_gene_run <- function( r.model, snp.mat, weights.common=c(0.5,0.5), weights.rare=c(1,25), 
+					rare.cutoff=NULL, test.type="Joint", r.corr=2,  run.cpp=T, debug=F ) 
 {
+	Y.delt   <- r.model$y.delt; 
+	Y.time   <- r.model$y.time; 
+	par_null <- c( r.model$par$sig_a,  r.model$par$sig_b, r.model$par$sig_e, r.model$par$rho );
+
+	X <- r.model$y.cov;
+	if(r.model$par$intercept)
+		X <- cbind(1, r.model$y.cov);
+
+	## SKAT Mode
+ 	Z.scale.skat <- SKAT_Scale_Genotypes( X, 
+ 					snp.mat, 
+ 					weights.common = weights.common, 
+ 					weights.rare   = weights.rare, 
+ 					rare.cutoff    = rare.cutoff, 
+ 					test.type      = test.type,
+ 					r.corr.common  = 0, 
+ 					r.corr.rare    = 0 )
+
+	## Burden Mode
+ 	Z.scale.burden <- SKAT_Scale_Genotypes( X, 
+ 					snp.mat, 
+ 					weights.common = weights.common, 
+ 					weights.rare   = weights.rare, 
+ 					rare.cutoff    = rare.cutoff, 
+ 					test.type      = test.type,
+ 					r.corr.common  = 1, 
+ 					r.corr.rare    = 1 )
+
+	Q <- try( est_gen_Q( par_null, 
+					X, 
+ 					Y.delt, 						
+					Y.time, 
+					Z.scale.skat, 
+					Z.scale.burden, 
+					r.model$par$y.cov.time, 
+					run.cpp = run.cpp ) );
+
+	if (class(Q)=="try-error")
+		return(NULL);
+		
+	p.lskat <- get_Qv_pvalue(Q$v.lskat, Q$w.lskat);
+	p.burden <- get_Qu_pvalue(Q$v.burden, Q$w.burden);
+
+	if(debug) cat( " MAF=", (Z.scale.skat$maf), "\n");
+	
+	r.lskat <- list( mle      = r.model, 
+					snp.total = NCOL(snp.mat), 
+					snp.rare  = Z.scale.skat$rare, 
+					q.lskat   = Q$v.lskat, 
+					p.lskat   = p.lskat$p.value, 
+					q.burden  = Q$v.burden, 
+					p.burden  = p.burden$p.value);
+	class(r.lskat) <- "LSKAT.gen.ret";
+	
+	return(r.lskat)
+}
+
+est_gen_Q.R<-function( par_null, X, Y.delt, Y.time, maf, Z, y.cov.time )
+{
+	Get_SKAT_Residuals.Get_X1 = function(X1){
+
+		qr1<-qr(X1)
+		q1<-ncol(X1)
+		if(qr1$rank < q1){
+
+			X1.svd<-svd(X1)
+			X1 = X1.svd$u	
+		} 
+
+		return(X1)
+	}
+	
+	X <- Get_SKAT_Residuals.Get_X1(X);
+
 	sig_a2  <- par_null[1]^2;
 	sig_b2  <- par_null[2]^2;
 	sig_e2  <- par_null[3]^2;
 	par_rho <- par_null[4];
 
-	n <- dim(Y.delt)[1];
-	m <- dim(Y.delt)[2];
-	k <- length(maf);
+	n <- NROW(Y.delt);
+	m <- NCOL(Y.delt);
+	k <- NCOL(Z);
 	
 	# SKAT   qv,pv
 	Q.v<-0;
@@ -20,89 +96,99 @@ est_gen_Q.R<-function(Y.delt, Y.time, maf, Z, X, par_null, y.cov.time)
 	AR.1 <- matrix(rep(1:m,m),ncol=m, byrow=T)
 	AR.1 <- par_rho^abs(t(AR.1)-AR.1)
 
-	V.j <- array(1, dim=c(m,m)) * sig_a2 +  AR.1 * sig_b2 + diag(1, m) * sig_e2
-	V.j_1 <- solve(V.j);
+	V    <- array(1, dim=c(m,m)) * sig_a2 +  AR.1 * sig_b2 + diag(1, m) * sig_e2
+	V_1  <- solve(V);
 
-	if(0)
+	V.i <- lapply(1:n, function(i) { idx<- !is.na(Y.delt[i,]); return(solve(V[idx, idx])); });
+	Y.i <- lapply(1:n, function(i) { idx<- !is.na(Y.delt[i,]); return(Y.delt[i,idx]); });
+	M.i <- unlist(lapply(1:n, function(i) { return(length(Y.i[[i]])); }));
+
+	for(i in 1:k)
 	{
-		V_1 <- kronecker( diag(1,n), V.j_1 );
-
-		K1 <-  kronecker( Z, array(1, dim=c(m,1)) ); 
-		KY <-  array( c(t(Y.delt)), dim=c(m*n,1));
-		Q.v<- t( KY ) %*% V_1 %*% K1 %*% t(K1) %*%V_1 %*% KY /2;
-
-		kr.Z<- kronecker( Z, array(1, dim=c(m,1)) );
-		kr.X<- kronecker( X, array(1, dim=c(m,1)) );
-		Q.w <- t(kr.Z)%*% V_1 %*% kr.Z - (t(kr.Z)%*% V_1 %*%kr.X) %*% solve(t(kr.X)%*% V_1 %*% kr.X) %*% (t(kr.X)%*% V_1 %*%kr.Z);
+		Q.i <- lapply(1:n, function(j){ Z[j,i]*t(rep(1, M.i[j] )) %*% V.i[[j]] %*% (Y.i[[j]]);});
+		Q.v <- Q.v + (sum(unlist(Q.i)))^2;
+		Q.u <- Q.u + (sum(unlist(Q.i)));
 	}
-	else
+		
+	Q.v <- Q.v/2;
+	Q.u <- Q.u^2/2;
+		
+	n.x <- NCOL(X) + y.cov.time ;
+	W0 <- array(0, dim=c(k,k));
+	W1 <- array(0, dim=c(k,n.x));
+	W2 <- array(0, dim=c(n.x,n.x));
+	W3 <- array(0, dim=c(n.x,k));
+		
+	for (i in 1:n)
 	{
-		V.j_x <- list();
-		Y.j_x <- list();
-		M.j_x <- c();
-
-		for(i in 1:n){
-			y.i <- Y.delt[i,];
-			y.j_i <- V.j[!is.na(y.i), !is.na(y.i)];
-			V.j_x[[i]] <- solve(y.j_i);
-			Y.j_x[[i]] <- y.i[!is.na(y.i)];
-			M.j_x[i] <- length(Y.j_x[[i]]);
-		}
-
-		for(i in 1:k){
-			Q.i <- 0;
-			for(j in 1:n)
-				Q.i <- Q.i + Z[j,i]*t(rep(1, M.j_x[j] )) %*% V.j_x[[j]] %*% (Y.j_x[[j]])
-			Q.v <- Q.v + (Q.i)^2;
-			Q.u <- Q.u + Q.i;
-		}
-		
-		Q.v <- Q.v/2;
-		Q.u <- Q.u^2/2;
-
-		n.x <- NCOL(X) + y.cov.time ;
-		W0 <- array(0, dim=c(k,k));
-		W1 <- array(0, dim=c(k,n.x));
-		W2 <- array(0, dim=c(n.x,n.x));
-		W3 <- array(0, dim=c(n.x,k));
-		
-		for (i in 1:n){
-			m.i <- M.j_x[i] ;
-
-			kr.X<- kronecker( X[i,,drop=F], array(1, dim=c(m.i,1)) )
+		m.i <- M.i[i] ;
+		kr.Z<- kronecker( Z[i,,drop=F], array(1, dim=c( m.i, 1 )) )
+		kr.X<- kronecker( X[i,,drop=F], array(1, dim=c( m.i,1)) )
 			
-			if( y.cov.time>0 )	
-			{
-				y.t.i <- c(Y.time[i, ]);
-				if ( length( which(is.na(y.t.i)) )> 0) 
-					y.t.i <- y.t.i[ -which(is.na(y.t.i)) ];
-
-				for(t in 1:y.cov.time)
-					kr.X<- cbind(kr.X, y.t.i^t);
-			}
-			
-			kr.Z<- kronecker( Z[i,,drop=F], array(1, dim=c( m.i, 1 )) )
-			W0 <- W0 + t(kr.Z) %*% V.j_x[[i]] %*% kr.Z;
-			W1 <- W1 + t(kr.Z) %*% V.j_x[[i]] %*% kr.X;
-			W2 <- W2 + t(kr.X) %*% V.j_x[[i]] %*% kr.X;
-			W3 <- W3 + t(kr.X) %*% V.j_x[[i]] %*% kr.Z;
+		if( y.cov.time>0 )	
+		{
+			yt.i <- Y.time[i, !is.na(Y.delt[i,]) ];
+				
+			for(t in 1:y.cov.time)
+				kr.X<- cbind( kr.X, yt.i**t);
 		}
-		
-		Q.w <- W0 - W1 %*% solve(W2) %*% W3;
+			
+		W0 <- W0 + t(kr.Z) %*% V.i[[i]] %*% kr.Z;
+		W1 <- W1 + t(kr.Z) %*% V.i[[i]] %*% kr.X;
+		W2 <- W2 + t(kr.X) %*% V.i[[i]] %*% kr.X;
+		W3 <- W3 + t(kr.X) %*% V.i[[i]] %*% kr.Z;
 	}
-	
-	return(list(v=Q.v, w=Q.w/2, u=Q.u));
+		
+	Q.w <- (W0 - W1 %*% solve(W2) %*% W3)/2;
+
+#cat("v=", Q.v, "u=", Q.u, "\n");
+#show( Q.w );
+
+	return(list(v=Q.v, w=Q.w, u=Q.u));
 }
 
-est_gen_Q<-function(Y.delt, Y.time, maf, Z, X, par_null, y.cov.time, run.cpp=T)
+est_gen_Q<-function( par_null, X, Y.delt, Y.time, Z.scale.skat, Z.scale.burden, y.cov.time, run.cpp=T)
 {
 	t0 <- proc.time()
 
 	r0 <- NA;
 	if(!run.cpp)
-		r0<- est_gen_Q.R( Y.delt, Y.time, maf, Z, X, par_null, y.cov.time)
+	{
+		r.lskat<- list(v=0, w=0);
+		if(!is.null(Z.scale.skat$new))
+			r.lskat<- est_gen_Q.R( 
+						par_null, 
+						X, 
+						Y.delt, 
+						Y.time, 
+						Z.scale.skat$maf, 
+						Z.scale.skat$new, 
+						y.cov.time);
+
+		r.burden<- list(v=0, w=0);
+		if(!is.null(Z.scale.burden$new))
+			r.burden<- est_gen_Q.R( 
+						par_null, 
+						X, 
+						Y.delt, 
+						Y.time, 
+						Z.scale.burden$maf, 
+						Z.scale.burden$new, 
+						y.cov.time)
+
+		r <- list( v.lskat = r.lskat$v, 
+						w.lskat  = r.lskat$w, 
+						v.burden = r.burden$u, 
+						w.burden = r.burden$w);
+		
+	}	
 	else	
-		r0<- .Call( "est_gen_Q_C", as.matrix( Y.delt*1.0 ) , as.matrix( Z*1.0 ),  as.matrix( X*1.0 ), as.vector(maf*1.0), as.vector( par_null*1.0) );
+		r0<- .Call( "est_gen_Q_C", 
+						as.matrix( Y.delt*1.0 ), 
+						as.matrix( Z*1.0 ),  
+						as.matrix( X*1.0 ), 
+						as.vector(maf*1.0), 
+						as.vector( par_null*1.0) );
 
 	t1 <- proc.time();
 
@@ -111,33 +197,7 @@ est_gen_Q<-function(Y.delt, Y.time, maf, Z, X, par_null, y.cov.time, run.cpp=T)
 	# if( any(c(r1$w) != c(r0$w) ) ) cat("W1<>W0");
 	# cat("EST_GEN_Q Runtime:", (t1-t0)[3], "\n");
 	
-	return(r0);		
-}
-
-#public:
-longskat_gene_run<-function( r.model, snp.mat, weights.common=c(0.5,0.5), weights.rare=c(1,25), run.cpp=T, debug=F ) 
-{
-	Y.delt <- r.model$y.delt; 
-	Y.time <- r.model$y.time; 
-	par_null <- c( r.model$par$sig_a,  r.model$par$sig_b, r.model$par$sig_e, r.model$par$rho );
-	X <- cbind(1, r.model$y.cov);
-
- 	Z.scale <- SKAT_Scale_Genotypes( X, snp.mat, weights.common=weights.common, weights.rare=weights.rare )
-
-	Q <- try( est_gen_Q( Y.delt, Y.time, Z.scale$maf, Z.scale$new, X, par_null, r.model$y.cov.time, run.cpp=run.cpp ) );
-
-	if (class(Q)=="try-error")
-		return(NULL);
-		
-	pv <- get_Qv_pvalue(Q$v, Q$w);
-	pu <- get_Qu_pvalue(Q$u, Q$w);
-
-	# if(debug) cat( " MAF=", (Z.scale$maf), "\n");
-	
-	r.lskat <- list( mle = r.model, snp.total=length(Z.scale$maf), snp.rare=Z.scale$rare, qv=Q$v, pv=pv$p.value, qu=Q$u, pu=pu$p.value);
-	class(r.lskat) <- "LSKAT.gen.ret";
-	
-	return(r.lskat)
+	return(r);		
 }
 
 #public:
@@ -157,12 +217,14 @@ print.LSKAT.gen.ret<-function(r.lskat, useS4=FALSE)
 	cat("[2] LSKAT:\n");	
 	cat("* SNP total = ",      r.lskat$snp.total, "\n");	
 	cat("* Rare SNPs = ",      r.lskat$snp.rare, "\n");	
-	cat("* Q value = ",        r.lskat$qv, "\n");	
-	cat("* p-value = ",		   r.lskat$pv, "\n");	
+	cat("* Q @ LSKAT = ",      r.lskat$q.lskat, "\n");	
+	cat("* p-value   = ",      r.lskat$p.lskat, "\n");	
+	cat("* Q @ burden= ",      r.lskat$q.burden, "\n");	
+	cat("* p-value   = ",      r.lskat$p.burden, "\n");	
 }
 
 #private
-longskat_gene_task<-function(r.model, gene.range, PF, gen.list, weights.common, weights.rare, run.cpp, snp.impute, debug) 
+longskat_gene_task<-function(r.model, gene.range, PF, gen.list, weights.common, weights.rare, run.cpp, snp.impute, rare.cutoff, test.type="Joint", debug) 
 {
 	rs.name <-c();
 	rs.lst <- vector("list", length(which(!is.na(gene.range))) );
@@ -191,32 +253,73 @@ longskat_gene_task<-function(r.model, gene.range, PF, gen.list, weights.common, 
 		}
 	
 		#gen.mat$snp:[P,N]=>[N,P]
-		ls <- try( longskat_gene_run(r.model, t(gen.mat$snp), weights.common=weights.common, weights.rare=weights.rare, run.cpp=run.cpp, debug = debug) );
+		ls <- try( longskat_gene_run( r.model, 
+						t(gen.mat$snp), 
+						weights.common = weights.common, 
+						weights.rare   = weights.rare, 
+						run.cpp        = run.cpp, 
+						rare.cutoff    = rare.cutoff, 
+						test.type      = test.type,
+						debug          = debug) );
 
 		rs.lst.idx <- rs.lst.idx + 1;
 		rs.name <- c(rs.name, as.character(gen$name));
 		
 		if(is.null(ls) || class(ls) == "try-error" )
 		{
-			rs.lst[[rs.lst.idx]] <- c( i, min(gen.mat$info[,2]), min(gen.mat$info[,3]), NROW(gen.mat$mat), NA, NA, NA, NA, NA );
+			rs.lst[[rs.lst.idx]] <- c( i, 
+						min(gen.mat$info[,2]), 
+						min(gen.mat$info[,3]), 
+						NROW(gen.mat$mat), 
+						NA, NA, NA, NA, NA );
 			cat("! Failed to calculate Gene[", i, "]=", as.character(gen$name), "\n");
 		}	
 		else
 		{
-			rs.lst[[rs.lst.idx]] <- c(i, min(gen.mat$info[,2]), min(gen.mat$info[,3]), ls$snp.total, ls$snp.rare, ls$qv, ls$pv, ls$qu, ls$pu );
-			if(debug) cat(" [", i, "]", as.character(gen$name), ls$snp.total,ls$snp.rare, ls$qv, ls$pv, ls$qu, ls$pu,"\n");
+			rs.lst[[rs.lst.idx]] <- c(i, 
+						min(gen.mat$info[,2]), 
+						min(gen.mat$info[,3]), 
+						ls$snp.total, 
+						ls$snp.rare, 
+						ls$q.lskat, 
+						ls$p.lskat, 
+						ls$q.burden, 
+						ls$p.burden );
+						
+			if(debug) cat(" [", i, "]", 
+						as.character(gen$name), 
+						ls$snp.total,
+						ls$snp.rare, 
+						ls$q.lskat, 
+						ls$p.lskat, 
+						ls$q.burden, 
+						ls$p.burden, "\n");
 		}
 	}	
 
 	rs <- do.call( "rbind", rs.lst );
-	ret <- data.frame(id=rs[,1], name=rs.name, chr=rs[,2], min.pos=rs[,3], snp=rs[,4], rare=rs[,5], Qv=rs[,6], pv = rs[,7], Qu=rs[,8], pu = rs[,9] );
+	ret <- data.frame( id    = rs[,1], 
+					name     = rs.name, 
+					chr      = rs[,2], 
+					min.pos  = rs[,3], 
+					snp      = rs[,4], 
+					rare     = rs[,5], 
+					Q.lskat  = rs[,6], 
+					p.lskat  = rs[,7], 
+					Q.burden = rs[,8], 
+					p.burden = rs[,9] );
 
 	return(ret);
 }
 
 #public:
-longskat_gene_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, file.gene.set, file.phe.long, file.phe.cov, file.phe.time=NULL, gene.range = NULL,  
-	options=list(y.cov.count= NA, y.cov.time= 0, g.maxiter = 20, weights.common=c(0.5,0.5), weights.rare=c(1,25), run.cpp=T, debug=F, n.cpu=1, snp.impute="mean") )
+longskat_gene_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, 
+				file.gene.set, 
+				file.phe.long, 
+				file.phe.cov, 
+				file.phe.time=NULL, 
+				gene.range = NULL,  
+				options=list() )
 {
 	cat( "[ LONGSKAT_GENE_PLINK ] Procedure.\n");
 	cat( "Checking the optional items......\n");
@@ -229,15 +332,8 @@ longskat_gene_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, f
 		options0[names(options)] <- options;
 		options <- options0;
 	}
-    	
-	cat( "* Covariate Count: ",  options$y.cov.count,  "\n");
-	cat( "* Covariate Time Effect: ",  options$y.cov.time, "\n");
-	cat( "* Parallel Computing: ", ifelse( options$n.cpu>1, "Yes,", "No,"), options$n.cpu,  "CPU(s)\n");
-	cat( "* Debug Output: ", ifelse( options$debug, "Yes", "No"),"\n");
-	cat( "* SNP Impute: ",  options$snp.impute, "\n");
-	cat( "* C/C++ Module Used Output: ", ifelse( options$run.cpp, "Yes", "No"), "\n");
-	cat( "* Beta Weights for Common SNPs: ",  options$weights.common[1], options$weights.common[2], "\n");
-	cat( "* Beta Weights for Rare SNPs: ",  options$weights.rare[1], options$weights.rare[2], "\n");
+	
+	show_options( options );
 
 	chk.genset <- check_geneset_file( file.gene.set )
 	if ( !chk.genset$bSuccess )
@@ -257,26 +353,35 @@ longskat_gene_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, f
 
 	cat( "Starting to load all data files......\n");
 	
-	PF <- read_gen_phe_cov ( file.plink.bed, file.plink.bim, file.plink.fam, file.phe.long, file.phe.time, file.phe.cov ); 
+	PF <- read_gen_phe_cov ( file.plink.bed, file.plink.bim, file.plink.fam, 
+					file.phe.long, 
+					file.phe.time, 
+					file.phe.cov ); 
 	
 	PF.par <- list(file.plink.bed = file.plink.bed, 
-			file.plink.bim = file.plink.bim, 
-			file.plink.fam = file.plink.fam, 
-			file.phe.long  = file.phe.long, 
-			file.phe.time  = file.phe.time, 
-			file.phe.cov   = file.phe.cov,
-			file.gene.set  = file.gene.set,
-			y.cov.count    = options$y.cov.count, 
-			y.cov.time     = options$y.cov.time,
-			weights.common = options$weights.common, 
-			weights.rare   = options$weights.rare );
+					file.plink.bim = file.plink.bim, 
+					file.plink.fam = file.plink.fam, 
+					file.phe.long  = file.phe.long, 
+					file.phe.time  = file.phe.time, 
+					file.phe.cov   = file.phe.cov,
+					file.gene.set  = file.gene.set,
+					y.cov.count    = options$y.cov.count, 
+					y.cov.time     = options$y.cov.time,
+					weights.common = options$weights.common, 
+					weights.rare   = options$weights.rare,
+					rare.cutoff    = options$rare.cutoff);
 
 	if( is.na(options$y.cov.count) )
 		options$y.cov.count <- NCOL(PF$phe.cov)-1;
 
 	cat( "Starting to estimate the SIGMA_A, SIGMA_B, SIGMA_E and other parameters......\n");
 
-	r.model <- longskat_est_model(PF$phe.long, PF$phe.cov, PF$phe.time, y.cov.time=options$y.cov.time, g.maxiter=options$g.maxiter, debug=options$debug);
+	r.model <- longskat_est_model(PF$phe.long, 
+					PF$phe.cov, 
+					PF$phe.time, 
+					y.cov.time = options$y.cov.time, 
+					g.maxiter  = options$g.maxiter, 
+					debug      = options$debug);
 	
 	if( class(r.model) != "LSKAT.null.model" ) 
 		stop("! Failed to estimate the parameters of Covariance Compoment.");
@@ -308,9 +413,24 @@ longskat_gene_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, f
 	{
 		g.range0 <- gene.range[((sect-1)*n.percpu+1):(sect*n.percpu)];
 		
-		PF <- read_gen_phe_cov ( PF.par$file.plink.bed, PF.par$file.plink.bim, PF.par$file.plink.fam, PF.par$file.phe.long, PF.par$file.phe.time, PF.par$file.phe.cov );
+		PF <- read_gen_phe_cov ( PF.par$file.plink.bed, 
+						PF.par$file.plink.bim, 
+						PF.par$file.plink.fam, 
+						PF.par$file.phe.long, 
+						PF.par$file.phe.time, 
+						PF.par$file.phe.cov );
 		
-		res.cluster <- longskat_gene_task( r.model, g.range0, PF, gen.list, options$weights.common, options$weights.rare, options$run.cpp, options$snp.impute, options$debug );
+		res.cluster <- longskat_gene_task( r.model, 
+						g.range0, 
+						PF, 
+						gen.list, 
+						options$weights.common, 
+						options$weights.rare, 
+						options$run.cpp, 
+						options$snp.impute, 
+						options$rare.cutoff, 
+						options$test.type,
+						options$debug );
 		
 		return(res.cluster);
 	}
@@ -334,7 +454,17 @@ longskat_gene_plink<-function( file.plink.bed, file.plink.bim, file.plink.fam, f
 	else
 	{
 		cat("Starting the LSKAT estimate for each gene......\n");
-		lskat.ret <- longskat_gene_task(r.model, gene.range, PF, gen.list, options$weights.common, options$weights.rare, options$run.cpp, options$snp.impute, options$debug );
+		lskat.ret <- longskat_gene_task( r.model, 
+						gene.range, 
+						PF, 
+						gen.list, 
+						options$weights.common, 
+						options$weights.rare, 
+						options$run.cpp, 
+						options$snp.impute, 
+						options$rare.cutoff, 
+						options$test.type, 
+						options$debug );
 	}
 	
 	tm <- proc.time() - tm.start;
@@ -419,7 +549,8 @@ summary.LSKAT.gen.plink<-function(r.lskat)
 #public:
 plot.LSKAT.gen.plink<-function( r.lskat, pdf.file=NA, title="", y.max=NA, bonferroni=F )
 {
-	if(is.na(pdf.file)) pdf.file<-paste(r.lskat$par$file.phe.long, ".pdf", sep="");
+	if(is.na(pdf.file)) 
+		pdf.file<-paste(r.lskat$par$file.phe.long, ".pdf", sep="");
 
 	#CHR, POS, NAME, PV
 	df.gene <- r.lskat$gene[,c(3,4,2,8)];
@@ -431,7 +562,12 @@ plot.LSKAT.gen.plink<-function( r.lskat, pdf.file=NA, title="", y.max=NA, bonfer
 
 	par(mar=c(3.2, 3.5,  2.5, 1))
 	par(mgp=c(1.4, 0.3, 0), tck=-0.03)
-	draw_manhattan( df.gene[,c(1,3,4)], map.title=title, ifelse(bonferroni, 0.0001, 0.05)/NROW(df.gene), 0.7, y.max= y.max );
+	
+	draw_manhattan( df.gene[,c(1,3,4)], 
+					map.title = title, 
+					ifelse(bonferroni, 0.0001, 0.05)/NROW(df.gene), 
+					0.7, 
+					y.max = y.max );
 
 	dev.off();
 
@@ -441,6 +577,34 @@ plot.LSKAT.gen.plink<-function( r.lskat, pdf.file=NA, title="", y.max=NA, bonfer
 
 get_default_options<-function()
 {
-	options <- list(y.cov.count= NA, y.cov.time= 0, g.maxiter = 20, weights.common=c(0.5,0.5), weights.rare=c(1,25), run.cpp=T, debug=F, n.cpu=1, snp.impute="mean");
+ 	options <- list( rare.cutoff   = NULL, 
+					y.cov.count   = NA, 
+					y.cov.time    = 0, 
+					g.maxiter     = 20, 
+					weights.common= c(0.5,0.5), 
+					weights.rare  = c(1,25), 
+					run.cpp       = T, 
+					debug         = F, 
+					n.cpu         = 1, 
+					snp.impute    = "mean",
+					test.type     = "Joint");
+
 	return(options);	
 }
+
+show_options<-function(options)
+{
+	cat( "* Covariate Count: ",  options$y.cov.count,  "\n");
+	cat( "* Covariate Time Effect: ",  options$y.cov.time, "\n");
+	cat( "* Parallel Computing: ", ifelse( options$n.cpu>1, "Yes,", "No,"), options$n.cpu,  "CPU(s)\n");
+	cat( "* Debug Output: ", ifelse( options$debug, "Yes", "No"),"\n");
+	cat( "* SNP Impute: ",  options$snp.impute, "\n");
+	cat( "* C/C++ Module Used Output: ", ifelse( options$run.cpp, "Yes", "No"), "\n");
+	cat( "* Beta Weights for Common SNPs: ",  options$weights.common[1], options$weights.common[2], "\n");
+	cat( "* Beta Weights for Rare SNPs: ",  options$weights.rare[1], options$weights.rare[2], "\n");
+	cat( "* Common-Rare cutoff:", options$rare.cutoff, "\n");
+	cat( "* Test type:", options$test.type, "\n");
+}
+
+
+  
